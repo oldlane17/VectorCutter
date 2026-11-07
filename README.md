@@ -48,7 +48,7 @@ The project is part of [Old Lane 17](https://oldlane17.com), a platform for purp
 This project is **100% static HTML**. Just clone or download the repo and open any `.html` file in your browser:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/vectorcutter.git
+git clone https://github.com/oldlane17/vectorcutter.git
 cd vectorcutter
 # Then open index.html in your browser
 ```
