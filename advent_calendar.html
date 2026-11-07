@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Design custom, laser-ready SVG advent calendars with configurable cell sizes, numbering styles and assembly options — ideal for holiday gifts, decorations, and small-batch production.">
+    <meta name="keywords" content="advent calendar generator, advent calendar svg, laser cut advent calendar, countdown calendar svg, holiday craft svg, customizable advent calendar, vectorcutter">
+
+    <title>VectorCutter - Advent Calendar Generator</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <!-- ANDROID -->
+	<link href="/favicon.ico" type="image/x-icon" rel='icon' />
+    <!-- iOS -->
+    <link href="/favicon.ico" type="image/x-icon" rel='apple-touch-icon' />
+    <link href='https://fonts.googleapis.com/css?family=Roboto:400,700' rel='stylesheet'>
+    <!-- OpenType.js for converting standard fonts to paths -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/opentype.js/1.3.4/opentype.min.js"></script>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-M8HF2H2T');</script>
+    <!-- End Google Tag Manager -->
+    <style>
+        /* --- STYLING --- */
+        :root{
+            --main-font:'Roboto', Tahoma, Geneva, Verdana, sans-serif;
+            --primary-color:#182a69; 
+            --primary-color-trans: rgba(24, 42, 105, 0.8);
+            --secondary-color:#a0a0ff;
+            --bg-gradient-start: #182a69;
+            --bg-gradient-end: #02133e;
+            --input-bg: #f0f0f5;
+            --text-color: #333;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--main-font); }
+        body {
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            min-height: 100vh;
+            color: #333;
+            margin: 20px;
+            padding: 0;
+            font-family: var(--main-font);
+            overflow-x: hidden;
+        }
+
+        /* --- NAVBAR (From Index) --- */
+        .topnav {
+            position: fixed; top: 10px; left: 20px; right: 20px;
+            border-radius: 15px; padding: 10px 20px; z-index: 999;
+            display: flex; justify-content: space-between; align-items: center;
+            background-color: #182a6995; backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        
+        /* Logo Styling - Circular */
+        .nav-logo {
+            width: 36px; height: 36px; 
+            background: #fff; 
+            border-radius: 50%; 
+            object-fit: contain;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; color: var(--bg-gradient-start);
+            border: 2px solid white;
+        }
+        
+        .nav-title { color: white; font-size: 1.2rem; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+        .nav-right { display: flex; gap: 5px; align-items: center; }
+        .topnav a, .dropbtn { color: white; text-decoration: none; padding: 10px 15px; border-radius: 8px; transition: all 0.3s ease; font-weight: 500; font-family: var(--main-font); font-size: 1rem; border:none; background: transparent; cursor: pointer; }
+        .topnav a:hover, .dropdown:hover .dropbtn { background: var(--primary-color); transform: translateY(-2px); }
+
+        /* Dropdown */
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content {
+            display: none; position: absolute; right: 0;
+            background-color: #02133e; min-width: 200px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1000; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden; margin-top: 0px;
+            transition: 0.3s;
+        }
+        .dropdown-content::before {
+            content: "";
+            display: block;
+            position: absolute;
+            top: -20px; /* Move up to overlap the gap */
+            left: 0;
+            width: 100%;
+            height: 20px; /* Height sufficient to bridge the gap */
+            background: transparent; /* Keep it invisible */
+        }
+        .dropdown-content a { color: white; padding: 12px 16px; text-decoration: none; display: block; text-align: left; }
+        .dropdown:hover .dropdown-content { display: block; }
+        .dropdown-content a:hover { background-color: var(--primary-color); }
+
+        /* --- MOBILE SIDE NAV (The Slide-in Menu) --- */
+        .sidenav {
+            height: 100%; width: 0; position: fixed; z-index: 2000;
+            top: 0; left: 0; background-color: #182a69;
+            overflow-x: hidden; transition: 0.5s; padding-top: 60px;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.5);
+        }
+
+        .sidenav a, .sidenav .sidenav-header {
+            padding: 8px 8px 8px 32px; text-decoration: none; font-size: 1.2rem;
+            color: #f1f1f1; display: block; transition: 0.3s; font-family: var(--main-font);
+        }
+
+        .sidenav a:hover { color: var(secondary-color); background: rgba(255,255,255,0.1); }
+        .sidenav .closebtn {
+            position: absolute; top: 15px; right: 20px;
+            font-size: 24px; margin-left: 0; padding: 0;
+        }
+        .sidenav .closebtn:hover { background: none; color: #ccc; }
+        .sidenav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 10px 20px; }
+        .sidenav-subitem { font-size: 1rem !important; padding-left: 50px !important; opacity: 0.9; }
+
+        /* Hamburger Icon */
+        .hamburger {
+            display: none; font-size: 28px; cursor: pointer; color: white;
+            margin-right: 15px; user-select: none;
+        }
+
+        /* --- GENERATOR LAYOUT --- */
+        .container { max-width: 1200px; margin: 100px auto 40px; padding: 20px; }
+
+        .action-area {
+            display: grid; grid-template-columns: 2fr 1fr; gap: 30px;
+            margin-bottom: 40px; min-height: 350px;
+        }
+
+        /* Settings */
+        .settings-container { display: flex; flex-direction: column; gap: 20px; height: 100%; }
+        .setting-card {
+            background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px; padding: 20px; color: white; backdrop-filter: blur(5px);
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .setting-card h3 { margin: 0 0 10px 0; font-size: 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; }
+        .input-group { margin-bottom: 10px; }
+        .input-group label { display: block; font-size: 0.9rem; margin-bottom: 5px; color: #ddd; }
+        .form-control {
+            width: 100%; padding: 8px 10px; border-radius: 8px; border: none;
+            background: var(--input-bg); font-family: var(--main-font); box-sizing: border-box;
+        }
+        .checkbox-group { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer; }
+        .checkbox-group input { width: 20px; height: 20px; cursor: pointer; }
+        
+        .hidden { display: none; }
+        .file-upload-wrapper {
+            background: rgba(255,255,255,0.1); border: 1px dashed rgba(255,255,255,0.4);
+            padding: 10px; border-radius: 8px; text-align: center; margin-top: 5px;
+        }
+        .file-upload-wrapper input { width: 100%; color: white; }
+        .hint-text { font-size: 0.8rem; color: #aaa; margin-top: 2px; }
+
+        /* Two column input row */
+        .row-inputs { display: flex; gap: 15px; }
+        .row-inputs .input-group { flex: 1; }
+
+        /* Action Button */
+        .big-action-btn {
+            background: white; border-radius: 20px; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); border: none; width: 100%; height: 100%; padding: 40px;
+        }
+        .big-action-btn:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4); background: #fdfdfd; }
+        .plus-icon { font-size: 6rem; color: var(--primary-color); line-height: 1; margin-bottom: 10px; }
+        .action-label { font-size: 1.5rem; color: #182a69; font-weight: bold; text-align: center; }
+        .loading-spinner { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin-bottom: 10px; display:none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Preview */
+        .projects-header { color: white; font-size: 2rem; margin-bottom: 25px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .preview-area {
+            background: white; border-radius: 15px; padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); min-height: 400px;
+            display: flex; justify-content: center; align-items: center; overflow: auto;
+        }
+        /* SVG Legend */
+        .svg-legend { margin-top:10px; font-size: 0.8rem; color:#666; text-align:center; }
+        .legend-item { display:inline-block; margin: 0 10px; }
+        .dot { width:10px; height:10px; display:inline-block; border-radius:50%; margin-right:5px; }
+
+        svg { max-width: 100%; max-height: 600px; border: 1px dashed #ccc; background-color: white; }
+
+        /* Footer */
+                /* Footer */
+        .footer-row-1 {
+  background-color: #02133e;
+font-family: Roboto, sans-serif;
+font-size: 12px ;
+display: flex; /* Use flexbox for layout */
+flex-direction: column;
+  justify-content: center; /* Center items horizontally */
+  align-items: center; /* Center items vertically */
+  padding: 0 0;
+gap: 0px;
+border-radius: 10px;
+
+border-bottom: none;
+position: relative;
+bottom:0;
+}
+.footer-row-container {
+    margin: 0 auto;
+    padding: 8px 20px;
+    align-items: center;
+    border-radius: 10px;
+    text-align: center;
+    flex-wrap: wrap;
+
+}
+.footer-row-1 nav {
+  display: flex;
+  justify-content: center;
+flex-wrap: wrap;
+  gap: 25px;
+border-bottom: None;
+padding: 8px;}
+
+        
+.footer-row-1 a {
+  color: #f9f8ff !important;
+  text-decoration: underline !important;
+  font-family: Roboto, sans-serif;
+font-size: 12px ;
+  transition: color 0.3s ease;
+  white-space: nowrap;
+}
+.footer-row-1 p{
+color: #f9f8ff;
+    justify-content: center;
+  font-family: Roboto, sans-serif;
+font-size: 9px ;
+  padding:0;
+margin:0;
+white-space: nowrap;
+
+}
+
+.footer-row-1 a:hover {
+  color: #d8dce8;
+}
+        /* --- MEDIA QUERIES --- */
+        @media (max-width: 768px) {
+            .action-area { grid-template-columns: 1fr; }
+            
+            /* Navbar Mobile Changes */
+            .topnav { 
+                flex-direction: row; 
+                justify-content: flex-start; 
+            }
+            .nav-right { display: none; } /* Hide Desktop Menu */
+            .hamburger { display: block; } /* Show Burger */
+        }
+    </style>
+</head>
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M8HF2H2T"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <!-- Mobile Sidenav -->
+    <div id="mySidenav" class="sidenav">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <a href="index.html">Home</a>
+        <a href="editor_5.8.html">Editor</a>
+        <div class="sidenav-divider"></div>
+        <span class="sidenav-header" style="color:#aaa; font-size:0.9rem; padding-left:32px;">GENERATORS</span>
+        <a href="advent_calendar.html" class="sidenav-subitem">Advent Calendar</a>
+        <a href="chessboard.html" class="sidenav-subitem">Chessboard</a>
+        <a href="puzzle.html" class="sidenav-subitem">Puzzle</a>
+        <a href="ruler.html" class="sidenav-subitem">Ruler Generator</a>
+    </div>
+
+    <!-- Main Navbar -->
+    <nav class="topnav">
+        <!-- Hamburger Menu (Mobile Only) -->
+        <span class="hamburger" onclick="openNav()">&#9776;</span>
+
+        <div class="nav-left">
+            <img src="favicon.png" alt="Logo" class="nav-logo" onerror="this.style.display='none'">
+            <span class="nav-title"><a href="index.html">VectorCutter - Old Lane 17</a></span>
+        </div>
+        
+        <!-- Desktop Links -->
+        <div class="nav-right">
+            <a href="index.html">Home</a>
+            <a href="editor_5.8.html" target="_blank">Editor</a>
+            <div class="dropdown">
+                <button class="dropbtn">Generators ▼</button>
+                <div class="dropdown-content">
+                    <a href="advent_calendar.html" target="_blank">Advent Calendar</a>
+                    <a href="chessboard.html" target="_blank">Chessboard</a>
+                    <a href="puzzle.html" target="_blank">Puzzle</a>
+                    <a href="ruler.html" target="_blank">Ruler</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="action-area">
+            
+            <!-- Settings Column -->
+            <div class="settings-container">
+                
+                <!-- Card 1: Sheet Size -->
+                <div class="setting-card">
+                    <h3>📄 Sheet Size</h3>
+                    <div class="input-group">
+                        <label>Format</label>
+                        <select id="paper_format" class="form-control" onchange="updateDimensions()">
+                            <option value="A4">A4 (297 x 210 mm)</option>
+                            <option value="A3">A3 (420 x 297 mm)</option>
+                            <option value="A5">A5 (210 x 148 mm)</option>
+                            <option value="Custom">Custom Size</option>
+                        </select>
+                    </div>
+                    <div class="row-inputs">
+                        <div class="input-group">
+                            <label>Width (mm)</label>
+                            <input type="number" id="sheet_width" class="form-control" value="297" disabled>
+                        </div>
+                        <div class="input-group">
+                            <label>Height (mm)</label>
+                            <input type="number" id="sheet_height" class="form-control" value="210" disabled>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Door Configuration -->
+                <div class="setting-card">
+                    <h3>🚪 Door Settings</h3>
+                    <div class="input-group">
+                        <label>Door Size (Side Length mm)</label>
+                        <input type="number" id="door_size" class="form-control" value="35">
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="pull_tab" checked>
+                        <label for="pull_tab">Add Pull Tab Handle?</label>
+                    </div>
+                    <div class="input-group">
+                        <label>Pull Tab Radius (mm)</label>
+                        <input type="number" id="tab_radius" class="form-control" value="4">
+                    </div>
+                </div>
+
+                <!-- Card 3: Fonts & Numbering -->
+                <div class="setting-card">
+                    <h3>🔢 Fonts & Numbering</h3>
+                    <div class="input-group">
+                        <label>Font Style</label>
+                        <select id="font_style" class="form-control" onchange="toggleFontUI()">
+                            <optgroup label="Laser Optimized (Fast)">
+                                <option value="modern">Stick: Modern (Engrave)</option>
+                                <option value="rounded">Stick: Rounded (Engrave)</option>
+                                <option value="serif">Stick: Serif (Engrave)</option>
+                                <option value="stencil">Stencil: Cargo (Cut Out)</option>
+                            </optgroup>
+                            <optgroup label="Standard Web Fonts (Download)">
+                                <option value="preset_sans">Sans Serif (Roboto/Arial-like)</option>
+                                <option value="preset_serif">Serif (Crimson/Times-like)</option>
+                                <option value="preset_cursive">Cursive (Christmas Style)</option>
+                                <option value="preset_bold">Bold Display (Oswald)</option>
+                            </optgroup>
+                            <optgroup label="Advanced">
+                                <option value="custom">📁 Custom (Upload .ttf/.otf)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <!-- Custom Font Upload UI -->
+                    <div id="custom-font-ui" class="hidden">
+                        <div class="file-upload-wrapper">
+                            <label style="color:#ddd; font-size:0.8rem;">Select Font File</label>
+                            <input type="file" id="font_file" accept=".ttf,.otf,.woff">
+                        </div>
+                    </div>
+
+                    <!-- Font Mode (Engrave vs Cut) -->
+                    <!-- Shown for Standard or Custom fonts only -->
+                    <div id="font-mode-ui" class="checkbox-group hidden" style="margin-top:10px;">
+                        <input type="checkbox" id="font_outline_cut">
+                        <label for="font_outline_cut">Cut Outline? (Default: Engrave Fill)</label>
+                        <div class="hint-text" style="margin-left:28px;">*Warning: Non-stencil fonts will lose centers (0, 8, etc) if cut.</div>
+                    </div>
+
+                    <div class="row-inputs" style="margin-top:10px;">
+                        <div class="input-group">
+                            <label>Size (mm)</label>
+                            <input type="number" id="font_size" class="form-control" value="12">
+                        </div>
+                        <div class="input-group">
+                            <label>Order Pattern</label>
+                            <select id="number_order" class="form-control">
+                                <option value="ordered_tb">Ordered (TL->BR)</option>
+                                <option value="ordered_bt">Ordered (BL->TR)</option>
+                                <option value="random">Randomly Scattered</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Action Button -->
+            <button class="big-action-btn" id="generate-btn">
+                <div class="loading-spinner" id="loading-spinner"></div>
+                <div class="plus-icon" id="btn-icon">📅</div>
+                <div class="action-label" id="btn-text">Generate Laser SVG</div>
+            </button>
+        </div>
+
+        <h2 class="projects-header">Live Preview</h2>
+        <div class="preview-area" id="preview-container">
+            <p style="color:#888;">Click Generate to see the result here...</p>
+        </div>
+        <div class="svg-legend">
+            <span class="legend-item"><span class="dot" style="background:red;"></span>Cut Line (Red)</span>
+            <span class="legend-item"><span class="dot" style="background:blue;"></span>Hinge/Perforation (Blue)</span>
+            <span class="legend-item"><span class="dot" style="background:black;"></span>Engrave (Black)</span>
+        </div>
+
+    </div>
+
+    <div class='footer-row footer-row-1'>
+        <div class='footer-row-container' style="background-color:#182a69; width:100%">
+            <nav>
+                <a href='about.html'>About</a>  
+                <a href = "privacy-policies.html" >Privacy Policies </a>
+                <a href = "terms-of-service.html"> Terms of Service</a>
+                <a href = "legal-notice.html"> Legal Notice</a>
+                <a href='https://www.oldlane17.com/p/contact.html'>Contact</a> 
+                <a href="#" data-cc="show-preferencesModal">Cookie Settings</a>
+                <a href = "https://info.oldlane17.com/faq" >FAQ </a>
+                <a href = "https://info.oldlane17.com/social-media" >Social media </a>
+            </nav>
+        </div>
+        <div class='footer-row-container' style="background-color:#02133e; width:100%">
+            <p>© Copyright 2024-2026 Old Lane 17</p>
+        </div>
+    </div>
+
+    <script>
+        /* --- MOBILE NAV LOGIC (Added) --- */
+        function openNav() {
+            document.getElementById("mySidenav").style.width = "250px";
+        }
+
+        function closeNav() {
+            document.getElementById("mySidenav").style.width = "0";
+        }
+
+        // --- GLOBAL STATE ---
+        let loadedFont = null;
+        let loadedFontName = "";
+        let currentPresetUrl = "";
+
+        // --- PRESETS ---
+        const formats = { "A3": [420, 297], "A4": [297, 210], "A5": [210, 148] };
+        
+        // Font URLs (Using reliable CDNs for open source fonts)
+        const fontPresets = {
+            'preset_sans': 'https://cdn.jsdelivr.net/npm/@fontsource/roboto/files/roboto-latin-700-normal.woff', // Roboto Bold
+            'preset_serif': 'https://cdn.jsdelivr.net/npm/@fontsource/crimson-pro/files/crimson-pro-latin-700-normal.woff', // Crimson Pro Bold
+            'preset_cursive': 'https://cdn.jsdelivr.net/npm/@fontsource/mountains-of-christmas/files/mountains-of-christmas-latin-700-normal.woff', // Thematic
+            'preset_bold': 'https://cdn.jsdelivr.net/npm/@fontsource/oswald/files/oswald-latin-700-normal.woff' // Oswald
+        };
+
+        // --- STICK FONTS (Hardcoded) ---
+        const stencilSegments = {
+            top: "M 1 0 L 9 0 L 8 2 L 2 2 Z", mid: "M 2 9 L 8 9 L 9 10 L 8 11 L 2 11 L 1 10 Z", bot: "M 2 18 L 8 18 L 9 20 L 1 20 Z",
+            tl: "M 0 1 L 2 3 L 2 8 L 0 9 Z", tr: "M 10 1 L 8 3 L 8 8 L 10 9 Z", bl: "M 0 11 L 2 12 L 2 17 L 0 19 Z", br: "M 10 11 L 8 12 L 8 17 L 10 19 Z"
+        };
+        const vectorFonts = {
+            modern: { '0': "M 2 0 L 8 0 L 10 2 L 10 18 L 8 20 L 2 20 L 0 18 L 0 2 L 2 0 Z", '1': "M 5 0 L 5 20", '2': "M 0 5 L 2 0 L 8 0 L 10 5 L 10 7 L 0 20 L 10 20", '3': "M 0 2 L 2 0 L 8 0 L 10 2 L 10 8 L 8 10 L 2 10 M 8 10 L 10 12 L 10 18 L 8 20 L 2 20 L 0 18", '4': "M 8 20 L 8 0 L 0 12 L 10 12", '5': "M 10 0 L 0 0 L 0 8 L 2 8 L 8 8 L 10 10 L 10 18 L 8 20 L 2 20 L 0 18", '6': "M 10 2 L 8 0 L 2 0 L 0 2 L 0 18 L 2 20 L 8 20 L 10 18 L 10 10 L 8 8 L 0 8", '7': "M 0 0 L 10 0 L 2 20", '8': "M 5 10 L 8 8 L 10 5 L 10 2 L 8 0 L 2 0 L 0 2 L 0 5 L 2 8 L 8 12 L 10 15 L 10 18 L 8 20 L 2 20 L 0 18 L 0 15 L 2 12 Z", '9': "M 0 18 L 2 20 L 8 20 L 10 18 L 10 2 L 8 0 L 2 0 L 0 2 L 0 10 L 2 12 L 10 12" },
+            rounded: { '0': "M 5 0 Q 10 0 10 5 L 10 15 Q 10 20 5 20 Q 0 20 0 15 L 0 5 Q 0 0 5 0 Z", '1': "M 4 2 L 5 0 L 5 20", '2': "M 1 5 Q 1 0 5 0 Q 10 0 10 5 Q 10 9 5 13 L 0 20 L 10 20", '3': "M 1 2 Q 1 0 5 0 Q 10 0 10 5 Q 10 8 7 9 Q 10 10 10 15 Q 10 20 5 20 Q 0 20 0 18", '4': "M 8 20 L 8 0 L 0 14 L 10 14", '5': "M 9 0 L 1 0 L 1 9 Q 1 7 5 7 Q 10 7 10 13 Q 10 20 5 20 Q 1 20 0 17", '6': "M 9 2 Q 7 0 5 0 Q 0 0 0 10 Q 0 20 5 20 Q 10 20 10 15 Q 10 10 5 10 Q 1 10 0 13", '7': "M 0 2 Q 0 0 2 0 L 10 0 L 4 20", '8': "M 5 10 Q 9 10 9 5 Q 9 0 5 0 Q 1 0 1 5 Q 1 10 5 10 Q 10 10 10 15 Q 10 20 5 20 Q 0 20 0 15 Q 0 10 5 10 Z", '9': "M 1 18 Q 3 20 5 20 Q 10 20 10 10 Q 10 0 5 0 Q 0 0 0 5 Q 0 10 5 10 Q 9 10 10 7" },
+            serif: { '0': "M 5 0 L 9 2 L 9 18 L 5 20 L 1 18 L 1 2 L 5 0 Z M 1 2 L 9 18", '1': "M 2 20 L 8 20 M 5 20 L 5 0 L 2 2", '2': "M 1 4 L 1 2 L 5 0 L 9 2 L 9 5 L 1 20 L 10 20", '3': "M 1 2 L 2 0 L 8 0 L 10 2 L 8 9 L 10 11 L 10 18 L 8 20 L 2 20 L 1 18", '4': "M 7 20 L 7 0 L 0 14 L 10 14", '5': "M 10 0 L 2 0 L 1 8 L 2 8 Q 10 6 10 14 Q 10 20 2 20 L 0 18", '6': "M 9 2 L 5 0 L 1 5 L 1 15 L 5 20 L 9 15 L 9 12 L 5 10 L 1 13", '7': "M 0 0 L 10 0 L 5 20", '8': "M 5 10 L 8 8 L 9 4 L 5 0 L 1 4 L 2 8 L 5 10 L 8 12 L 9 16 L 5 20 L 1 16 L 2 12 Z", '9': "M 1 18 L 5 20 L 9 15 L 9 5 L 5 0 L 1 5 L 1 8 L 5 10 L 9 7" },
+            stencil: { '0': ['top','tl','tr','bl','br','bot'], '1': ['tr','br'], '2': ['top','tr','mid','bl','bot'], '3': ['top','tr','mid','br','bot'], '4': ['tl','mid','tr','br'], '5': ['top','tl','mid','br','bot'], '6': ['top','tl','mid','bl','br','bot'], '7': ['top','tr','br'], '8': ['top','tl','tr','mid','bl','br','bot'], '9': ['top','tl','tr','mid','br','bot'] }
+        };
+
+        // --- UI LOGIC ---
+        function updateDimensions() {
+            const format = document.getElementById("paper_format").value;
+            const wInput = document.getElementById("sheet_width");
+            const hInput = document.getElementById("sheet_height");
+            if (format === "Custom") { wInput.disabled = false; hInput.disabled = false; }
+            else { wInput.disabled = true; hInput.disabled = true; wInput.value = formats[format][0]; hInput.value = formats[format][1]; }
+        }
+
+        function toggleFontUI() {
+            const val = document.getElementById("font_style").value;
+            const customUi = document.getElementById("custom-font-ui");
+            const modeUi = document.getElementById("font-mode-ui");
+
+            // Show Upload if custom
+            if (val === "custom") customUi.classList.remove("hidden");
+            else customUi.classList.add("hidden");
+
+            // Show Cut/Engrave option if NOT using Stick/Stencil (which have fixed modes)
+            if (val.startsWith("preset_") || val === "custom") {
+                modeUi.classList.remove("hidden");
+            } else {
+                modeUi.classList.add("hidden");
+            }
+        }
+
+        // --- FILE UPLOAD (Custom) ---
+        document.getElementById('font_file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const buffer = e.target.result;
+                    loadedFont = opentype.parse(buffer);
+                    loadedFontName = file.name;
+                    alert("Custom font loaded successfully!");
+                } catch (err) { alert("Error parsing font: " + err); }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        // --- FETCH PRESET FONT ---
+        async function loadPresetFont(presetKey) {
+            const url = fontPresets[presetKey];
+            if (currentPresetUrl === url && loadedFont) return; // Already loaded
+
+            // Fetch as ArrayBuffer
+            const response = await fetch(url);
+            const buffer = await response.arrayBuffer();
+            loadedFont = opentype.parse(buffer);
+            currentPresetUrl = url;
+            loadedFontName = presetKey;
+        }
+
+        // --- PATH HELPERS ---
+        function parseAndScale(pathD, startX, startY, scale) {
+            const commands = pathD.split(/(?=[MLQZ])/);
+            let charPath = "";
+            commands.forEach(cmd => {
+                const type = cmd.trim()[0];
+                const coordsStr = cmd.substring(1).trim();
+                if (type === 'Z') charPath += " Z";
+                else if (coordsStr.length > 0) {
+                    const coords = coordsStr.split(/\s+/).map(Number);
+                    if (type === 'M' || type === 'L') {
+                        const lx = (coords[0] * scale) + startX; const ly = (coords[1] * scale) + startY;
+                        charPath += ` ${type} ${lx.toFixed(2)} ${ly.toFixed(2)}`;
+                    } else if (type === 'Q') {
+                        const c1x = (coords[0] * scale) + startX; const c1y = (coords[1] * scale) + startY;
+                        const lx = (coords[2] * scale) + startX; const ly = (coords[3] * scale) + startY;
+                        charPath += ` Q ${c1x.toFixed(2)} ${c1y.toFixed(2)} ${lx.toFixed(2)} ${ly.toFixed(2)}`;
+                    }
+                }
+            });
+            return charPath;
+        }
+
+        function getPerforatedLinePath(x, y, length, dashLen = 2, gapLen = 1) {
+            let d = ""; let currentY = y; const endY = y + length;
+            while (currentY < endY) {
+                let nextY = currentY + dashLen; if (nextY > endY) nextY = endY;
+                d += `M ${x} ${currentY} L ${x} ${nextY} `; currentY = nextY + gapLen;
+            }
+            return d;
+        }
+
+        // --- GET NUMBER PATH ---
+        function getNumberPath(number, cx, cy, fontSize, style) {
+            const strNum = number.toString();
+
+            // A) OPENTYPE (Preset or Custom)
+            if (style === 'custom' || style.startsWith('preset_')) {
+                if (!loadedFont) return ""; 
+                // Metrics
+                const textWidth = loadedFont.getAdvanceWidth(strNum, fontSize);
+                const startX = cx - (textWidth / 2);
+                const startY = cy + (fontSize / 3); // Vertical center approx
+                // Convert to Path
+                const path = loadedFont.getPath(strNum, startX, startY, fontSize);
+                return path.toPathData(2);
+            }
+
+            // B) STICK FONTS
+            const scale = fontSize / 20; 
+            const charWidth = 10 * scale; 
+            const spacing = 4 * scale; 
+            const totalWidth = (strNum.length * charWidth) + ((strNum.length - 1) * spacing);
+            let startX = cx - (totalWidth / 2);
+            let startY = cy - (fontSize / 2);
+            let combinedPath = "";
+
+            if (style === 'stencil') {
+                const glyphs = vectorFonts['stencil'];
+                for (let i = 0; i < strNum.length; i++) {
+                    const char = strNum[i];
+                    (glyphs[char] || []).forEach(seg => { combinedPath += parseAndScale(stencilSegments[seg], startX, startY, scale); });
+                    startX += charWidth + spacing;
+                }
+            } else {
+                const glyphs = vectorFonts[style];
+                for (let i = 0; i < strNum.length; i++) {
+                    const char = strNum[i];
+                    if (glyphs[char]) combinedPath += parseAndScale(glyphs[char], startX, startY, scale);
+                    startX += charWidth + spacing;
+                }
+            }
+            return combinedPath;
+        }
+
+        // --- MAIN GENERATOR ---
+        async function generateCalendar() {
+            // UI Loading State
+            const btn = document.getElementById("generate-btn");
+            const spinner = document.getElementById("loading-spinner");
+            const icon = document.getElementById("btn-icon");
+            spinner.style.display = "block"; icon.style.display = "none";
+            btn.style.cursor = "wait";
+
+            try {
+                const width = parseFloat(document.getElementById("sheet_width").value);
+                const height = parseFloat(document.getElementById("sheet_height").value);
+                const doorSize = parseFloat(document.getElementById("door_size").value);
+                const hasTab = document.getElementById("pull_tab").checked;
+                const tabRadius = parseFloat(document.getElementById("tab_radius").value);
+                const orderType = document.getElementById("number_order").value;
+                const fontSize = parseFloat(document.getElementById("font_size").value);
+                const fontStyle = document.getElementById("font_style").value;
+                const outlineCut = document.getElementById("font_outline_cut").checked;
+
+                // Load font if Preset
+                if (fontStyle.startsWith('preset_')) {
+                    await loadPresetFont(fontStyle);
+                } else if (fontStyle === 'custom' && !loadedFont) {
+                    alert("Please upload a font file first!");
+                    throw new Error("No font");
+                }
+
+                let numbers = Array.from({length: 24}, (_, i) => i + 1);
+                function shuffle(array) {
+                    let currentIndex = array.length, randomIndex;
+                    while (currentIndex != 0) {
+                        randomIndex = Math.floor(Math.random() * currentIndex);
+                        currentIndex--;
+                        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+                    }
+                }
+                if (orderType === "random") shuffle(numbers);
+
+                let cols = 6; let rows = 4;
+                if (height > width) { cols = 4; rows = 6; }
+                const marginX = width * 0.1; const marginY = height * 0.1;
+                const availableW = width - (2 * marginX); const availableH = height - (2 * marginY);
+                const gapX = (availableW - (cols * doorSize)) / (cols - 1);
+                const gapY = (availableH - (rows * doorSize)) / (rows - 1);
+
+                let svgContent = "";
+                let gridPositions = [];
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        gridPositions.push({ x: marginX + (c * (doorSize + gapX)), y: marginY + (r * (doorSize + gapY)) });
+                    }
+                }
+
+                if (orderType === "ordered_bt") {
+                    gridPositions.sort((a, b) => { if (Math.abs(a.y - b.y) > 0.1) return b.y - a.y; return a.x - b.x; });
+                }
+
+                gridPositions.forEach((pos, index) => {
+                    const num = numbers[index];
+                    const cx = pos.x + doorSize / 2; const cy = pos.y + doorSize / 2;
+                    const x = pos.x; const y = pos.y; const s = doorSize;
+
+                    // Door Cut
+                    let cutPathD = "";
+                    if (!hasTab) cutPathD = `M ${x} ${y} L ${x+s} ${y} L ${x+s} ${y+s} L ${x} ${y+s}`;
+                    else {
+                        const midY = y + (s/2); const tabR = tabRadius;
+                        cutPathD = `M ${x} ${y} L ${x+s} ${y} L ${x+s} ${midY - tabR} A ${tabR} ${tabR} 0 1 1 ${x+s} ${midY + tabR} L ${x+s} ${y+s} L ${x} ${y+s}`;
+                    }
+                    svgContent += `<path d="${cutPathD}" fill="none" stroke="red" stroke-width="0.1" />`; 
+
+                    // Hinge
+                    const hingePath = getPerforatedLinePath(x, y, s, 2, 1); 
+                    svgContent += `<path d="${hingePath}" fill="none" stroke="blue" stroke-width="0.1" />`;
+
+                    // Number
+                    const numPath = getNumberPath(num, cx, cy, fontSize, fontStyle);
+                    
+                    if (fontStyle === 'stencil') {
+                        svgContent += `<path d="${numPath}" fill="none" stroke="red" stroke-width="0.1" />`;
+                    } else if (fontStyle === 'custom' || fontStyle.startsWith('preset_')) {
+                        if (outlineCut) svgContent += `<path d="${numPath}" fill="none" stroke="red" stroke-width="0.1" />`;
+                        else svgContent += `<path d="${numPath}" fill="none" stroke="black" stroke-width="0.1" />`; // Standard fonts use fill-like outline for engrave
+                    } else {
+                        svgContent += `<path d="${numPath}" fill="none" stroke="black" stroke-width="0.3" stroke-linecap="round" stroke-linejoin="round" />`;
+                    }
+                });
+
+                const svgOutput = `
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}mm" height="${height}mm" viewBox="0 0 ${width} ${height}">
+    <title>Advent Calendar</title>
+    <rect x="0" y="0" width="${width}" height="${height}" fill="white" stroke="none"/>
+    <rect x="0" y="0" width="${width}" height="${height}" fill="none" stroke="red" stroke-width="0.1" />
+    ${svgContent}
+</svg>`;
+
+                document.getElementById("preview-container").innerHTML = svgOutput;
+                window.lastGeneratedSVG = svgOutput;
+                saveGeneratedProjectToDashboard(svgOutput, "Advent Calendar");
+
+            } catch(e) {
+                console.error(e);
+            } finally {
+                // Restore UI
+                spinner.style.display = "none"; icon.style.display = "block";
+                btn.style.cursor = "pointer";
+            }
+            
+        }
+
+        function downloadSVG(content, fileName) {
+            const blob = new Blob([content], {type: 'image/svg+xml'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = fileName;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
+        function saveGeneratedProjectToDashboard(svgString, baseName) {
+            const projects = JSON.parse(localStorage.getItem('vc_projects') || '[]');
+            
+            const newProject = {
+                id: Date.now(),
+                name: baseName,
+                type: 'generator',
+                content: svgString
+            };
+
+            projects.push(newProject);
+            localStorage.setItem('vc_projects', JSON.stringify(projects));
+        }
+
+
+
+        document.getElementById('generate-btn').onclick = async function() {
+            await generateCalendar();
+            if(window.lastGeneratedSVG) {
+                const width = document.getElementById("sheet_width").value;
+                const height = document.getElementById("sheet_height").value;
+                downloadSVG(window.lastGeneratedSVG, `LaserAdvent_${width}x${height}.svg`);
+            }
+        };
+
+        updateDimensions();
+        toggleFontUI();
+    </script>
+</body>
+</html>

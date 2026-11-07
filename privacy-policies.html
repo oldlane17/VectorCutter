@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta name="description" content="Privacy Policies - Old Lane 17">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <!-- ANDROID -->
+	<link href="/favicon.ico" type="image/x-icon" rel='icon' />
+    <!-- iOS -->
+    <link href="/favicon.ico" type="image/x-icon" rel='apple-touch-icon' />
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-M8HF2H2T');</script>
+    <!-- End Google Tag Manager -->
+    
+
+    <link href='https://fonts.googleapis.com/css?family=Roboto:400,700' rel='stylesheet'>
+    <title>Privacy Policies - VectorCutter</title>
+    
+    <style>
+        /* --- CORE VARIABLES & RESET --- */
+        :root{
+            --main-font:'Roboto', Tahoma, Geneva, Verdana, sans-serif;
+            --primary-color:#182a69;
+            --secondary-color:#a0a0ff;
+            --bg-gradient-start: #182a69;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: var(--main-font);
+        }
+        
+        body {
+            /* Strictly the dark blue background requested */
+            background-color: #02133e; 
+            min-height: 100vh;
+            padding: 20px;
+            /* Force white text globally */
+            color: white; 
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* --- NAVBAR STYLES --- */
+        .topnav {
+            position: fixed; top: 10px; left: 20px; right: 20px;
+            border-radius: 15px; padding: 10px 20px; z-index: 999;
+            display: flex; justify-content: space-between; align-items: center;
+            background-color: #182a6995; backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        
+        /* Circular Logo */
+        .nav-logo {
+            width: 36px; height: 36px; 
+            background: #fff; 
+            border-radius: 50%; 
+            object-fit: contain;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; color: var(--primary-color);
+            border: 2px solid white;
+        }
+
+        .nav-title { color: white; font-size: 1.2rem; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+        .nav-title a { color: white; text-decoration: none; }
+        
+        .nav-right { display: flex; gap: 5px; align-items: center; }
+        
+        .topnav a, .dropbtn { 
+            color: white; text-decoration: none; padding: 10px 15px; 
+            border-radius: 8px; transition: all 0.3s ease; font-weight: 500; 
+            font-size: 1rem; border:none; background: transparent; cursor: pointer; 
+            font-family: var(--main-font);
+        }
+        .topnav a:hover, .dropdown:hover .dropbtn { background: var(--primary-color); transform: translateY(-2px); }
+
+        /* Dropdown */
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content {
+            display: none; position: absolute; right: 0;
+            background-color: #02133e; min-width: 200px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1000; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden; margin-top: 0px;
+        }
+        .dropdown-content::before {
+            content: "";
+            display: block;
+            position: absolute;
+            top: -20px; /* Move up to overlap the gap */
+            left: 0;
+            width: 100%;
+            height: 20px; /* Height sufficient to bridge the gap */
+            background: transparent; /* Keep it invisible */
+        }
+        .dropdown-content a { color: white; padding: 12px 16px; text-decoration: none; display: block; text-align: left; }
+        .dropdown:hover .dropdown-content { display: block; }
+        .dropdown-content a:hover { background-color: var(--primary-color); transform: none; }
+
+        /* --- MOBILE SIDE NAV (The Slide-in Menu) --- */
+        .sidenav {
+            height: 100%; width: 0; position: fixed; z-index: 2000;
+            top: 0; left: 0; background-color: #182a69; 
+            overflow-x: hidden; transition: 0.5s; padding-top: 60px;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.5);
+        }
+
+        .sidenav a, .sidenav .sidenav-header {
+            padding: 8px 8px 8px 32px; text-decoration: none;
+            font-size: 1.2rem; color: #f1f1f1; display: block;
+            transition: 0.3s; font-family: var(--main-font);
+        }
+
+        .sidenav a:hover { color: var(--secondary-color); background: rgba(255,255,255,0.1); }
+
+        /* Close Button (Cross) */
+        .sidenav .closebtn {
+            position: absolute; top: 15px; right: 20px;
+            font-size: 24px; margin-left: 0; padding: 0;
+        }
+        .sidenav .closebtn:hover { background: none; color: #ccc; }
+
+        .sidenav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 10px 20px; }
+        .sidenav-subitem { font-size: 1rem !important; padding-left: 50px !important; opacity: 0.9; }
+
+        /* Hamburger Icon */
+        .hamburger {
+            display: none; font-size: 28px; cursor: pointer;
+            color: white; margin-right: 15px; user-select: none;
+        }
+
+        /* --- CONTAINER & CONTENT STYLES --- */
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            margin-top: 100px; /* Accounts for fixed navbar */
+        }
+        
+        /* Text overrides for white theme */
+        h1, h2, h3, h4, p, li, span, strong, div {
+            color: white !important;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 25px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 15px;
+        }
+
+        h3 {
+            margin-top: 30px;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            border-left: 4px solid white;
+            padding-left: 10px;
+        }
+
+        h4 {
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+
+        p {
+            font-size: 1rem;
+            margin-bottom: 16px;
+        }
+
+        ol {
+            padding-left: 20px;
+        }
+
+        ul {
+            margin: 10px 0 20px 20px;
+            padding-left: 15px;
+        }
+
+        li {
+            margin-bottom: 10px;
+        }
+
+        li::marker {
+            color: white;
+            font-weight: bold;
+        }
+
+        /* Links in content */
+        .container a {
+            color: var(secondary-color) !important; /* Adjusted to be visible on dark bg */
+            text-decoration: underline;
+            transition: color 0.3s;
+        }
+
+        .container a:hover {
+            color: #ffffff !important;
+        }
+
+        .last-updated {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .last-updated p {
+            margin: 5px 0;
+            font-size: 0.9rem;
+        }
+
+        /* --- FOOTER --- */
+                /* Footer */
+        .footer-row-1 {
+  background-color: #02133e;
+font-family: Roboto, sans-serif;
+font-size: 12px ;
+display: flex; /* Use flexbox for layout */
+flex-direction: column;
+  justify-content: center; /* Center items horizontally */
+  align-items: center; /* Center items vertically */
+  padding: 0 0;
+gap: 0px;
+border-radius: 10px;
+
+border-bottom: none;
+position: relative;
+bottom:0;
+}
+.footer-row-container {
+    margin: 0 auto;
+    padding: 8px 20px;
+    align-items: center;
+    border-radius: 10px;
+    text-align: center;
+    flex-wrap: wrap;
+
+}
+.footer-row-1 nav {
+  display: flex;
+  justify-content: center;
+flex-wrap: wrap;
+  gap: 25px;
+border-bottom: None;
+padding: 8px;}
+
+        
+.footer-row-1 a {
+  color: #f9f8ff !important;
+  text-decoration: underline !important;
+  font-family: Roboto, sans-serif;
+font-size: 12px ;
+  transition: color 0.3s ease;
+  white-space: nowrap;
+}
+.footer-row-1 p{
+color: #f9f8ff;
+    justify-content: center;
+  font-family: Roboto, sans-serif;
+font-size: 9px ;
+  padding:0;
+margin:0;
+white-space: nowrap;
+
+}
+
+.footer-row-1 a:hover {
+  color: #d8dce8;
+}
+
+        /* --- MEDIA QUERIES --- */
+        @media (max-width: 768px) {
+            .topnav { flex-direction: row; justify-content: flex-start; }
+            .nav-right { display: none; } /* Hide Desktop Menu */
+            .hamburger { display: block; } /* Show Burger */
+            
+            .container { margin-top: 110px; }
+            h1 { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M8HF2H2T"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <!-- Mobile Sidenav (New) -->
+    <div id="mySidenav" class="sidenav">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <a href="index.html">Home</a>
+        <a href="editor_5.8.html">Editor</a>
+        <div class="sidenav-divider"></div>
+        <span class="sidenav-header" style="color:#aaa; font-size:0.9rem; padding-left:32px;">GENERATORS</span>
+        <a href="advent_calendar.html" class="sidenav-subitem">Advent Calendar</a>
+        <a href="chessboard.html" class="sidenav-subitem">Chessboard</a>
+        <a href="puzzle.html" class="sidenav-subitem">Puzzle</a>
+        <a href="ruler.html" class="sidenav-subitem">Ruler Generator</a>
+    </div>
+    <!-- Navbar -->
+     <nav class="topnav">
+        <!-- Hamburger Menu (New) -->
+        <span class="hamburger" onclick="openNav()">&#9776;</span>
+
+        <div class="nav-left">
+            <img src="favicon.png" alt="Logo" class="nav-logo" onerror="this.style.display='none'">
+            <span class="nav-title"><a href="index.html">VectorCutter - Old Lane 17</a></span>
+        </div>
+        
+        <!-- Desktop Links -->
+        <div class="nav-right">
+            <a href="index.html">Home</a>
+            <a href="editor_5.8.html" target="_blank">Editor</a>
+            <div class="dropdown">
+                <button class="dropbtn">Generators ▼</button>
+                <div class="dropdown-content">
+                    <a href="advent_calendar.html" target="_blank">Advent Calendar</a>
+                    <a href="chessboard.html" target="_blank">Chessboard</a>
+                    <a href="puzzle.html" target="_blank">Puzzle</a>
+                    <a href="ruler.html" target="_blank">Ruler</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    
+    <div class="container" id="policies" style="background-color: #02133e; color: white; font-family: 'Roboto', sans-serif; padding: 20px; line-height: 1.6;">
+        <h1>Privacy Policy</h1>
+        <div class="last-updated">
+            <p><strong>Last Updated:</strong> March 7, 2026</p>
+        </div>
+
+        <ol>
+            <li>
+                <h3>Introduction</h3>
+                <p>Welcome to Old Lane 17 ("we," "us," or "our"). This Privacy Policy explains how we handle information when you visit our website at <strong>www.oldlane17.com</strong> and our tool at <strong>vectorcutter.oldlane17.com</strong>. By using our site, you consent to this policy.</p>
+            </li>
+
+            <li>
+                <h3>File Processing (Vector Cutter Tool)</h3>
+                <p>For our Vector Cutter tool, privacy is built-in by design:</p>
+                <ul>
+                    <li><strong>Local Processing:</strong> All file conversions and "cuts" are performed locally in your web browser. Your files are <strong>not</strong> uploaded to our servers.</li>
+                    <li><strong>No Storage:</strong> We do not see, store, or have access to the SVG/DXF files you process using our tools.</li>
+                </ul>
+            </li>
+
+            <li>
+                <h3>Data Collection via Third-Parties</h3>
+                <p>We do not directly collect personal data (names/emails) unless you contact us. However, we use the following Google services:</p>
+                
+                <h4>A. Google Analytics & Blogger</h4>
+                <ul>
+                    <li><strong>Purpose:</strong> Analyzes traffic and user behavior.</li>
+                    <li><strong>Data Collected:</strong> Anonymized IP addresses, device type, and pages visited.</li>
+                    <li><strong>Opt-Out:</strong> <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" style="color: #cccccc;">Google Analytics Opt-Out</a></li>
+                </ul>
+                
+                <h4>B. Google AdSense</h4>
+                <ul>
+                    <li><strong>Purpose:</strong> Displays ads. Cookies may track browsing habits to serve relevant ads.</li>
+                    <li><strong>Opt-Out:</strong> <a href="https://adssettings.google.com" target="_blank" style="color: #cccccc;">Google Ad Settings</a></li>
+                </ul>
+            </li>
+
+            <li>
+                <h3>Cookies</h3>
+                <p>We use cookies for site functionality and analytics. You can disable cookies via your browser settings, though some site features may degrade.</p>
+            </li>
+
+            <li>
+                <h3>Your Rights (GDPR/CCPA)</h3>
+                <p>You have the right to access, request deletion, or opt-out of data collection via the Google tools listed in Section 3. Since we do not store your personal data on our own servers, we cannot provide "user records" for deletion.</p>
+            </li>
+
+            <li>
+                <h3>Contact Us</h3>
+                <p>For privacy questions: Use our <a href="https://www.oldlane17.com/p/contact.html" style="color: #cccccc;">contact form</a> or email <strong>contact@oldlane17.com</strong></p>
+            </li>
+        </ol>
+    </div>
+
+    <div class='footer-row footer-row-1'>
+        <div class='footer-row-container' style="background-color:#182a69; width:100%">
+            <nav>
+                <a href='about.html'>About</a>  
+                <a href = "privacy-policies.html" >Privacy Policies </a>
+                <a href = "terms-of-service.html"> Terms of Service</a>
+                <a href = "legal-notice.html"> Legal Notice</a>
+                <a href='https://www.oldlane17.com/p/contact.html'>Contact</a> 
+                <a href="#" data-cc="show-preferencesModal">Cookie Settings</a>
+                <a href = "https://info.oldlane17.com/faq" >FAQ </a>
+                <a href = "https://info.oldlane17.com/social-media" >Social media </a>
+            </nav>
+        </div>
+        <div class='footer-row-container' style="background-color:#02133e; width:100%">
+            <p>© Copyright 2024-2026 Old Lane 17</p>
+        </div>
+    </div>
+    <script>
+        function openNav() {
+            document.getElementById("mySidenav").style.width = "250px";
+        }
+        function closeNav() {
+            document.getElementById("mySidenav").style.width = "0";
+        }
+    </script>
+</body>
+</html>

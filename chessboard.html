@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VectorCutter - Chessboard Generator</title>
+    <meta name="description" content="Generate precise, laser-ready SVG chessboards with customizable board size, square dimensions, notation and export options — perfect for laser cutting and CNC.">
+    <meta name="keywords" content="chessboard generator, chessboard svg, laser cut chessboard, chessboard layout, chessboard template, customizable chessboard, vectorcutter">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <!-- ANDROID -->
+	<link href="/favicon.ico" type="image/ico" rel='icon' />
+    <!-- iOS -->
+    <link href="/favicon.ico" type="image/x-icon" rel='apple-touch-icon' />
+    <link href='https://fonts.googleapis.com/css?family=Roboto:400,700|Open+Sans|Lato|Montserrat|Oswald' rel='stylesheet'>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-M8HF2H2T');</script>
+    <!-- End Google Tag Manager -->
+    
+    <!-- LOAD MATHJAX -->
+    <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      svg: { fontCache: 'local' },
+      startup: { typeset: false }
+    };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+    <style>
+        /* --- STYLING --- */
+        :root{
+            --main-font:'Roboto', Tahoma, Geneva, Verdana, sans-serif;
+            --primary-color:#182a69; 
+            --secondary-color:#a0a0ff;
+            --primary-color-trans: rgba(24, 42, 105, 0.8);
+            --bg-gradient-start: #182a69;
+            --bg-gradient-end: #02133e;
+            --input-bg: #f0f0f5;
+            --text-color: #333;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--main-font); }
+        body {
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            min-height: 100vh;
+            color: #333;
+            margin: 20px;
+            padding: 0;
+            font-family: var(--main-font);
+            overflow-x: hidden;
+        }
+
+        /* --- NAVBAR (From Index.html) --- */
+        .topnav {
+            position: fixed; top: 10px; left: 20px; right: 20px;
+            border-radius: 15px; padding: 10px 20px; z-index: 999;
+            display: flex; justify-content: space-between; align-items: center;
+            background-color: #182a6995; backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        
+        /* Logo Styling - Circular */
+        /* Logo Styling - Circular */
+        .nav-logo {
+            width: 36px; height: 36px; 
+            background: #fff; 
+            border-radius: 50%; /* Makes it circular */
+            object-fit: contain;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; color: var(--bg-gradient-start);
+            border: 2px solid white;
+        }
+        
+        .nav-title { color: white; font-size: 1.2rem; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+        .nav-right { display: flex; gap: 5px; align-items: center; }
+        .topnav a, .dropbtn { color: white; text-decoration: none; padding: 10px 15px; border-radius: 8px; transition: all 0.3s ease; font-weight: 500; font-family: var(--main-font); font-size: 1rem; border:none; background: transparent; cursor: pointer; }
+        .topnav a:hover, .dropdown:hover .dropbtn { background: var(--primary-color); transform: translateY(-2px); }
+
+        /* Dropdown */
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content {
+            display: none; position: absolute; right: 0;
+            background-color: #02133e; min-width: 200px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1000; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden; margin-top: 0px;
+        }
+        .dropdown-content::before {
+            content: "";
+            display: block;
+            position: absolute;
+            top: -20px; /* Move up to overlap the gap */
+            left: 0;
+            width: 100%;
+            height: 20px; /* Height sufficient to bridge the gap */
+            background: transparent; /* Keep it invisible */
+        }
+        .dropdown-content a { color: white; padding: 12px 16px; text-decoration: none; display: block; text-align: left; }
+        .dropdown:hover .dropdown-content { display: block; }
+        .dropdown-content a:hover { background-color: var(--primary-color); }
+
+        /* --- MOBILE SIDE NAV (The Slide-in Menu) --- */
+        .sidenav {
+            height: 100%;
+            width: 0;
+            position: fixed;
+            z-index: 2000;
+            top: 0;
+            left: 0;
+            background-color: #182a69;
+            overflow-x: hidden;
+            transition: 0.5s;
+            padding-top: 60px;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.5);
+        }
+
+        .sidenav a, .sidenav .sidenav-header {
+            padding: 8px 8px 8px 32px;
+            text-decoration: none;
+            font-size: 1.2rem;
+            color: #f1f1f1;
+            display: block;
+            transition: 0.3s;
+            font-family: var(--main-font);
+        }
+
+        .sidenav a:hover {
+            color: var(secondary-color);
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* Close Button (Cross) Styling */
+        .sidenav .closebtn {
+            position: absolute;
+            top: 15px;       
+            right: 20px;     
+            font-size: 24px; 
+            margin-left: 0;
+            padding: 0;      
+        }
+
+        .sidenav .closebtn:hover {
+            background: none; 
+            color: #ccc;
+        }
+
+        .sidenav-divider {
+            border-top: 1px solid rgba(255,255,255,0.2);
+            margin: 10px 20px;
+        }
+
+        .sidenav-subitem {
+            font-size: 1rem !important;
+            padding-left: 50px !important;
+            opacity: 0.9;
+        }
+
+        /* Hamburger Icon */
+        .hamburger {
+            display: none; /* Hidden on desktop */
+            font-size: 28px;
+            cursor: pointer;
+            color: white;
+            margin-right: 15px;
+            user-select: none;
+        }
+
+        /* Container */
+        .container { max-width: 1200px; margin: 100px auto 40px; padding: 20px; }
+
+        .action-area {
+            display: grid; grid-template-columns: 2fr 1fr; gap: 30px;
+            margin-bottom: 40px; min-height: 350px;
+        }
+
+        /* Settings */
+        .settings-container { display: flex; flex-direction: column; gap: 20px; height: 100%; }
+        .setting-card {
+            background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px; padding: 20px; color: white; backdrop-filter: blur(5px);
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .setting-card h3 { margin: 0 0 10px 0; font-size: 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; }
+        .input-group { margin-bottom: 10px; }
+        .input-group label { display: block; font-size: 0.9rem; margin-bottom: 5px; color: #ddd; }
+        .form-control {
+            width: 100%; padding: 8px 10px; border-radius: 8px; border: none;
+            background: var(--input-bg); font-family: var(--main-font); box-sizing: border-box;
+        }
+        .checkbox-group { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer; }
+        .checkbox-group input { width: 20px; height: 20px; cursor: pointer; }
+
+        /* Animation Classes */
+        .collapsible-wrapper {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0, 1, 0, 1), opacity 0.5s ease-in-out;
+        }
+        .collapsible-wrapper.open {
+            max-height: 500px;
+            opacity: 1;
+            transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out;
+        }
+
+        /* Action Button */
+        .big-action-btn {
+            background: white; border-radius: 20px; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); border: none; width: 100%; height: 100%; padding: 40px;
+        }
+        .big-action-btn:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4); background: #fdfdfd; }
+        .plus-icon { font-size: 6rem; color: var(--primary-color); line-height: 1; margin-bottom: 10px; }
+        .action-label { font-size: 1.5rem; color: #182a69; font-weight: bold; text-align: center; }
+
+        /* Download Button (Small) */
+        .download-btn-small {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: bold;
+            display: inline-block;
+            transition: all 0.2s;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            cursor: pointer;
+        }
+        .download-btn-small:hover {
+            background-color: #253b85;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(0,0,0,0.2);
+        }
+
+        /* Preview */
+        .projects-header { color: white; font-size: 2rem; margin-bottom: 25px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .preview-area {
+            background: white; border-radius: 15px; padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); min-height: 400px;
+            display: flex; justify-content: center; align-items: center; overflow: auto;
+        }
+        svg { max-width: 100%; max-height: 600px; border: 1px dashed #ccc; background-color: white; }
+
+        /* Footer & Navbar fixes */
+                /* Footer */
+        .footer-row-1 {
+  background-color: #02133e;
+font-family: Roboto, sans-serif;
+font-size: 12px ;
+display: flex; /* Use flexbox for layout */
+flex-direction: column;
+  justify-content: center; /* Center items horizontally */
+  align-items: center; /* Center items vertically */
+  padding: 0 0;
+gap: 0px;
+border-radius: 10px;
+
+border-bottom: none;
+position: relative;
+bottom:0;
+}
+.footer-row-container {
+    margin: 0 auto;
+    padding: 8px 20px;
+    align-items: center;
+    border-radius: 10px;
+    text-align: center;
+    flex-wrap: wrap;
+
+}
+.footer-row-1 nav {
+  display: flex;
+  justify-content: center;
+flex-wrap: wrap;
+  gap: 25px;
+border-bottom: None;
+padding: 8px;}
+
+        
+.footer-row-1 a {
+  color: #f9f8ff !important;
+  text-decoration: underline !important;
+  font-family: Roboto, sans-serif;
+font-size: 12px ;
+  transition: color 0.3s ease;
+  white-space: nowrap;
+}
+.footer-row-1 p{
+color: #f9f8ff;
+    justify-content: center;
+  font-family: Roboto, sans-serif;
+font-size: 9px ;
+  padding:0;
+margin:0;
+white-space: nowrap;
+
+}
+
+.footer-row-1 a:hover {
+  color: #d8dce8;
+}
+        /* --- MEDIA QUERIES --- */
+        @media (max-width: 768px) {
+            .action-area { grid-template-columns: 1fr; }
+            
+            /* Navbar Mobile Changes */
+            .topnav { 
+                flex-direction: row; 
+                justify-content: flex-start; /* Align left */
+            }
+            .nav-right { display: none; } /* Hide Desktop Menu */
+            .hamburger { display: block; } /* Show Burger */
+        }
+    </style>
+</head>
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M8HF2H2T"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <!-- Mobile Sidenav -->
+    <!-- Mobile Sidenav -->
+    <div id="mySidenav" class="sidenav">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <a href="index.html">Home</a>
+        <a href="editor_5.8.html">Editor</a>
+        <div class="sidenav-divider"></div>
+        <span class="sidenav-header" style="color:#aaa; font-size:0.9rem; padding-left:32px;">GENERATORS</span>
+        <a href="advent_calendar.html" class="sidenav-subitem">Advent Calendar</a>
+        <a href="chessboard.html" class="sidenav-subitem">Chessboard</a>
+        <a href="puzzle.html" class="sidenav-subitem">Puzzle</a>
+        <a href="ruler.html" class="sidenav-subitem">Ruler Generator</a>
+    </div>
+
+    <!-- Main Navbar -->
+    <nav class="topnav">
+        <!-- Hamburger Menu (Mobile Only) -->
+        <span class="hamburger" onclick="openNav()">&#9776;</span>
+
+        <div class="nav-left">
+            <img src="favicon.png" alt="Logo" class="nav-logo" onerror="this.style.display='none'">
+            <span class="nav-title"><a href="index.html">VectorCutter - Old Lane 17</a></span>
+        </div>
+        
+        <!-- Desktop Links -->
+        <div class="nav-right">
+            <a href="index.html">Home</a>
+            <a href="editor_5.8.html" target="_blank">Editor</a>
+            <div class="dropdown">
+                <button class="dropbtn">Generators ▼</button>
+                <div class="dropdown-content">
+                    <a href="advent_calendar.html" target="_blank">Advent Calendar</a>
+                    <a href="chessboard.html" target="_blank">Chessboard</a>
+                    <a href="puzzle.html" target="_blank">Puzzle</a>
+                    <a href="ruler.html" target="_blank">Ruler</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="action-area">
+            
+            <!-- Settings Column -->
+            <div class="settings-container">
+                
+                <div class="setting-card">
+                    <h3>📏 Dimensions</h3>
+                    <div class="input-group">
+                        <label>Size (mm)</label>
+                        <input type="number" id="size_mm" class="form-control" value="100">
+                    </div>
+                    
+                    <!-- Primary Coordinate Switch -->
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="enable_coords" onchange="toggleTypography()">
+                        <label for="enable_coords">Enable Coordinates</label>
+                    </div>
+
+                    <!-- Collapsible Section -->
+                    <div id="coord_options" class="collapsible-wrapper">
+                        <div style="margin-top: 15px; padding-left: 10px; border-left: 2px solid rgba(255,255,255,0.3);">
+                            
+                            <div class="checkbox-group">
+                                <input type="checkbox" id="include_border_size">
+                                <label for="include_border_size">Include Coordinates in Total Size?</label>
+                            </div>
+
+                            <h4 style="margin: 10px 0 5px 0; font-size: 0.95rem; color: #a0a0ff;">Typography</h4>
+                            <div class="input-group">
+                                <label>Font Family</label>
+                                <select id="font_family" class="form-control">
+                                    <option value="Arial">Arial (Sans)</option>
+                                    <option value="Roboto">Roboto (Sans)</option>
+                                    <option value="Times New Roman">Times New Roman (Serif)</option>
+                                    <option value="Courier New">Courier New (Monospace)</option>
+                                    <option value="Verdana">Verdana (Sans)</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label>Font Size (mm)</label>
+                                <input type="number" id="font_size" class="form-control" value="4">
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setting-card">
+                    <h3>🎨 Pattern</h3>
+                    <div class="input-group">
+                        <label>Fill Style</label>
+                        <select id="pattern_select" class="form-control">
+                            <option value="0">Solid (Full)</option>
+                            <option value="1">Multi Cross / Single Cross</option>
+                            <option value="2">Multi Cross / Empty White</option>
+                            <option value="3">Double Multi / Empty White</option>
+                        </select>
+                    </div>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="recursive_yes">
+                        <label for="recursive_yes">Recursive Mini-Board?</label>
+                    </div>
+                    <div class="input-group">
+                        <label>Divider (Density for Cross)</label>
+                        <input type="number" id="divider" class="form-control" value="2" min="2">
+                    </div>
+                </div>
+
+                <div class="setting-card">
+                    <h3>✂️ Corners & Cuts</h3>
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="cut_corner_yes">
+                        <label for="cut_corner_yes">Enable Outer Cutting Line</label>
+                    </div>
+                    <div class="input-group">
+                        <label>Corner Distance (Margin per side in mm)</label>
+                        <input type="number" id="cut_dist" class="form-control" value="5" disabled>
+                        <small style="color:#aaa;">Adds to total size</small>
+                    </div>
+                    <div class="input-group">
+                        <label>Corner Radius (mm)</label>
+                        <input type="number" id="cut_radi" class="form-control" value="10" disabled>
+                        <small style="color:#aaa;">0 = Square cut</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Button -->
+            <button class="big-action-btn" onclick="generateAndDownload()">
+                <div class="plus-icon">⚙️</div>
+                <div class="action-label">Generate & Download SVG</div>
+            </button>
+        </div>
+
+        <h2 class="projects-header">Live Preview</h2>
+        <div class="preview-area" id="preview-container">
+            <p style="color:#888;">Click Generate to see the result here...</p>
+        </div>
+        
+        <!-- NEW: Manual Download Area -->
+        <div id="download-area" style="text-align: center; margin-top: 20px; min-height: 50px;">
+            <!-- Button will appear here -->
+        </div>
+
+    </div>
+
+    <div class='footer-row footer-row-1'>
+        <div class='footer-row-container' style="background-color:#182a69; width:100%">
+            <nav>
+                <a href='about.html'>About</a>  
+                <a href = "privacy-policies.html" >Privacy Policies </a>
+                <a href = "terms-of-service.html"> Terms of Service</a>
+                <a href = "legal-notice.html"> Legal Notice</a>
+                <a href='https://www.oldlane17.com/p/contact.html'>Contact</a> 
+                <a href="#" data-cc="show-preferencesModal">Cookie Settings</a>
+                <a href = "https://info.oldlane17.com/faq" >FAQ </a>
+                <a href = "https://info.oldlane17.com/social-media" >Social media </a>
+            </nav>
+        </div>
+        <div class='footer-row-container' style="background-color:#02133e; width:100%">
+            <p>© Copyright 2024-2026 Old Lane 17</p>
+        </div>
+    </div>
+
+    <script>
+        /* --- MOBILE NAV LOGIC --- */
+        function openNav() {
+            // Set width to 250px or percentage for the drawer
+            document.getElementById("mySidenav").style.width = "250px";
+        }
+
+        function closeNav() {
+            document.getElementById("mySidenav").style.width = "0";
+        }
+
+        // --- UI LOGIC ---
+        function toggleTypography() {
+            const checkBox = document.getElementById("enable_coords");
+            const wrapper = document.getElementById("coord_options");
+            if (checkBox.checked) wrapper.classList.add("open");
+            else wrapper.classList.remove("open");
+        }
+
+        document.getElementById('cut_corner_yes').addEventListener('change', function(e) {
+            document.getElementById('cut_dist').disabled = !e.target.checked;
+            document.getElementById('cut_radi').disabled = !e.target.checked;
+        });
+
+        // --- SVG TURTLE ENGINE ---
+        class SvgTurtle {
+            constructor(width, height) {
+                this.widthVal = width;
+                this.heightVal = height;
+                this.x = 0;
+                this.y = 0;
+                this.heading = 0; 
+                this.isDown = true;
+                this.lineWidth = 0.1;
+                this.penColor = "black";
+                this.fillColor = "black";
+                this.currentPath = "";
+                this.svgContent = [];
+            }
+
+            rad(deg) { return deg * (Math.PI / 180); }
+
+            addCurrentPathToContent() {
+                if (this.currentPath.trim() !== "") {
+                    this.svgContent.push(`<path d="${this.currentPath}" fill="none" stroke="${this.penColor}" stroke-width="${this.lineWidth}" stroke-linecap="round" stroke-linejoin="round"/>`);
+                    this.currentPath = "";
+                }
+            }
+
+            forward(distance) {
+                const startX = this.x;
+                const startY = this.y;
+                this.x += distance * Math.cos(this.rad(this.heading));
+                this.y -= distance * Math.sin(this.rad(this.heading)); 
+                if (this.filling) this.fillPath += `L ${this.x.toFixed(3)} ${this.y.toFixed(3)} `;
+                if (this.isDown) {
+                    if (this.currentPath === "") this.currentPath = `M ${startX.toFixed(3)} ${startY.toFixed(3)} `;
+                    this.currentPath += `L ${this.x.toFixed(3)} ${this.y.toFixed(3)} `;
+                } else {
+                    this.currentPath += `M ${this.x.toFixed(3)} ${this.y.toFixed(3)} `;
+                }
+            }
+
+            backward(distance) { this.forward(-distance); }
+            right(angle) { this.heading -= angle; }
+            left(angle) { this.heading += angle; }
+
+            penup() { this.addCurrentPathToContent(); this.isDown = false; }
+            pendown() { this.isDown = true; this.currentPath = `M ${this.x.toFixed(3)} ${this.y.toFixed(3)} `; }
+
+            setx(newX) { this.addCurrentPathToContent(); this.x = newX; if(this.isDown) this.currentPath = `M ${this.x.toFixed(3)} ${this.y.toFixed(3)} `; }
+            sety(newY) { this.addCurrentPathToContent(); this.y = -newY; if(this.isDown) this.currentPath = `M ${this.x.toFixed(3)} ${this.y.toFixed(3)} `; }
+
+            setheading(angle) { this.heading = angle; }
+            width(w) { this.addCurrentPathToContent(); this.lineWidth = w; }
+            pencolor(c) { this.addCurrentPathToContent(); this.penColor = c; }
+            fillcolor(c) { this.fillColor = c; }
+
+            begin_fill() { this.addCurrentPathToContent(); this.fillPath = `M ${this.x.toFixed(3)} ${this.y.toFixed(3)} `; this.filling = true; }
+            end_fill() {
+                if(this.filling) {
+                    this.svgContent.push(`<path d="${this.fillPath} Z" fill="${this.fillColor}" stroke="none" />`);
+                    this.filling = false; this.fillPath = "";
+                }
+                this.currentPath = `M ${this.x.toFixed(3)} ${this.y.toFixed(3)} `;
+            }
+
+            circle(radius, extent=360, steps=100) {
+                const stepAngle = extent / steps;
+                const stepDist = (2 * Math.PI * radius * (extent/360)) / steps;
+                for(let i=0; i<steps; i++){ this.forward(stepDist); this.left(stepAngle); }
+            }
+
+            // --- TEXT TO PATH (UPDATED: Rotation + Precise Centering) ---
+            write(text, align, font, rotationAngle=0) {
+                this.addCurrentPathToContent();
+
+                const family = font[0];
+                const fontSizeMm = font[1];
+                let texString = text;
+
+                if(family.includes('Times')) texString = `\\mathrm{${text}}`;
+                else if(family.includes('Courier')) texString = `\\mathtt{${text}}`;
+                else texString = `\\mathsf{${text}}`;
+
+                try {
+                    const mjNode = MathJax.tex2svg(texString);
+                    const mjSvg = mjNode.querySelector('svg');
+
+                    // Flatten <use> to <path>
+                    const defs = mjSvg.querySelector('defs');
+                    if (defs) {
+                        const uses = mjSvg.querySelectorAll('use');
+                        uses.forEach(use => {
+                            const href = use.getAttribute('xlink:href') || use.getAttribute('href');
+                            if (!href) return;
+                            const id = href.replace('#', '');
+                            const originalPath = defs.querySelector(`[id="${id}"]`);
+                            if (originalPath) {
+                                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                                path.setAttribute('d', originalPath.getAttribute('d'));
+                                const x = use.getAttribute('x') || 0;
+                                const y = use.getAttribute('y') || 0;
+                                let transform = use.getAttribute('transform') || '';
+                                if (x != 0 || y != 0) transform = `translate(${x} ${y}) ${transform}`;
+                                if (transform) path.setAttribute('transform', transform.trim());
+                                path.setAttribute('fill', this.penColor);
+                                path.setAttribute('stroke', 'none');
+                                use.parentNode.replaceChild(path, use);
+                            }
+                        });
+                        defs.remove();
+                    }
+
+                    // Geometry Calculations
+                    const viewBoxStr = mjSvg.getAttribute('viewBox'); 
+                    if(viewBoxStr) {
+                        const vbParts = viewBoxStr.split(' ').map(parseFloat);
+                        const vbMinX = vbParts[0];
+                        const vbMinY = vbParts[1];
+                        const vbWidth = vbParts[2];
+                        const vbHeight = vbParts[3];
+
+                        const scaleFactor = fontSizeMm / vbHeight;
+                        
+                        // Centering Logic (Bounding Box Center)
+                        // BBox Center in Local Units
+                        const cx = vbMinX + vbWidth/2;
+                        const cy = vbMinY + vbHeight/2;
+
+                        // To center on (0,0) before scaling, we translate by -cx, -cy.
+                        // Then we scale.
+                        // Then we rotate.
+                        // Then we translate to the Turtle Position (this.x, this.y).
+                        
+                        // Transform String Composition (Applied Right to Left in SVG, but written left to right in string)
+                        // Order: translate(TX,TY) -> rotate(R) -> scale(S) -> translate(-cx, -cy)
+                        
+                        let rotCmd = "";
+                        if(rotationAngle !== 0) rotCmd = `rotate(${rotationAngle})`;
+
+                        const transformCmd = `translate(${this.x.toFixed(3)}, ${this.y.toFixed(3)}) ${rotCmd} scale(${scaleFactor.toFixed(5)}) translate(${-cx}, ${-cy})`;
+
+                        const innerContent = mjSvg.innerHTML;
+
+                        this.svgContent.push(`
+                            <g transform="${transformCmd}" fill="${this.penColor}">
+                                ${innerContent}
+                            </g>
+                        `);
+                    }
+                } catch(e) {
+                    console.error("MathJax Error:", e);
+                }
+            }
+
+            getSVG() {
+                this.addCurrentPathToContent();
+                const viewBox = `-${this.widthVal/2} -${this.heightVal/2} ${this.widthVal} ${this.heightVal}`;
+                return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="${viewBox}" width="${this.widthVal}mm" height="${this.heightVal}mm">
+                    ${this.svgContent.join('\n')}
+                </svg>`;
+            }
+        }
+
+        // --- BOARD LOGIC ---
+        let divider_val = 2;
+
+        function gitter(t, function_index, l, is_recursive) {
+            t.width(0.1);
+            const colors = ["black", "white"];
+            const patternFuncs = [black_white_full, black_multi_cross_white_single_cross, black_multi_cross_white_without_cross, black_double_multi_cross_white_without_cross];
+            let selectedFunc = is_recursive ? (t_inst, col, length) => little_chessboard_onto_square(t_inst, col, length, function_index) : patternFuncs[function_index];
+
+            for(let i=0; i<8; i++){
+                for(let j=0; j<8; j++){
+                    t.pendown(); selectedFunc(t, colors[(i+j)%2], l/8); t.penup(); t.forward(l/8);
+                }
+                t.backward(l); t.right(90); t.forward(l/8); t.left(90);
+            }
+        }
+
+        function ground_square(t, groundside) {
+            t.width(0.1); t.pencolor("black");
+            for(let i=0; i<4; i++){ t.forward(groundside); t.right(90); }
+        }
+
+        function black_white_full(t, color, l) { t.fillcolor(color); t.begin_fill(); for(let i=0; i<4; i++){ t.forward(l); t.right(90); } t.end_fill(); }
+        
+        function black_multi_cross_white_single_cross(t, color, l) {
+            for(let i=0; i<4; i++){ t.forward(l); t.right(90); }
+            if(color === "black") {
+                t.right(45); t.forward(Math.sqrt(2)*l); t.left(45); t.penup(); t.backward(l); t.pendown();
+                t.left(45); t.forward(Math.sqrt(2)*l); t.right(45); t.penup(); t.backward(l); t.pendown();
+                t.right(90);
+                for(let c=1; c<divider_val; c++){
+                    t.penup(); t.forward(l/divider_val); t.left(45); t.pendown(); t.forward(Math.sqrt(2)*(l - l/divider_val*c)); t.penup(); t.backward(Math.sqrt(2)*(l - l/divider_val*c)); t.right(45);
+                }
+                t.backward(l*(divider_val-1)/divider_val); t.left(90);
+                t.width(0); t.forward(l); t.right(90); t.forward(l); t.right(90); t.width(0.1);
+                t.right(90);
+                for(let c=1; c<divider_val; c++){
+                    t.penup(); t.forward(l/divider_val); t.left(45); t.pendown(); t.forward(Math.sqrt(2)*(l - l/divider_val*c)); t.penup(); t.backward(Math.sqrt(2)*(l - l/divider_val*c)); t.right(45);
+                }
+                t.backward(l*(divider_val-1)/divider_val); t.left(90);
+                t.penup(); t.forward(l); t.right(90); t.forward(l); t.right(90);
+            } else if (color === "white") {
+                t.pendown(); t.right(45); t.forward(Math.sqrt(2)*l); t.left(45); t.penup(); t.backward(l); t.pendown();
+                t.left(45); t.forward(Math.sqrt(2)*l); t.right(45); t.penup(); t.backward(l); t.pendown();
+            }
+        }
+
+        function black_multi_cross_white_without_cross(t, color, l){
+             for(let i=0; i<4; i++){ t.forward(l); t.right(90); }
+            if (color === "black"){
+                t.right(45); t.forward(Math.sqrt(2)*l); t.left(45); t.penup(); t.backward(l); t.pendown();
+                t.left(45); t.forward(Math.sqrt(2)*l); t.right(45); t.penup(); t.backward(l); t.pendown();
+                t.right(90);
+                for(let c=1; c<divider_val; c++){
+                    t.penup(); t.forward(l/divider_val); t.left(45); t.pendown(); t.forward(Math.sqrt(2)*(l - l/divider_val*c)); t.width(0); t.backward(Math.sqrt(2)*(l - l/divider_val*c)); t.width(0.1); t.right(45);
+                }
+                t.backward(l*(divider_val-1)/divider_val); t.left(90);
+                t.width(0); t.forward(l); t.right(90); t.forward(l); t.right(90); t.width(0.1);
+                t.right(90);
+                for(let c=1; c<divider_val; c++){
+                    t.penup(); t.forward(l/divider_val); t.left(45); t.pendown(); t.forward(Math.sqrt(2)*(l - l/divider_val*c)); t.penup(); t.backward(Math.sqrt(2)*(l - l/divider_val*c)); t.right(45);
+                }
+                t.backward(l*(divider_val-1)/divider_val); t.left(90);
+                t.penup(); t.forward(l); t.right(90); t.forward(l); t.right(90);
+            }
+        }
+
+        function black_double_multi_cross_white_without_cross(t, color, l){
+            for(let i=0; i<4; i++){ t.forward(l); t.right(90); }
+            if (color === "black") {
+                t.right(45); t.forward(Math.sqrt(2)*l); t.left(45); t.penup(); t.backward(l); t.pendown();
+                t.left(45); t.forward(Math.sqrt(2)*l); t.right(45); t.penup(); t.backward(l); t.pendown();
+                for(let o=0; o<4; o++){
+                    t.right(90);
+                    for(let c=1; c<divider_val; c++){
+                        t.penup(); t.forward(l/divider_val); t.left(45); t.pendown(); t.forward(Math.sqrt(2)*(l - l/divider_val*c)); t.penup(); t.backward(Math.sqrt(2)*(l - l/divider_val*c)); t.right(45);
+                    }
+                    t.backward(l*(divider_val-1)/divider_val); t.left(90); t.penup(); t.forward(l); t.right(90);
+                }
+            }
+        }
+
+        function little_chessboard_onto_square(t, color, l, innerPatternIdx){
+            for(let i=0; i<4; i++){ t.forward(l); t.right(90); }
+            if(color === "black"){ gitter(t, innerPatternIdx, l, false); t.left(90); t.forward(l); t.right(90); }
+        }
+
+        // --- DRAW COORDINATES ---
+        function drawCoordinates(t, inner_size, margin_total, fontSize, fontFamily) {
+            const fontStyle = [fontFamily, fontSize, 'normal'];
+            const letters = ["A","B","C","D","E","F","G","H"];
+            const numbers = [1,2,3,4,5,6,7,8];
+            const cellSize = inner_size / 8;
+            
+            t.pencolor("black");
+
+            // Distance from board edge to text center
+            const textOffset = fontSize * 1.5; 
+
+            // 1. Bottom (Letters) - Standard
+            t.penup();
+            let startY = -inner_size/2 - textOffset;
+            for(let i=0; i<8; i++){
+                let startX = -inner_size/2 + cellSize/2 + i*cellSize;
+                t.setx(startX); t.sety(startY);
+                t.write(letters[i], "center", fontStyle, 0);
+            }
+
+            // 2. Right (Numbers) - Rotated 180 (for opponent)
+            let startX = inner_size/2 + textOffset;
+            for(let i=0; i<8; i++){
+                let y = -inner_size/2 + cellSize/2 + i*cellSize;
+                t.setx(startX); t.sety(y);
+                t.write(String(numbers[i]), "center", fontStyle, 180);
+            }
+
+            // 3. Top (Letters Reversed) - Rotated 180 (for opponent)
+            startY = inner_size/2 + textOffset;
+            for(let i=0; i<8; i++){
+                let x = -inner_size/2 + cellSize/2 + i*cellSize;
+                t.setx(x); t.sety(startY);
+                t.write(letters[i], "center", fontStyle, 180);
+            }
+
+            // 4. Left (Numbers) - Standard
+            startX = -inner_size/2 - textOffset;
+            for(let i=0; i<8; i++){
+                let y = -inner_size/2 + cellSize/2 + i*cellSize;
+                t.setx(startX); t.sety(y);
+                t.write(String(numbers[i]), "center", fontStyle, 0);
+            }
+
+            // Reset
+            t.setx(-inner_size/2); t.sety(-inner_size/2); t.setheading(90);
+        }
+
+        // --- CUTTING BORDER ---
+        function drawCuttingBorder(t, totalSize, radius) {
+            const half = totalSize/2;
+            t.penup();
+            t.pencolor("#FF0000"); t.width(0.1);
+            
+            if (radius <= 0) {
+                t.setx(-half); t.sety(-half);
+                t.setheading(0); t.pendown();
+                for(let i=0; i<4; i++) { t.forward(totalSize); t.left(90); }
+            } else {
+                t.setx(-half + radius); t.sety(-half);
+                t.setheading(0); t.pendown();
+                t.forward(totalSize - 2*radius); t.circle(radius, 90, 20);
+                t.forward(totalSize - 2*radius); t.circle(radius, 90, 20);
+                t.forward(totalSize - 2*radius); t.circle(radius, 90, 20);
+                t.forward(totalSize - 2*radius); t.circle(radius, 90, 20);
+            }
+            t.pencolor("black");
+        }
+
+        // --- CONTROLLER ---
+        function generateAndDownload() {
+            if (typeof MathJax === 'undefined' || !MathJax.tex2svg) {
+                alert("MathJax is still loading. Please wait a moment and try again.");
+                return;
+            }
+
+            const sizeInput = parseFloat(document.getElementById('size_mm').value);
+            const divider = parseInt(document.getElementById('divider').value);
+            const patternIdx = parseInt(document.getElementById('pattern_select').value);
+            const isRecursive = document.getElementById('recursive_yes').checked;
+            
+            const enableCoords = document.getElementById('enable_coords').checked;
+            const includeBorderSize = document.getElementById('include_border_size').checked;
+            
+            const hasCut = document.getElementById('cut_corner_yes').checked;
+            const cutDist = parseFloat(document.getElementById('cut_dist').value);
+            const cutRadi = parseFloat(document.getElementById('cut_radi').value);
+            
+            const fontSize = parseFloat(document.getElementById('font_size').value);
+            const fontFamily = document.getElementById('font_family').value;
+
+            divider_val = divider;
+
+            // Dimensions
+            let marginForCoords = 0;
+            if(enableCoords) marginForCoords = fontSize * 3.5; 
+
+            let innerGridSize;
+            let visualBoardSize;
+
+            if (enableCoords && includeBorderSize) {
+                visualBoardSize = sizeInput;
+                innerGridSize = visualBoardSize - 2*marginForCoords;
+                if(innerGridSize <= 0) innerGridSize = 10; 
+            } else {
+                innerGridSize = sizeInput;
+                visualBoardSize = innerGridSize + 2*marginForCoords;
+            }
+
+            let totalSvgSize = visualBoardSize;
+            if (hasCut) totalSvgSize = visualBoardSize + (2 * cutDist);
+
+            const t = new SvgTurtle(totalSvgSize, totalSvgSize);
+            t.pencolor("black"); t.width(0.1);
+
+            if (hasCut) drawCuttingBorder(t, totalSvgSize, cutRadi);
+
+            t.pencolor("black");
+
+            if (enableCoords) drawCoordinates(t, innerGridSize, marginForCoords, fontSize, fontFamily);
+
+            t.penup();
+            t.setx(-innerGridSize/2); t.sety(-innerGridSize/2); t.setheading(90);
+            
+            ground_square(t, innerGridSize); 
+            t.width(0.1);
+            gitter(t, patternIdx, innerGridSize, isRecursive);
+
+            const svgString = t.getSVG();
+            document.getElementById('preview-container').innerHTML = svgString;
+
+            // --- 1. Try Saving to Dashboard (Fail Safe) ---
+            try {
+                saveGeneratedProjectToDashboard(svgString, "Chessboard");
+            } catch(e) {
+                console.warn("Storage Error: Could not save to Editor dashboard (Local Storage full or disabled). Proceeding to download only.", e);
+            }
+
+            // --- 2. Create Download Blob ---
+            const blob = new Blob([svgString], {type: 'image/svg+xml'});
+            const url = URL.createObjectURL(blob);
+            
+            // --- 3. Create Persistent Manual Download Button ---
+            const downloadArea = document.getElementById('download-area');
+            downloadArea.innerHTML = ''; // Clear previous button
+            
+            const manualBtn = document.createElement('a');
+            manualBtn.href = url;
+            manualBtn.download = `chessboard_${totalSvgSize}mm.svg`;
+            manualBtn.innerText = "⬇ Download SVG File";
+            manualBtn.className = "download-btn-small"; // Use new CSS class
+            downloadArea.appendChild(manualBtn);
+
+            // --- 4. Trigger Automatic Download ---
+            manualBtn.click();
+        }
+
+        function saveGeneratedProjectToDashboard(svgString, baseName) {
+            const projects = JSON.parse(localStorage.getItem('vc_projects') || '[]');
+            const newProject = {
+                id: Date.now(),
+                name: baseName,
+                type: 'generator',
+                content: svgString
+            };
+            projects.push(newProject);
+            localStorage.setItem('vc_projects', JSON.stringify(projects));
+        }
+    </script>
+</body>
+</html>

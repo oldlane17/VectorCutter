@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Design custom, laser-ready SVG pop-up cards. Upload custom SVG silhouettes (castles) and auto-generate true Kirigami one-sheet mechanisms.">
+    <title>VectorCutter - Pop-Up Card Generator</title>
+    
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link href='https://fonts.googleapis.com/css?family=Roboto:400,700' rel='stylesheet'>
+    
+    <!-- Paper.js for Vector Boolean Operations (Crucial for breaking the SVG paths) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/paper.js/0.12.17/paper-full.min.js"></script>
+
+    <style>
+        /* --- STYLING --- */
+        :root{
+            --main-font:'Roboto', Tahoma, Geneva, Verdana, sans-serif;
+            --primary-color:#182a69; 
+            --secondary-color:#a0a0ff;
+            --bg-gradient-start: #182a69;
+            --bg-gradient-end: #02133e;
+            --input-bg: #f0f0f5;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--main-font); }
+        body {
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            min-height: 100vh;
+            color: #333;
+            margin: 20px;
+            overflow-x: hidden;
+        }
+
+        /* Navbar */
+        .topnav {
+            position: fixed; top: 10px; left: 20px; right: 20px;
+            border-radius: 15px; padding: 10px 20px; z-index: 999;
+            display: flex; justify-content: space-between; align-items: center;
+            background-color: #182a6995; backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        .nav-logo {
+            width: 36px; height: 36px; background: #fff; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; color: var(--bg-gradient-start); border: 2px solid white;
+        }
+        .nav-title { color: white; font-size: 1.2rem; font-weight: bold; }
+        .nav-right { display: flex; gap: 5px; align-items: center; }
+        .topnav a, .dropbtn { color: white; text-decoration: none; padding: 10px 15px; border-radius: 8px; transition: 0.3s; font-size: 1rem; border:none; background: transparent; cursor: pointer; }
+        .topnav a:hover { background: var(--primary-color); }
+
+        /* Layout */
+        .container { max-width: 1200px; margin: 100px auto 40px; padding: 20px; }
+        .action-area { display: grid; grid-template-columns: 1fr 2fr; gap: 30px; align-items: start; }
+        
+        .setting-card {
+            background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px; padding: 20px; color: white; backdrop-filter: blur(5px);
+            margin-bottom: 20px; display: flex; flex-direction: column; gap: 10px;
+        }
+        .setting-card h3 { margin: 0 0 10px 0; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; }
+        
+        .input-group { margin-bottom: 10px; }
+        .input-group label { display: block; font-size: 0.9rem; margin-bottom: 5px; color: #ddd; font-weight:bold; }
+        .form-control { width: 100%; padding: 8px 10px; border-radius: 8px; border: none; background: var(--input-bg); box-sizing: border-box; }
+        .row-inputs { display: flex; gap: 15px; }
+        .row-inputs .input-group { flex: 1; }
+        .hint-text { font-size: 0.8rem; color: #ccc; margin-top: 4px; }
+
+        .element-box { background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1); }
+        .element-header { font-weight: bold; margin-bottom: 10px; display: flex; justify-content: space-between; }
+        .remove-btn { background: #ff4d4d; color: white; border: none; border-radius: 5px; padding: 3px 8px; cursor: pointer; font-size: 0.8rem; }
+        .add-element-btn { background: var(--secondary-color); color: #02133e; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; width: 100%; }
+
+        .big-action-btn {
+            background: white; border-radius: 20px; display: flex; flex-direction: row; justify-content: center; align-items: center; gap: 15px;
+            cursor: pointer; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); border: none; width: 100%; padding: 20px;
+        }
+        .action-label { font-size: 1.3rem; color: #182a69; font-weight: bold; }
+
+        .preview-area { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); min-height: 400px; text-align: center;}
+        svg { max-width: 100%; max-height: 600px; background-color: #f9f9f9; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); }
+        
+        .instructions-area { background: rgba(255,255,255,0.95); border-radius: 15px; padding: 20px; font-size: 0.95rem; line-height: 1.5; margin-top:20px;}
+        .svg-legend { margin-top:10px; color:#fff; display: flex; justify-content: center; gap: 20px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px; }
+        .dot { width:12px; height:12px; display:inline-block; border-radius:50%; }
+        .dot.cut { background: red; }
+        .dot.valley { background: blue; }
+        .dot.mountain { background: green; }
+
+        #loading-overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:2000; color:white; justify-content:center; align-items:center; font-size: 2rem; }
+    </style>
+</head>
+<body>
+
+    <div id="loading-overlay">⚙️ Processing Vector Geometry...</div>
+
+    <nav class="topnav">
+        <div class="nav-left">
+            <div class="nav-logo">VC</div>
+            <span class="nav-title">VectorCutter Pop-Up</span>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="action-area">
+            
+            <div class="settings-container">
+                <div class="setting-card">
+                    <h3>📄 Card Properties</h3>
+                    <div class="input-group">
+                        <label>Opening Direction</label>
+                        <select id="card_orientation" class="form-control" onchange="generatePreview()">
+                            <option value="horizontal">Horizontal (Opens Top-to-Bottom)</option>
+                            <option value="vertical">Vertical (Opens Book-style, Left-to-Right)</option>
+                        </select>
+                    </div>
+                    <div class="row-inputs">
+                        <div class="input-group">
+                            <label>Width (mm)</label>
+                            <input type="number" id="card_width" class="form-control" value="200" onchange="generatePreview()">
+                        </div>
+                        <div class="input-group">
+                            <label>Height (mm)</label>
+                            <input type="number" id="card_height" class="form-control" value="150" onchange="generatePreview()">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setting-card">
+                    <h3>✂️ Pop-Up Elements</h3>
+                    <div id="elements-container"></div>
+                    <button class="add-element-btn" onclick="addPopupElement()">+ Add Element</button>
+                </div>
+
+                <button class="big-action-btn" onclick="downloadSVG()">
+                    <span style="font-size: 2rem;">📥</span>
+                    <div class="action-label">Download Laser SVG</div>
+                </button>
+            </div>
+
+            <div>
+                <div class="preview-area" id="preview-container"></div>
+                
+                <div class="svg-legend">
+                    <div><span class="dot cut"></span> Cut (Laser)</div>
+                    <div><span class="dot valley"></span> Valley Fold</div>
+                    <div><span class="dot mountain"></span> Mountain Fold</div>
+                </div>
+
+                <div class="instructions-area" id="instructions-container"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- GLOBAL VARIABLES ---
+        let popups = [];
+        let elementCounter = 0;
+        let currentSVGData = "";
+
+        // Initialize Paper.js globally (invisible canvas)
+        window.onload = function() {
+            let canvas = document.createElement('canvas');
+            paper.setup(canvas);
+            addPopupElement(); // Load first default element
+        };
+
+        function addPopupElement() {
+            popups.push({
+                id: elementCounter++,
+                type: 'svg_silhouette',
+                position: 50, 
+                width: 70,    
+                depth: 40,    
+                svgContent: '', 
+                origW: 100,
+                origH: 100,
+                strapW: 10,
+                warning: ''
+            });
+            renderElementsUI();
+            generatePreview();
+        }
+
+        function removePopupElement(id) {
+            popups = popups.filter(p => p.id !== id);
+            renderElementsUI();
+            generatePreview();
+        }
+
+        function updatePopup(id, field, value) {
+            let p = popups.find(p => p.id === id);
+            p[field] = (field === 'position' || field === 'width' || field === 'depth') ? (parseFloat(value) || 0) : value;
+            generatePreview();
+        }
+
+        function renderElementsUI() {
+            const container = document.getElementById("elements-container");
+            container.innerHTML = "";
+
+            popups.forEach((popup, i) => {
+                const isSvg = popup.type === 'svg_silhouette';
+                let html = `
+                <div class="element-box">
+                    <div class="element-header">
+                        <span>Element ${i + 1}</span>
+                        <button class="remove-btn" onclick="removePopupElement(${popup.id})">Remove</button>
+                    </div>
+                    <div class="input-group">
+                        <select class="form-control" onchange="updatePopup(${popup.id}, 'type', this.value); renderElementsUI();">
+                            <option value="svg_silhouette" ${isSvg ? 'selected' : ''}>🏰 Custom SVG Silhouette</option>
+                            <option value="parallel" ${popup.type === 'parallel' ? 'selected' : ''}>📦 Blank Box / Parallel Fold</option>
+                            <option value="vfold" ${popup.type === 'vfold' ? 'selected' : ''}>📐 V-Fold</option>
+                        </select>
+                    </div>
+                    ${isSvg ? `
+                    <div class="input-group" style="border: 1px dashed rgba(255,255,255,0.5); padding:10px;">
+                        <label style="color:#aaf;">Upload Vector (.svg)</label>
+                        <input type="file" accept=".svg" class="form-control" onchange="handleSvgUpload(event, ${popup.id})">
+                    </div>` : ''}
+                    <div class="row-inputs" style="margin-top:10px;">
+                        <div class="input-group"><label>Position Center (%)</label><input type="number" class="form-control" value="${popup.position}" onchange="updatePopup(${popup.id}, 'position', this.value)"></div>
+                        <div class="input-group"><label>Width (mm)</label><input type="number" class="form-control" value="${popup.width}" onchange="updatePopup(${popup.id}, 'width', this.value)"></div>
+                    </div>
+                    <div class="input-group"><label>Pop-Out Depth (mm)</label><input type="number" class="form-control" value="${popup.depth}" onchange="updatePopup(${popup.id}, 'depth', this.value)"></div>
+                </div>`;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
+
+        // --- THE MAGIC: Vector Boolean Logic via Paper.js ---
+        function handleSvgUpload(event, id) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            document.getElementById("loading-overlay").style.display = "flex";
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                paper.project.clear(); // Clear workspace
+                
+                paper.project.importSVG(e.target.result, {
+                    expandShapes: true,
+                    onLoad: function(item) {
+                        try {
+                            // 1. Combine all parts of the uploaded SVG into one outline
+                            let paths = item.getItems({ class: paper.PathItem });
+                            if (paths.length === 0) throw new Error("No paths found in SVG.");
+                            
+                            let silhouette = paths[0];
+                            for(let i = 1; i < paths.length; i++) {
+                                silhouette = silhouette.unite(paths[i]);
+                            }
+
+                            let bounds = silhouette.bounds;
+                            let strapW = Math.min(10, bounds.width * 0.4); 
+
+                            // 2. Cut a 2mm gap at the bottom so the laser doesn't detach the base
+                            let bottomCutout = new paper.Path.Rectangle({
+                                point: [bounds.left - 5, bounds.bottom - 1], 
+                                size: [bounds.width + 10, 2]
+                            });
+
+                            // 3. Cut a gap at the top so the strap remains connected
+                            let topCutout = new paper.Path.Rectangle({
+                                point: [bounds.center.x - strapW/2, bounds.top - 1],
+                                size: [strapW, 2]
+                            });
+
+                            // Perform the boolean subtraction!
+                            let finalPath = silhouette.subtract(bottomCutout).subtract(topCutout);
+                            
+                            // 4. Style for Laser
+                            finalPath.fillColor = null;
+                            finalPath.strokeColor = 'red';
+                            finalPath.strokeWidth = 0.5;
+                            finalPath.position = new paper.Point(0,0); // Center to (0,0) for easy math later
+
+                            let popup = popups.find(p => p.id === id);
+                            popup.svgContent = finalPath.exportSVG({asString: true});
+                            popup.origW = finalPath.bounds.width;
+                            popup.origH = finalPath.bounds.height;
+                            popup.strapW = strapW;
+
+                            generatePreview();
+                        } catch(err) {
+                            alert("Error parsing SVG: " + err.message);
+                        }
+                        document.getElementById("loading-overlay").style.display = "none";
+                    }
+                });
+            };
+            reader.readAsText(file);
+        }
+
+        // --- GENERATOR LOGIC ---
+        function generatePreview() {
+            const width = parseFloat(document.getElementById("card_width").value) || 200;
+            const height = parseFloat(document.getElementById("card_height").value) || 150;
+            const isHoriz = document.getElementById("card_orientation").value === 'horizontal';
+            
+            let centerLine = isHoriz ? (height / 2) : (width / 2);
+            let foldAxisLen = isHoriz ? width : height;
+            let svgLines = [`<rect x="0" y="0" width="${width}" height="${height}" fill="none" stroke="red" stroke-width="0.5" />`];
+            let instructions = [];
+            let centerCuts = []; // Keep track of cutouts so we don't draw the center valley fold through them
+
+            popups.forEach((p, idx) => {
+                let centerPos = (p.position / 100) * foldAxisLen;
+                
+                if (p.type === 'svg_silhouette' && p.svgContent) {
+                    // --- TRUE KIRIGAMI LOGIC ---
+                    let scale = p.width / p.origW;
+                    let pHeight = p.origH * scale;
+                    let strapW = p.strapW * scale; 
+                    
+                    let w2 = p.width / 2;
+                    centerCuts.push({start: centerPos - w2, end: centerPos + w2});
+
+                    if (isHoriz) {
+                        let baseY = centerLine + p.depth;
+                        let topY = baseY - pHeight;
+                        let anchorY = centerLine - pHeight;
+
+                        // Add Processed SVG (Bottom aligned to baseY, centered at centerPos)
+                        let tx = centerPos; 
+                        let ty = baseY - (pHeight/2);
+                        svgLines.push(`<g transform="translate(${tx}, ${ty}) scale(${scale})">${p.svgContent}</g>`);
+
+                        // Draw Missing Folds & Strap
+                        svgLines.push(`<line x1="${centerPos - w2}" y1="${baseY}" x2="${centerPos + w2}" y2="${baseY}" stroke="blue" stroke-dasharray="2,2" stroke-width="0.5" />`); // Base
+                        svgLines.push(`<line x1="${centerPos - strapW/2}" y1="${topY}" x2="${centerPos + strapW/2}" y2="${topY}" stroke="green" stroke-dasharray="1,3" stroke-width="0.5" />`); // Motif Top
+                        svgLines.push(`<line x1="${centerPos - strapW/2}" y1="${topY}" x2="${centerPos - strapW/2}" y2="${anchorY}" stroke="red" stroke-width="0.5" />`); // Strap Left
+                        svgLines.push(`<line x1="${centerPos + strapW/2}" y1="${topY}" x2="${centerPos + strapW/2}" y2="${anchorY}" stroke="red" stroke-width="0.5" />`); // Strap Right
+                        svgLines.push(`<line x1="${centerPos - strapW/2}" y1="${anchorY}" x2="${centerPos + strapW/2}" y2="${anchorY}" stroke="blue" stroke-dasharray="2,2" stroke-width="0.5" />`); // Anchor Top
+
+                    } else { // Vertical
+                        let baseX = centerLine + p.depth;
+                        let topX = baseX - pHeight;
+                        let anchorX = centerLine - pHeight;
+
+                        // Rotate shape to stand horizontally on vertical fold
+                        let tx = baseX - (pHeight/2); 
+                        let ty = centerPos;
+                        svgLines.push(`<g transform="translate(${tx}, ${ty}) rotate(-90) scale(${scale})">${p.svgContent}</g>`);
+
+                        svgLines.push(`<line x1="${baseX}" y1="${centerPos - w2}" x2="${baseX}" y2="${centerPos + w2}" stroke="blue" stroke-dasharray="2,2" stroke-width="0.5" />`); 
+                        svgLines.push(`<line x1="${topX}" y1="${centerPos - strapW/2}" x2="${topX}" y2="${centerPos + strapW/2}" stroke="green" stroke-dasharray="1,3" stroke-width="0.5" />`); 
+                        svgLines.push(`<line x1="${topX}" y1="${centerPos - strapW/2}" x2="${anchorX}" y2="${centerPos - strapW/2}" stroke="red" stroke-width="0.5" />`);
+                        svgLines.push(`<line x1="${topX}" y1="${centerPos + strapW/2}" x2="${anchorX}" y2="${centerPos + strapW/2}" stroke="red" stroke-width="0.5" />`); 
+                        svgLines.push(`<line x1="${anchorX}" y1="${centerPos - strapW/2}" x2="${anchorX}" y2="${centerPos + strapW/2}" stroke="blue" stroke-dasharray="2,2" stroke-width="0.5" />`); 
+                    }
+                    instructions.push(`<b>Element ${idx+1}:</b> Kirigami Silhouette. The laser will cut the outline EXCEPT the base and strap. It folds perfectly into the card.`);
+
+                } else if (p.type === 'parallel' || p.type === 'vfold') {
+                    // Standard Folds Math
+                    let w2 = p.width / 2;
+                    let pS = centerPos - w2, pE = centerPos + w2;
+                    centerCuts.push({start: pS, end: pE});
+
+                    if(isHoriz) {
+                        if(p.type === 'parallel') {
+                            svgLines.push(`<line x1="${pS}" y1="${centerLine - p.depth}" x2="${pS}" y2="${centerLine + p.depth}" stroke="red" stroke-width="0.5" />`);
+                            svgLines.push(`<line x1="${pE}" y1="${centerLine - p.depth}" x2="${pE}" y2="${centerLine + p.depth}" stroke="red" stroke-width="0.5" />`);
+                            svgLines.push(`<line x1="${pS}" y1="${centerLine - p.depth}" x2="${pE}" y2="${centerLine - p.depth}" stroke="blue" stroke-dasharray="2,2" stroke-width="0.5" />`);
+                            svgLines.push(`<line x1="${pS}" y1="${centerLine + p.depth}" x2="${pE}" y2="${centerLine + p.depth}" stroke="blue" stroke-dasharray="2,2" stroke-width="0.5" />`);
+                            svgLines.push(`<line x1="${pS}" y1="${centerLine}" x2="${pE}" y2="${centerLine}" stroke="green" stroke-dasharray="1,3" stroke-width="0.5" />`);
+                        } else {
+                            svgLines.push(`<line x1="${pS}" y1="${centerLine}" x2="${pE}" y2="${centerLine}" stroke="red" stroke-width="0.5" />`);
+                            svgLines.push(`<line x1="${pS}" y1="${centerLine}" x2="${centerPos}" y2="${centerLine - p.depth}" stroke="green" stroke-dasharray="1,3" stroke-width="0.5" />`);
+                            svgLines.push(`<line x1="${centerPos}" y1="${centerLine - p.depth}" x2="${pE}" y2="${centerLine}" stroke="green" stroke-dasharray="1,3" stroke-width="0.5" />`);
+                            svgLines.push(`<line x1="${pS}" y1="${centerLine}" x2="${centerPos}" y2="${centerLine + p.depth}" stroke="green" stroke-dasharray="1,3" stroke-width="0.5" />`);
+                            svgLines.push(`<line x1="${centerPos}" y1="${centerLine + p.depth}" x2="${pE}" y2="${centerLine}" stroke="green" stroke-dasharray="1,3" stroke-width="0.5" />`);
+                        }
+                    } else { // vertical equivalent 
+                        if(p.type === 'parallel') {
+                            svgLines.push(`<line x1="${centerLine - p.depth}" y1="${pS}" x2="${centerLine + p.depth}" y2="${pS}" stroke="red" stroke-width="0.5" />`);
+                            svgLines.push(`<line x1="${centerLine - p.depth}" y1="${pE}" x2="${centerLine + p.depth}" y2="${pE}" stroke="red" stroke-width="0.5" />`);
+                            svgLines.push(`<line x1="${centerLine - p.depth}" y1="${pS}" x2="${centerLine - p.depth}" y2="${pE}" stroke="blue" stroke-dasharray="2,2" stroke-width="0.5" />`);
+                            svgLines.push(`<line x1="${centerLine + p.depth}" y1="${pS}" x2="${centerLine + p.depth}" y2="${pE}" stroke="blue" stroke-dasharray="2,2" stroke-width="0.5" />`);
+                            svgLines.push(`<line x1="${centerLine}" y1="${pS}" x2="${centerLine}" y2="${pE}" stroke="green" stroke-dasharray="1,3" stroke-width="0.5" />`);
+                        } else {
+                            svgLines.push(`<line x1="${centerLine}" y1="${pS}" x2="${centerLine}" y2="${pE}" stroke="red" stroke-width="0.5" />`);
+                            svgLines.push(`<line x1="${centerLine}" y1="${pS}" x2="${centerLine - p.depth}" y2="${centerPos}" stroke="green" stroke-dasharray="1,3" stroke-width="0.5" />`);
+                            svgLines.push(`<line x1="${centerLine - p.depth}" y1="${centerPos}" x2="${centerLine}" y2="${pE}" stroke="green" stroke-dasharray="1,3" stroke-width="0.5" />`);
+                            svgLines.push(`<line x1="${centerLine}" y1="${pS}" x2="${centerLine + p.depth}" y2="${centerPos}" stroke="green" stroke-dasharray="1,3" stroke-width="0.5" />`);
+                            svgLines.push(`<line x1="${centerLine + p.depth}" y1="${centerPos}" x2="${centerLine}" y2="${pE}" stroke="green" stroke-dasharray="1,3" stroke-width="0.5" />`);
+                        }
+                    }
+                }
+            });
+
+            // Draw Main Center Fold between mechanisms
+            centerCuts.sort((a,b) => a.start - b.start);
+            let currentPt = 0;
+            centerCuts.forEach(cut => {
+                if (cut.start > currentPt) {
+                    if(isHoriz) svgLines.push(`<line x1="${currentPt}" y1="${centerLine}" x2="${cut.start}" y2="${centerLine}" stroke="blue" stroke-dasharray="2,2" stroke-width="0.5" />`);
+                    else svgLines.push(`<line x1="${centerLine}" y1="${currentPt}" x2="${centerLine}" y2="${cut.start}" stroke="blue" stroke-dasharray="2,2" stroke-width="0.5" />`);
+                }
+                currentPt = Math.max(currentPt, cut.end);
+            });
+            if (currentPt < foldAxisLen) {
+                if(isHoriz) svgLines.push(`<line x1="${currentPt}" y1="${centerLine}" x2="${foldAxisLen}" y2="${centerLine}" stroke="blue" stroke-dasharray="2,2" stroke-width="0.5" />`);
+                else svgLines.push(`<line x1="${centerLine}" y1="${currentPt}" x2="${centerLine}" y2="${foldAxisLen}" stroke="blue" stroke-dasharray="2,2" stroke-width="0.5" />`);
+            }
+
+            currentSVGData = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="100%" height="100%">${svgLines.join("\n")}</svg>`;
+            document.getElementById("preview-container").innerHTML = currentSVGData;
+            document.getElementById("instructions-container").innerHTML = `<h3>Instructions</h3><ul>` + instructions.map(i => `<li>${i}</li>`).join('') + `</ul>`;
+        }
+
+        function downloadSVG() {
+            if(!currentSVGData) return;
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([currentSVGData], {type: 'image/svg+xml'}));
+            a.download = 'VectorCutter_PopUp.svg';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
+    </script>
+</body>
+</html>

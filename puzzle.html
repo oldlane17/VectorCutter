@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VectorCutter - Puzzle Generator</title>
+    <meta name="description" content="Generate precise, laser-ready jigsaw puzzle SVGs with unique custom tab shapes. Customize dimensions, grid size, and interlocking patterns for CNC and laser cutting.">
+    <meta name="keywords" content="puzzle generator, jigsaw svg, laser cut puzzle, puzzle template, interlocking puzzle, vectorcutter, custom puzzle tabs, svg generator, cnc puzzle, jigsaw pattern">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <!-- ANDROID -->
+	<link href="/favicon.ico" type="image/ico" rel='icon' />
+    <!-- iOS -->
+    <link href="/favicon.ico" type="image/x-icon" rel='apple-touch-icon' />
+    <link href='https://fonts.googleapis.com/css?family=Roboto:400,700|Open+Sans|Lato|Montserrat|Oswald' rel='stylesheet'>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-M8HF2H2T');</script>
+    <!-- End Google Tag Manager -->
+    <style>
+        /* --- STYLING --- */
+        :root{ --main-font:'Roboto', sans-serif; --primary-color:#182a69; --input-bg: #f0f0f5; }
+        body { background: linear-gradient(135deg, #182a69 0%, #02133e 100%); min-height: 100vh; color: #333; margin: 20px; font-family: var(--main-font); }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--main-font); }
+        .container { max-width: 1200px; margin: 100px auto 40px; padding: 20px; }
+        .action-area { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; margin-bottom: 40px; }
+        .setting-card { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 15px; padding: 20px; color: white; backdrop-filter: blur(5px); margin-bottom: 20px; }
+        .setting-card h3 { margin: 0 0 10px 0; font-size: 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; }
+        .input-group { margin-bottom: 10px; }
+        .input-group label { display: block; font-size: 0.9rem; margin-bottom: 5px; color: #ddd; }
+        
+        .form-control { width: 100%; padding: 8px 10px; border-radius: 8px; border: none; background: var(--input-bg); font-family: var(--main-font); box-sizing: border-box; }
+        
+
+
+        /* --- NAVBAR STYLES --- */
+        .topnav {
+            position: fixed; top: 10px; left: 20px; right: 20px;
+            border-radius: 15px; padding: 10px 20px; z-index: 999;
+            display: flex; justify-content: space-between; align-items: center;
+            background-color: #182a6995; backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        
+        /* Circular Logo */
+        .nav-logo {
+            width: 36px; height: 36px; 
+            background: #fff; 
+            border-radius: 50%; 
+            object-fit: contain;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; color: var(--primary-color);
+            border: 2px solid white;
+        }
+
+        .nav-title { color: white; font-size: 1.2rem; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+        .nav-title a { color: white; text-decoration: none; }
+        
+        .nav-right { display: flex; gap: 5px; align-items: center; }
+        
+        .topnav a, .dropbtn { 
+            color: white; text-decoration: none; padding: 10px 15px; 
+            border-radius: 8px; transition: all 0.3s ease; font-weight: 500; 
+            font-size: 1rem; border:none; background: transparent; cursor: pointer; 
+            font-family: var(--main-font);
+        }
+        .topnav a:hover, .dropdown:hover .dropbtn { background: var(--primary-color); transform: translateY(-2px); }
+
+        /* Dropdown */
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content {
+            display: none; position: absolute; right: 0;
+            background-color: #02133e; min-width: 200px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1000; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden; margin-top: 0px;
+        }
+        .dropdown-content::before {
+            content: "";
+            display: block;
+            position: absolute;
+            top: -20px; /* Move up to overlap the gap */
+            left: 0;
+            width: 100%;
+            height: 20px; /* Height sufficient to bridge the gap */
+            background: transparent; /* Keep it invisible */
+        }
+        .dropdown-content a { color: white; padding: 12px 16px; text-decoration: none; display: block; text-align: left; }
+        .dropdown:hover .dropdown-content { display: block; }
+        .dropdown-content a:hover { background-color: var(--primary-color); transform: none; }
+
+        /* --- MOBILE SIDE NAV (The Slide-in Menu) --- */
+        .sidenav {
+            height: 100%; width: 0; position: fixed; z-index: 2000;
+            top: 0; left: 0; background-color: #182a69; 
+            overflow-x: hidden; transition: 0.5s; padding-top: 60px;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.5);
+        }
+
+        .sidenav a, .sidenav .sidenav-header {
+            padding: 8px 8px 8px 32px; text-decoration: none;
+            font-size: 1.2rem; color: #f1f1f1; display: block;
+            transition: 0.3s; font-family: var(--main-font);
+        }
+
+        .sidenav a:hover { color: var(--secondary-color); background: rgba(255,255,255,0.1); }
+
+        /* Close Button (Cross) */
+        .sidenav .closebtn {
+            position: absolute; top: 15px; right: 20px;
+            font-size: 24px; margin-left: 0; padding: 0;
+        }
+        .sidenav .closebtn:hover { background: none; color: #ccc; }
+
+        .sidenav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 10px 20px; }
+        .sidenav-subitem { font-size: 1rem !important; padding-left: 50px !important; opacity: 0.9; }
+
+        /* Hamburger Icon */
+        .hamburger {
+            display: none; font-size: 28px; cursor: pointer;
+            color: white; margin-right: 15px; user-select: none;
+        }
+        /* --- BUTTON STYLING --- */
+        
+        /* File Input */
+        input[type="file"] { color: black; }
+        input[type="file"]::file-selector-button {
+            background-color: #182a69; color: white; border: none; padding: 8px 12px;
+            border-radius: 5px; cursor: pointer; margin-right: 10px; transition: background 0.2s; font-weight: bold;
+        }
+        input[type="file"]::file-selector-button:hover { background-color: #253b85; }
+
+        /* Small Action Button (Randomize) */
+        .btn-small-action {
+            background-color: #182a69; color: white; border: none; padding: 8px 12px;
+            border-radius: 5px; cursor: pointer; font-weight: bold; margin-top: 5px; transition: background 0.2s;
+        }
+        .btn-small-action:hover { background-color: #253b85; }
+
+        /* Big Action Button */
+        .big-action-btn { background: white; border-radius: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; transition: transform 0.3s; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); border: none; width: 100%; height: 100%; padding: 20px; }
+        .big-action-btn:hover { transform: translateY(-5px); background: #fdfdfd; }
+        .plus-icon { font-size: 4rem; color: var(--primary-color); margin-bottom: 10px; }
+        .action-label { font-size: 1.2rem; color: #182a69; font-weight: bold; }
+
+        .preview-area { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); min-height: 400px; display: flex; justify-content: center; align-items: center; overflow: auto; }
+        svg { max-width: 100%; max-height: 600px; border: 1px dashed #ccc; background-color: #eee; }
+        
+        .download-btn-small { background-color: var(--primary-color); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: none; margin-top: 20px; cursor: pointer; font-size: 1.1rem; border: 2px solid white; box-shadow: 0 5px 15px rgba(0,0,0,0.3); transition: all 0.2s ease; }
+        .download-btn-small:hover { transform: scale(1.05); background-color: #253b85; }
+        
+        /* Loading Spinner */
+        .loader { border: 5px solid #f3f3f3; border-top: 5px solid var(--primary-color); border-radius: 50%; width: 30px; height: 30px; animation: spin 1s linear infinite; display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        @media (max-width: 768px) { .action-area { grid-template-columns: 1fr; } }
+
+                /* Footer */
+        .footer-row-1 {
+  background-color: #02133e;
+font-family: Roboto, sans-serif;
+font-size: 12px ;
+display: flex; /* Use flexbox for layout */
+flex-direction: column;
+  justify-content: center; /* Center items horizontally */
+  align-items: center; /* Center items vertically */
+  padding: 0 0;
+gap: 0px;
+border-radius: 10px;
+
+border-bottom: none;
+position: relative;
+bottom:0;
+}
+.footer-row-container {
+    margin: 0 auto;
+    padding: 8px 20px;
+    align-items: center;
+    border-radius: 10px;
+    text-align: center;
+    flex-wrap: wrap;
+
+}
+.footer-row-1 nav {
+  display: flex;
+  justify-content: center;
+flex-wrap: wrap;
+  gap: 25px;
+border-bottom: None;
+padding: 8px;}
+
+        
+.footer-row-1 a {
+  color: #f9f8ff !important;
+  text-decoration: underline !important;
+  font-family: Roboto, sans-serif;
+font-size: 12px ;
+  transition: color 0.3s ease;
+  white-space: nowrap;
+}
+.footer-row-1 p{
+color: #f9f8ff;
+    justify-content: center;
+  font-family: Roboto, sans-serif;
+font-size: 9px ;
+  padding:0;
+margin:0;
+white-space: nowrap;
+
+}
+
+.footer-row-1 a:hover {
+  color: #d8dce8;
+}
+        /* --- MEDIA QUERIES --- */
+        @media (max-width: 768px) {
+            .action-area { grid-template-columns: 1fr; }
+            
+            /* Navbar Mobile Changes */
+            .topnav { flex-direction: row; justify-content: flex-start; }
+            .nav-right { display: none; } /* Hide Desktop Menu */
+            .hamburger { display: block; } /* Show Burger */
+            
+            .container { margin-top: 110px; }
+        }
+    </style>
+</head>
+<body>
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M8HF2H2T"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+    <!-- Mobile Sidenav -->
+    <div id="mySidenav" class="sidenav">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <a href="index.html">Home</a>
+        <a href="editor_5.8.html">Editor</a>
+        <div class="sidenav-divider"></div>
+        <span class="sidenav-header" style="color:#aaa; font-size:0.9rem; padding-left:32px;">GENERATORS</span>
+        <a href="advent_calendar.html" class="sidenav-subitem">Advent Calendar</a>
+        <a href="chessboard.html" class="sidenav-subitem">Chessboard</a>
+        <a href="puzzle.html" class="sidenav-subitem">Puzzle</a>
+        <a href="ruler.html" class="sidenav-subitem">Ruler Generator</a>
+    </div>
+
+    <!-- Main Navbar -->
+    <nav class="topnav">
+        <!-- Hamburger Menu (Mobile Only) -->
+        <span class="hamburger" onclick="openNav()">&#9776;</span>
+
+        <div class="nav-left">
+            <img src="favicon.png" alt="Logo" class="nav-logo" onerror="this.style.display='none'">
+            <span class="nav-title"><a href="index.html">VectorCutter - Old Lane 17</a></span>
+        </div>
+        
+        <!-- Desktop Links -->
+        <div class="nav-right">
+            <a href="index.html">Home</a>
+            <a href="editor_5.8.html" target="_blank">Editor</a>
+            <div class="dropdown">
+                <button class="dropbtn">Generators ▼</button>
+                <div class="dropdown-content">
+                    <a href="advent_calendar.html" target="_blank">Advent Calendar</a>
+                    <a href="chessboard.html" target="_blank">Chessboard</a>
+                    <a href="puzzle.html" target="_blank">Puzzle</a>
+                    <a href="ruler.html" target="_blank">Ruler</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        
+        <div class="action-area">
+            <div class="settings-container">
+                <div class="setting-card">
+                    <h3>1. Configuration</h3>
+                    <div class="input-group">
+                        <label>Image (Aspect Ratio)</label>
+                        <input type="file" id="imageUpload" accept="image/*" class="form-control">
+                    </div>
+                    <div class="input-group">
+                        <label>Opacity</label>
+                        <input type="range" id="imgOpacity" min="0" max="1" step="0.1" value="0.7" oninput="updateOpacity()">
+                    </div>
+                </div>
+
+                <div class="setting-card">
+                    <h3>2. Dimensions (mm)</h3>
+                    <div class="input-group"><label>Width</label><input type="number" id="width_mm" class="form-control" value="200"></div>
+                    <div class="input-group"><label>Height</label><input type="number" id="height_mm" class="form-control" value="150"></div>
+                </div>
+
+                <div class="setting-card">
+                    <h3>3. Grid & Lashes</h3>
+                    <div class="input-group"><label>Columns</label><input type="number" id="col_count" class="form-control" value="6" min="2"></div>
+                    <div class="input-group"><label>Rows</label><input type="number" id="row_count" class="form-control" value="4" min="2"></div>
+                    <div class="input-group">
+                        <label>Random Seed</label>
+                        <input type="number" id="seed_val" class="form-control" value="12345">
+                        <button onclick="randomizeSeed()" class="btn-small-action">🎲 Randomize</button>
+                    </div>
+                </div>
+            </div>
+
+            <button class="big-action-btn" onclick="generatePuzzle()">
+                <div class="loader" id="loading-spinner"></div>
+                <div class="plus-icon" id="btn-icon">🧩</div>
+                <div class="action-label">Generate Preview</div>
+                <div style="font-size:0.8rem; color:#888; margin-top:5px;">(Loads SVGs & Saves to Dashboard)</div>
+            </button>
+        </div>
+
+        <h2 style="color:white;">Preview</h2>
+        <div class="preview-area" id="preview-container">
+            <p style="color:#888;">Click Generate to load lashes and create puzzle...</p>
+        </div>
+        
+        <div id="download-area" style="text-align: center; height: 80px;">
+            <a id="download-link" class="download-btn-small">⬇ Download SVG File</a>
+        </div>
+    </div>
+
+    <div class='footer-row footer-row-1'>
+        <div class='footer-row-container' style="background-color:#182a69; width:100%">
+            <nav>
+                <a href='about.html'>About</a>  
+                <a href = "privacy-policies.html" >Privacy Policies </a>
+                <a href = "terms-of-service.html"> Terms of Service</a>
+                <a href = "legal-notice.html"> Legal Notice</a>
+                <a href='https://www.oldlane17.com/p/contact.html'>Contact</a> 
+                <a href="#" data-cc="show-preferencesModal">Cookie Settings</a>
+                <a href = "https://info.oldlane17.com/faq" >FAQ </a>
+                <a href = "https://info.oldlane17.com/social-media" >Social media </a>
+            </nav>
+        </div>
+        <div class='footer-row-container' style="background-color:#02133e; width:100%">
+            <p>© Copyright 2024-2026 Old Lane 17</p>
+        </div>
+    </div>
+    <script>
+        /* =========================================
+           USER CONFIGURATION: CUSTOM LASH FOLDER
+           ========================================= */
+        const LASH_FOLDER = "./lashes/"; 
+
+        const LASH_FILES = [
+            "lash1.svg"
+            
+        ];
+
+        /* =========================================
+           INTERNAL FALLBACK (If folder fails)
+           ========================================= */
+        const FALLBACK_LASHES = [
+            { id: "default_round", width: 100, d: "M 0 0 C 30 0, 30 20, 30 20 C 30 35, 20 40, 50 40 C 80 40, 70 35, 70 20 C 70 20, 70 0, 100 0" },
+            { id: "default_square", width: 100, d: "M 0 0 L 25 0 L 25 35 L 75 35 L 75 0 L 100 0" },
+            { id: "default_triangle", width: 100, d: "M 0 0 L 30 0 L 50 35 L 70 0 L 100 0" }
+        ];
+
+        /* --- GLOBAL VARIABLES --- */
+        let loadedLashData = []; 
+        let currentAspectRatio = 0;
+        let imageBase64 = null;
+        let currentSvgBlobUrl = null;
+
+        /* --- SETUP & HELPERS --- */
+        function sfc32(a, b, c, d) {
+            return function() {
+                a |= 0; b |= 0; c |= 0; d |= 0; 
+                var t = (a + b | 0) + d | 0;
+                d = d + 1 | 0;
+                a = b ^ b >>> 9;
+                b = c + (c << 3) | 0;
+                c = (c << 21 | c >>> 11);
+                c = c + t | 0;
+                return (t >>> 0) / 4294967296;
+            }
+        }
+
+        async function loadExternalLashes() {
+            const tempLashes = [];
+            const parser = new DOMParser();
+
+            console.log(`Attempting to load ${LASH_FILES.length} files from ${LASH_FOLDER}...`);
+
+            for (let filename of LASH_FILES) {
+                try {
+                    const response = await fetch(LASH_FOLDER + filename);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    
+                    const text = await response.text();
+                    const doc = parser.parseFromString(text, "image/svg+xml");
+                    
+                    const svgEl = doc.querySelector('svg');
+                    let viewBox = svgEl.getAttribute('viewBox');
+                    let nativeWidth = 100;
+                    if(viewBox) {
+                        const parts = viewBox.split(/[\s,]+/).map(parseFloat);
+                        if(parts.length === 4) nativeWidth = parts[2];
+                    } else {
+                        const w = svgEl.getAttribute('width');
+                        if(w) nativeWidth = parseFloat(w);
+                    }
+
+                    const pathEl = doc.querySelector('path');
+                    if (pathEl) {
+                        const d = pathEl.getAttribute('d');
+                        tempLashes.push({ id: filename, width: nativeWidth, d: d });
+                    }
+                } catch (err) {
+                    console.warn(`Could not load ${filename}:`, err);
+                }
+            }
+            return tempLashes;
+        }
+
+        /* --- GENERATOR LOGIC --- */
+        async function generatePuzzle() {
+            document.getElementById('loading-spinner').style.display = 'block';
+            document.getElementById('btn-icon').style.display = 'none';
+
+            loadedLashData = await loadExternalLashes();
+            
+            if (loadedLashData.length === 0) {
+                console.log("Using internal fallback lashes.");
+                loadedLashData = FALLBACK_LASHES;
+            }
+
+            const width = parseFloat(document.getElementById('width_mm').value);
+            const height = parseFloat(document.getElementById('height_mm').value);
+            const cols = parseInt(document.getElementById('col_count').value);
+            const rows = parseInt(document.getElementById('row_count').value);
+            const seedInput = parseInt(document.getElementById('seed_val').value) || 12345;
+            const rand = sfc32(seedInput, seedInput, seedInput, seedInput);
+            
+            const pieceW = width / cols;
+            const pieceH = height / rows;
+
+            let vEdges = []; 
+            for(let x=0; x<=cols; x++) {
+                vEdges[x] = [];
+                for(let y=0; y<rows; y++) {
+                    if(x===0 || x===cols) vEdges[x][y] = 0; 
+                    else vEdges[x][y] = (rand() > 0.5) ? 1 : -1;
+                }
+            }
+
+            let hEdges = [];
+            for(let x=0; x<cols; x++) {
+                hEdges[x] = [];
+                for(let y=0; y<=rows; y++) {
+                    if(y===0 || y===rows) hEdges[x][y] = 0; 
+                    else hEdges[x][y] = (rand() > 0.5) ? 1 : -1;
+                }
+            }
+
+            let innerSvgContent = "";
+            const getRandomLash = () => loadedLashData[Math.floor(rand() * loadedLashData.length)];
+            const GAP_START_PCT = 0.36;
+            const GAP_END_PCT = 0.64;
+            const GAP_WIDTH_PCT = GAP_END_PCT - GAP_START_PCT;
+
+            // Horizontal Edges
+            for(let y=1; y<rows; y++) {
+                for(let x=0; x<cols; x++) {
+                    const absX = x * pieceW;
+                    const absY = y * pieceH;
+                    const sign = hEdges[x][y];
+                    
+                    if (sign === 0) {
+                        innerSvgContent += `<line x1="${absX}" y1="${absY}" x2="${absX+pieceW}" y2="${absY}" class="cut-line" />`;
+                    } else {
+                        innerSvgContent += `<line x1="${absX}" y1="${absY}" x2="${absX + (pieceW*GAP_START_PCT)}" y2="${absY}" class="cut-line" />`;
+                        const lash = getRandomLash();
+                        const targetWidth = pieceW * GAP_WIDTH_PCT;
+                        const scale = targetWidth / lash.width;
+                        const startX = absX + (pieceW * GAP_START_PCT);
+                        const startY = absY;
+                        let transform = "";
+                        if (sign === 1) {
+                            transform = `translate(${startX}, ${startY}) scale(${scale})`;
+                        } else {
+                            const endGapX = absX + (pieceW * GAP_END_PCT);
+                            transform = `translate(${endGapX}, ${startY}) rotate(180) scale(${scale})`;
+                        }
+                        innerSvgContent += `<path d="${lash.d}" transform="${transform}" class="cut-line" />`;
+                        innerSvgContent += `<line x1="${absX + (pieceW*GAP_END_PCT)}" y1="${absY}" x2="${absX + pieceW}" y2="${absY}" class="cut-line" />`;
+                    }
+                }
+            }
+
+            // Vertical Edges
+            for(let x=1; x<cols; x++) {
+                for(let y=0; y<rows; y++) {
+                    const absX = x * pieceW;
+                    const absY = y * pieceH;
+                    const sign = vEdges[x][y];
+
+                    if (sign === 0) {
+                        innerSvgContent += `<line x1="${absX}" y1="${absY}" x2="${absX}" y2="${absY+pieceH}" class="cut-line" />`;
+                    } else {
+                        innerSvgContent += `<line x1="${absX}" y1="${absY}" x2="${absX}" y2="${absY + (pieceH*GAP_START_PCT)}" class="cut-line" />`;
+                        const lash = getRandomLash();
+                        const targetLen = pieceH * GAP_WIDTH_PCT;
+                        const scale = targetLen / lash.width;
+                        let transform = "";
+                        const startGapY = absY + (pieceH * GAP_START_PCT);
+                        const endGapY = absY + (pieceH * GAP_END_PCT);
+
+                        if (sign === 1) {
+                            transform = `translate(${absX}, ${startGapY}) rotate(90) scale(${scale})`;
+                        } else {
+                            transform = `translate(${absX}, ${endGapY}) rotate(-90) scale(${scale})`;
+                        }
+                        innerSvgContent += `<path d="${lash.d}" transform="${transform}" class="cut-line" />`;
+                        innerSvgContent += `<line x1="${absX}" y1="${absY + (pieceH*GAP_END_PCT)}" x2="${absX}" y2="${absY + pieceH}" class="cut-line" />`;
+                    }
+                }
+            }
+
+            const borderPath = `M 0 0 L ${width} 0 L ${width} ${height} L 0 ${height} Z`;
+            const opacity = document.getElementById('imgOpacity').value;
+
+            const fullSvg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="${width}mm" height="${height}mm" viewBox="0 0 ${width} ${height}">
+    <defs>
+        <style> 
+            .cut-line { fill: none; stroke: red; stroke-width: 0.1mm; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; } 
+            .border-line { fill: none; stroke: blue; stroke-width: 0.1mm; vector-effect: non-scaling-stroke; }
+        </style>
+    </defs>
+    ${imageBase64 ? `<image id="preview-bg-image" href="${imageBase64}" x="0" y="0" width="${width}" height="${height}" preserveAspectRatio="none" style="opacity:${opacity}" />` : ''}
+    <g id="cut-layer">
+        <path d="${borderPath}" class="border-line" />
+        ${innerSvgContent}
+    </g>
+</svg>`;
+
+            // Update Preview
+            document.getElementById('preview-container').innerHTML = fullSvg;
+            document.getElementById('loading-spinner').style.display = 'none';
+            document.getElementById('btn-icon').style.display = 'block';
+
+            // --- SAVE TO DASHBOARD (IMPLEMENTED HERE) ---
+            try {
+                // We name it "Puzzle [Width]x[Height]mm" so you can identify it in the editor
+                saveGeneratedProjectToDashboard(fullSvg, `Puzzle ${Math.round(width)}x${Math.round(height)}mm`);
+                console.log("Project saved to dashboard successfully.");
+            } catch(e) {
+                console.warn("Storage Error: Could not save to Editor dashboard (Local Storage full or disabled).", e);
+            }
+
+            // Setup Manual Download
+            if (currentSvgBlobUrl) URL.revokeObjectURL(currentSvgBlobUrl);
+            const blob = new Blob([fullSvg], {type: 'image/svg+xml'});
+            currentSvgBlobUrl = URL.createObjectURL(blob);
+            
+            const dlBtn = document.getElementById('download-link');
+            dlBtn.href = currentSvgBlobUrl;
+            dlBtn.download = `custom_puzzle_${width}x${height}.svg`;
+            dlBtn.style.display = 'inline-block';
+        }
+
+        document.getElementById('imageUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                imageBase64 = event.target.result;
+                const img = new Image();
+                img.onload = function() {
+                    currentAspectRatio = img.width / img.height;
+                    const w = parseFloat(document.getElementById('width_mm').value) || 200;
+                    document.getElementById('height_mm').value = (w / currentAspectRatio).toFixed(2);
+                    generatePuzzle(); 
+                };
+                img.src = imageBase64;
+            };
+            reader.readAsDataURL(file);
+        });
+        function openNav() {
+            document.getElementById("mySidenav").style.width = "250px";
+        }
+        function closeNav() {
+            document.getElementById("mySidenav").style.width = "0";
+        }
+
+        // --- UI UTILS ---
+        function toggleCollapsible(wrapperId, checkboxId, populateFunc) {
+            const wrapper = document.getElementById(wrapperId);
+            const checkbox = document.getElementById(checkboxId);
+            
+            if (checkbox.checked) {
+                if(populateFunc) populateFunc();
+                wrapper.classList.add("open");
+            } else {
+                wrapper.classList.remove("open");
+            }
+        }
+
+        function randomizeSeed() {
+            document.getElementById('seed_val').value = Math.floor(Math.random() * 90000) + 10000;
+            generatePuzzle();
+        }
+
+        function updateOpacity() {
+            const el = document.getElementById('preview-bg-image');
+            if(el) el.style.opacity = document.getElementById('imgOpacity').value;
+        }
+
+        // --- DASHBOARD SAVING FUNCTION ---
+        function saveGeneratedProjectToDashboard(svgString, baseName) {
+            // Get existing projects or initialize empty array
+            const projects = JSON.parse(localStorage.getItem('vc_projects') || '[]');
+            
+            // Create new project object
+            const newProject = {
+                id: Date.now(),
+                name: baseName,
+                type: 'generator',
+                content: svgString
+            };
+            
+            // Save back to Local Storage
+            projects.push(newProject);
+            localStorage.setItem('vc_projects', JSON.stringify(projects));
+        }
+    
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Create accurate, export-ready SVG rulers for laser cutting — choose metric or imperial units, custom lengths, tick spacing and engraving labels for precision tools and projects.">
+    <meta name="keywords" content="ruler generator, ruler svg, laser cut ruler, metric ruler svg, imperial ruler svg, scale ruler, engraving ruler, vectorcutter">
+
+    <title>VectorCutter - Ruler Generator</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link href='https://fonts.googleapis.com/css?family=Roboto:400,700|Open+Sans|Lato|Montserrat|Oswald' rel='stylesheet'>
+    
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-M8HF2H2T');</script>
+    <!-- End Google Tag Manager -->
+
+    <!-- LOAD MATHJAX -->
+    <script>
+    window.MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      svg: { fontCache: 'local' },
+      startup: { typeset: false }
+    };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+    <style>
+        /* --- CORE VARIABLES & RESET --- */
+        :root{
+            --main-font:'Roboto', Tahoma, Geneva, Verdana, sans-serif;
+            --primary-color:#182a69;
+            --secondary-color:#a0a0ff;
+            --bg-gradient-start: #182a69;
+            --bg-gradient-end: #02133e;
+            --input-bg: #f0f0f5;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--main-font); }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%);
+            min-height: 100vh;
+            color: #333;
+            margin: 20px;
+            padding: 0;
+            font-family: var(--main-font);
+            overflow-x: hidden;
+        }
+
+        /* --- NAVBAR STYLES --- */
+        .topnav {
+            position: fixed; top: 10px; left: 20px; right: 20px;
+            border-radius: 15px; padding: 10px 20px; z-index: 999;
+            display: flex; justify-content: space-between; align-items: center;
+            background-color: #182a6995; backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .nav-left { display: flex; align-items: center; gap: 15px; }
+        
+        /* Circular Logo */
+        .nav-logo {
+            width: 36px; height: 36px; 
+            background: #fff; 
+            border-radius: 50%; 
+            object-fit: contain;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; color: var(--primary-color);
+            border: 2px solid white;
+        }
+
+        .nav-title { color: white; font-size: 1.2rem; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
+        .nav-title a { color: white; text-decoration: none; }
+        
+        .nav-right { display: flex; gap: 5px; align-items: center; }
+        
+        .topnav a, .dropbtn { 
+            color: white; text-decoration: none; padding: 10px 15px; 
+            border-radius: 8px; transition: all 0.3s ease; font-weight: 500; 
+            font-size: 1rem; border:none; background: transparent; cursor: pointer; 
+            font-family: var(--main-font);
+        }
+        .topnav a:hover, .dropdown:hover .dropbtn { background: var(--primary-color); transform: translateY(-2px); }
+
+        /* Dropdown */
+        .dropdown { position: relative; display: inline-block; }
+        .dropdown-content {
+            display: none; position: absolute; right: 0;
+            background-color: #02133e; min-width: 200px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1000; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
+            overflow: hidden; margin-top: 0px;
+        }
+        .dropdown-content::before {
+            content: "";
+            display: block;
+            position: absolute;
+            top: -20px; /* Move up to overlap the gap */
+            left: 0;
+            width: 100%;
+            height: 20px; /* Height sufficient to bridge the gap */
+            background: transparent; /* Keep it invisible */
+        }
+        .dropdown-content a { color: white; padding: 12px 16px; text-decoration: none; display: block; text-align: left; }
+        .dropdown:hover .dropdown-content { display: block; }
+        .dropdown-content a:hover { background-color: var(--primary-color); transform: none; }
+
+        /* --- MOBILE SIDE NAV (The Slide-in Menu) --- */
+        .sidenav {
+            height: 100%; width: 0; position: fixed; z-index: 2000;
+            top: 0; left: 0; background-color: #182a69; 
+            overflow-x: hidden; transition: 0.5s; padding-top: 60px;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.5);
+        }
+
+        .sidenav a, .sidenav .sidenav-header {
+            padding: 8px 8px 8px 32px; text-decoration: none;
+            font-size: 1.2rem; color: #f1f1f1; display: block;
+            transition: 0.3s; font-family: var(--main-font);
+        }
+
+        .sidenav a:hover { color: var(--secondary-color); background: rgba(255,255,255,0.1); }
+
+        /* Close Button (Cross) */
+        .sidenav .closebtn {
+            position: absolute; top: 15px; right: 20px;
+            font-size: 24px; margin-left: 0; padding: 0;
+        }
+        .sidenav .closebtn:hover { background: none; color: #ccc; }
+
+        .sidenav-divider { border-top: 1px solid rgba(255,255,255,0.2); margin: 10px 20px; }
+        .sidenav-subitem { font-size: 1rem !important; padding-left: 50px !important; opacity: 0.9; }
+
+        /* Hamburger Icon */
+        .hamburger {
+            display: none; font-size: 28px; cursor: pointer;
+            color: white; margin-right: 15px; user-select: none;
+        }
+
+        /* --- RULER SPECIFIC STYLES --- */
+        .container { max-width: 1200px; margin: 100px auto 40px; padding: 20px; }
+
+        .action-area {
+            display: grid; grid-template-columns: 2fr 1fr; gap: 30px;
+            margin-bottom: 40px; min-height: 350px;
+        }
+
+        /* Settings */
+        .settings-container { display: flex; flex-direction: column; gap: 20px; height: 100%; }
+        .setting-card {
+            background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px; padding: 20px; color: white; backdrop-filter: blur(5px);
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .setting-card h3 { margin: 0 0 10px 0; font-size: 1.1rem; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; color: white; }
+        .input-group { margin-bottom: 10px; }
+        .input-group label { display: block; font-size: 0.9rem; margin-bottom: 5px; color: #ddd; }
+        .form-control {
+            width: 100%; padding: 8px 10px; border-radius: 8px; border: none;
+            background: var(--input-bg); font-family: var(--main-font); box-sizing: border-box;
+        }
+        textarea.form-control {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .checkbox-group { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer; color: white;}
+        .checkbox-group input { width: 20px; height: 20px; cursor: pointer; }
+
+        /* Animation Classes */
+        .collapsible-wrapper {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0, 1, 0, 1), opacity 0.5s ease-in-out;
+        }
+        .collapsible-wrapper.open {
+            max-height: 800px; 
+            opacity: 1;
+            transition: max-height 0.5s ease-in-out, opacity 0.5s ease-in-out;
+        }
+
+        /* Action Button */
+        .big-action-btn {
+            background: white; border-radius: 20px; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); border: none; width: 100%; height: 100%; padding: 40px;
+        }
+        .big-action-btn:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4); background: #fdfdfd; }
+        .plus-icon { font-size: 6rem; color: var(--primary-color); line-height: 1; margin-bottom: 10px; }
+        .action-label { font-size: 1.5rem; color: #182a69; font-weight: bold; text-align: center; }
+
+        /* Preview */
+        .projects-header { color: white; font-size: 2rem; margin-bottom: 25px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+        .preview-area {
+            background: white; border-radius: 15px; padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); min-height: 200px;
+            display: flex; flex-direction: column; align-items: center; overflow: auto;
+        }
+        /* SVG Display */
+        svg { border: 1px dashed #ccc; background-color: white; margin-top: 10px; display: block; }
+
+        /* Footer */
+                /* Footer */
+        .footer-row-1 {
+  background-color: #02133e;
+font-family: Roboto, sans-serif;
+font-size: 12px ;
+display: flex; /* Use flexbox for layout */
+flex-direction: column;
+  justify-content: center; /* Center items horizontally */
+  align-items: center; /* Center items vertically */
+  padding: 0 0;
+gap: 0px;
+border-radius: 10px;
+
+border-bottom: none;
+position: relative;
+bottom:0;
+}
+.footer-row-container {
+    margin: 0 auto;
+    padding: 8px 20px;
+    align-items: center;
+    border-radius: 10px;
+    text-align: center;
+    flex-wrap: wrap;
+
+}
+.footer-row-1 nav {
+  display: flex;
+  justify-content: center;
+flex-wrap: wrap;
+  gap: 25px;
+border-bottom: None;
+padding: 8px;}
+
+        
+.footer-row-1 a {
+  color: #f9f8ff !important;
+  text-decoration: underline !important;
+  font-family: Roboto, sans-serif;
+font-size: 12px ;
+  transition: color 0.3s ease;
+  white-space: nowrap;
+}
+.footer-row-1 p{
+color: #f9f8ff;
+    justify-content: center;
+  font-family: Roboto, sans-serif;
+font-size: 9px ;
+  padding:0;
+margin:0;
+white-space: nowrap;
+
+}
+
+.footer-row-1 a:hover {
+  color: #d8dce8;
+}
+        /* --- MEDIA QUERIES --- */
+        @media (max-width: 768px) {
+            .action-area { grid-template-columns: 1fr; }
+            
+            /* Navbar Mobile Changes */
+            .topnav { flex-direction: row; justify-content: flex-start; }
+            .nav-right { display: none; } /* Hide Desktop Menu */
+            .hamburger { display: block; } /* Show Burger */
+            
+            .container { margin-top: 110px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M8HF2H2T"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+
+    <!-- Mobile Sidenav -->
+    <div id="mySidenav" class="sidenav">
+        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+        <a href="index.html">Home</a>
+        <a href="editor_5.8.html">Editor</a>
+        <div class="sidenav-divider"></div>
+        <span class="sidenav-header" style="color:#aaa; font-size:0.9rem; padding-left:32px;">GENERATORS</span>
+        <a href="advent_calendar.html" class="sidenav-subitem">Advent Calendar</a>
+        <a href="chessboard.html" class="sidenav-subitem">Chessboard</a>
+        <a href="puzzle.html" class="sidenav-subitem">Puzzle</a>
+        <a href="ruler.html" class="sidenav-subitem">Ruler Generator</a>
+    </div>
+
+    <!-- Main Navbar -->
+    <nav class="topnav">
+        <!-- Hamburger Menu (Mobile Only) -->
+        <span class="hamburger" onclick="openNav()">&#9776;</span>
+
+        <div class="nav-left">
+            <img src="favicon.png" alt="Logo" class="nav-logo" onerror="this.style.display='none'">
+            <span class="nav-title"><a href="index.html">VectorCutter - Old Lane 17</a></span>
+        </div>
+        
+        <!-- Desktop Links -->
+        <div class="nav-right">
+            <a href="index.html">Home</a>
+            <a href="editor_5.8.html" target="_blank">Editor</a>
+            <div class="dropdown">
+                <button class="dropbtn">Generators ▼</button>
+                <div class="dropdown-content">
+                    <a href="advent_calendar.html" target="_blank">Advent Calendar</a>
+                    <a href="chessboard.html" target="_blank">Chessboard</a>
+                    <a href="puzzle.html" target="_blank">Puzzle</a>
+                    <a href="ruler.html" target="_blank">Ruler</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <div class="action-area">
+            
+            <!-- Settings Column -->
+            <div class="settings-container">
+                
+                <!-- 1. Dimensions & Unit -->
+                <div class="setting-card">
+                    <h3>📏 Base Dimensions</h3>
+                    <div class="input-group">
+                        <label>Base Unit System</label>
+                        <select id="unit_system" class="form-control" onchange="updateUnitPresets()">
+                            <option value="cm">Metric (Centimeters/Millimeters)</option>
+                            <option value="in">Imperial (Inches/16ths)</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Total Length (mm)</label>
+                        <input type="number" id="total_length" class="form-control" value="100">
+                    </div>
+                    
+                    <div style="display: flex; gap:10px;">
+                        <div class="input-group" style="flex:1;">
+                            <label>Ticks per Unit</label>
+                            <input type="number" id="ticks_per_unit" class="form-control" value="10">
+                        </div>
+                        <div class="input-group" style="flex:1;">
+                            <label>Tick Gap (mm)</label>
+                            <input type="number" id="base_tick_gap" class="form-control" value="1">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Visuals -->
+                <div class="setting-card">
+                    <h3>🎨 Mark Design</h3>
+                    <div class="input-group">
+                        <label>Font Style (MathJax)</label>
+                        <select id="font_family" class="form-control">
+                            <option value="sans-serif">Sans Serif (Arial-like)</option>
+                            <option value="serif">Serif (Times-like)</option>
+                            <option value="monospace">Typewriter (Courier-like)</option>
+                            <option value="bold">Bold</option>
+                        </select>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+                        <div class="input-group">
+                            <label>Major Ht</label>
+                            <input type="number" id="h_major" class="form-control" value="10">
+                        </div>
+                        <div class="input-group">
+                            <label>Half Ht</label>
+                            <input type="number" id="h_mid" class="form-control" value="6">
+                        </div>
+                        <div class="input-group">
+                            <label>Small Ht</label>
+                            <input type="number" id="h_minor" class="form-control" value="3">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Joke / Customization -->
+                <div class="setting-card">
+                    <h3>🃏 Customization & Pranks</h3>
+                    
+                    <!-- Spacing -->
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="enable_custom_dist" onchange="toggleCollapsible('custom_dist_wrapper', 'enable_custom_dist', populateCustomDistances)">
+                        <label for="enable_custom_dist">Customize Mark Distances</label>
+                    </div>
+                    <div id="custom_dist_wrapper" class="collapsible-wrapper">
+                        <div style="margin: 5px 0 15px 10px; padding-left: 10px; border-left: 2px solid rgba(255,255,255,0.3);">
+                            <label style="font-size: 0.8rem; color:#ccc;">Comma separated values (mm) for the gap between each individual tick:</label>
+                            <textarea id="custom_dist_array" class="form-control"></textarea>
+                            <small style="color:#a0a0ff; cursor:pointer;" onclick="populateCustomDistances()">Reset to Standard</small>
+                        </div>
+                    </div>
+
+                    <!-- Numbering -->
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="enable_custom_nums" onchange="toggleCollapsible('custom_nums_wrapper', 'enable_custom_nums', populateCustomNumbers)">
+                        <label for="enable_custom_nums">Customize Number Values</label>
+                    </div>
+                    <div id="custom_nums_wrapper" class="collapsible-wrapper">
+                        <div style="margin: 5px 0 15px 10px; padding-left: 10px; border-left: 2px solid rgba(255,255,255,0.3);">
+                            <label style="font-size: 0.8rem; color:#ccc;">Comma separated numbers for the Major marks (Starting at 0):</label>
+                            <textarea id="custom_nums_array" class="form-control"></textarea>
+                            <small style="color:#a0a0ff; cursor:pointer;" onclick="populateCustomNumbers()">Reset to Standard</small>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Action Button -->
+            <button class="big-action-btn" onclick="generateRuler()">
+                <div class="plus-icon">📏</div>
+                <div class="action-label">Generate Ruler</div>
+            </button>
+        </div>
+
+        <h2 class="projects-header">Live Preview</h2>
+        <div class="preview-area" id="preview-container">
+            <p style="color:#888;">Configure dimensions and click Generate...</p>
+        </div>
+
+    </div>
+
+    <div class='footer-row footer-row-1'>
+        <div class='footer-row-container' style="background-color:#182a69; width:100%">
+            <nav>
+                <a href='about.html'>About</a>  
+                <a href = "privacy-policies.html" >Privacy Policies </a>
+                <a href = "terms-of-service.html"> Terms of Service</a>
+                <a href = "legal-notice.html"> Legal Notice</a>
+                <a href='https://www.oldlane17.com/p/contact.html'>Contact</a> 
+                <a href="#" data-cc="show-preferencesModal">Cookie Settings</a>
+                <a href = "https://info.oldlane17.com/faq" >FAQ </a>
+                <a href = "https://info.oldlane17.com/social-media" >Social media </a>
+            </nav>
+        </div>
+        <div class='footer-row-container' style="background-color:#02133e; width:100%">
+            <p>© Copyright 2024-2026 Old Lane 17</p>
+        </div>
+    </div>
+
+    <script>
+        // --- MOBILE NAV LOGIC ---
+        function openNav() {
+            document.getElementById("mySidenav").style.width = "250px";
+        }
+        function closeNav() {
+            document.getElementById("mySidenav").style.width = "0";
+        }
+
+        // --- UI UTILS ---
+        function toggleCollapsible(wrapperId, checkboxId, populateFunc) {
+            const wrapper = document.getElementById(wrapperId);
+            const checkbox = document.getElementById(checkboxId);
+            
+            if (checkbox.checked) {
+                if(populateFunc) populateFunc();
+                wrapper.classList.add("open");
+            } else {
+                wrapper.classList.remove("open");
+            }
+        }
+
+        function updateUnitPresets() {
+            const sys = document.getElementById('unit_system').value;
+            const ticksInput = document.getElementById('ticks_per_unit');
+            const gapInput = document.getElementById('base_tick_gap');
+            
+            if(sys === 'cm') {
+                ticksInput.value = 10;
+                gapInput.value = 1; 
+            } else if (sys === 'in') {
+                ticksInput.value = 16;
+                gapInput.value = 1.5875;
+            }
+        }
+
+        function populateCustomDistances() {
+            const length = parseFloat(document.getElementById('total_length').value);
+            const gap = parseFloat(document.getElementById('base_tick_gap').value);
+            const count = Math.ceil(length / gap);
+            let arr = [];
+            for(let i=0; i<count; i++) arr.push(gap);
+            document.getElementById('custom_dist_array').value = arr.join(', ');
+        }
+
+        function populateCustomNumbers() {
+            const length = parseFloat(document.getElementById('total_length').value);
+            const gap = parseFloat(document.getElementById('base_tick_gap').value);
+            const ticksPerUnit = parseInt(document.getElementById('ticks_per_unit').value);
+            const totalTicks = Math.ceil(length / gap);
+            const numCount = Math.floor(totalTicks / ticksPerUnit) + 1;
+            let arr = [];
+            for(let i=0; i<numCount; i++) arr.push(i);
+            document.getElementById('custom_nums_array').value = arr.join(', ');
+        }
+
+
+        // --- ENGINE ---
+        function generateRuler() {
+            // Check if MathJax is ready
+            if (typeof MathJax === 'undefined' || !MathJax.tex2svg) {
+                alert("MathJax is still loading. Please wait a moment and try again.");
+                return;
+            }
+
+            const totalLen = parseFloat(document.getElementById('total_length').value);
+            const ticksPerUnit = parseInt(document.getElementById('ticks_per_unit').value);
+            let baseGap = parseFloat(document.getElementById('base_tick_gap').value);
+            
+            const hMajor = parseFloat(document.getElementById('h_major').value);
+            const hMid = parseFloat(document.getElementById('h_mid').value);
+            const hMinor = parseFloat(document.getElementById('h_minor').value);
+            const fontStyle = document.getElementById('font_family').value;
+            
+            const useCustomDist = document.getElementById('enable_custom_dist').checked;
+            const useCustomNums = document.getElementById('enable_custom_nums').checked;
+
+            let distArray = [];
+            if (useCustomDist) {
+                const raw = document.getElementById('custom_dist_array').value;
+                distArray = raw.split(',').map(s => parseFloat(s.trim())).filter(n => !isNaN(n));
+            }
+
+            let numsArray = [];
+            if (useCustomNums) {
+                const raw = document.getElementById('custom_nums_array').value;
+                numsArray = raw.split(',').map(s => s.trim());
+            }
+
+            // Typography Config
+            const textOffset = 2; // Gap between tick and number
+            const numberHeightMm = 4; // Desired physical height of numbers in mm
+            
+            // Total height calculation
+            const svgHeight = hMajor + textOffset + numberHeightMm; 
+            
+            let svgContent = "";
+            let currentX = 0;
+            let lastValidX = 0;
+            let tickIndex = 0;
+            let majorCount = 0;
+
+            // Track max width of numbers to calculate padding
+            let maxNumberHalfWidth = 0.5; 
+
+            let keepGoing = true;
+            
+            while (keepGoing) {
+                // Bounds Check
+                if (!useCustomDist && currentX > totalLen + 0.001) {
+                    keepGoing = false;
+                    break;
+                }
+
+                // Determine Tick Height
+                let height = hMinor;
+                let isMajor = (tickIndex % ticksPerUnit === 0);
+                let isMid = (tickIndex % (ticksPerUnit/2) === 0);
+
+                if (isMajor) height = hMajor;
+                else if (isMid) height = hMid;
+
+                // Draw Tick Line
+                svgContent += `<line x1="${currentX.toFixed(3)}" y1="0" x2="${currentX.toFixed(3)}" y2="${height}" stroke="black" stroke-width="0.5" />`;
+
+                // Draw Number if Major (Using MathJax Paths)
+                if (isMajor) {
+                    let labelText = majorCount.toString();
+                    if (useCustomNums) {
+                        labelText = (majorCount < numsArray.length) ? numsArray[majorCount] : "";
+                    }
+
+                    if(labelText !== "") {
+                        // 1. Prepare TeX string based on style
+                        let texString = labelText;
+                        if(fontStyle === 'sans-serif') texString = `\\mathsf{${labelText}}`;
+                        else if(fontStyle === 'serif') texString = `\\mathrm{${labelText}}`;
+                        else if(fontStyle === 'monospace') texString = `\\mathtt{${labelText}}`;
+                        else if(fontStyle === 'bold') texString = `\\mathbf{${labelText}}`;
+
+                        // 2. Generate SVG DOM using MathJax
+                        try {
+                            const mjNode = MathJax.tex2svg(texString);
+                            const mjSvg = mjNode.querySelector('svg');
+
+                            // --- FLATTENING LOGIC ---
+                            const defs = mjSvg.querySelector('defs');
+                            if (defs) {
+                                const uses = mjSvg.querySelectorAll('use');
+                                uses.forEach(use => {
+                                    // Get ID
+                                    const href = use.getAttribute('xlink:href') || use.getAttribute('href');
+                                    if (!href) return;
+                                    const id = href.replace('#', '');
+                                    
+                                    // Find original path
+                                    const originalPath = defs.querySelector(`[id="${id}"]`);
+                                    
+                                    if (originalPath) {
+                                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                                        path.setAttribute('d', originalPath.getAttribute('d'));
+                                        
+                                        // Handle position and transform
+                                        const x = use.getAttribute('x') || 0;
+                                        const y = use.getAttribute('y') || 0;
+                                        let transform = use.getAttribute('transform') || '';
+                                        
+                                        // Merge x/y into transform
+                                        if (x != 0 || y != 0) {
+                                            transform = `translate(${x} ${y}) ${transform}`;
+                                        }
+                                        
+                                        if (transform) path.setAttribute('transform', transform.trim());
+                                        
+                                        // Force Fill Black for Laser
+                                        path.setAttribute('fill', 'black');
+                                        path.setAttribute('stroke', 'none');
+                                        
+                                        use.parentNode.replaceChild(path, use);
+                                    }
+                                });
+                                // Remove defs after extraction
+                                defs.remove();
+                            }
+                            // --- END FLATTENING ---
+                            
+                            // 3. Extract ViewBox to calculate scaling
+                            const viewBoxStr = mjSvg.getAttribute('viewBox'); // "min-x min-y width height"
+                            if(viewBoxStr) {
+                                const vbParts = viewBoxStr.split(' ').map(parseFloat);
+                                const vbMinX = vbParts[0];
+                                const vbMinY = vbParts[1];
+                                const vbWidth = vbParts[2];
+                                const vbHeight = vbParts[3];
+                                
+                                // Calculate Scale Factor (MathJax Units -> Millimeters)
+                                const scaleFactor = numberHeightMm / vbHeight;
+                                
+                                // Calculate Real Dimensions
+                                const finalW = vbWidth * scaleFactor;
+                                
+                                if ((finalW / 2) > maxNumberHalfWidth) {
+                                    maxNumberHalfWidth = finalW / 2;
+                                }
+
+                                // 4. Coordinate Transformation
+                                // We need to Center the number on currentX
+                                const transX = currentX - (finalW / 2);
+                                const transY = hMajor + textOffset;
+
+                                // 5. Create Group Wrapper instead of Nested SVG
+                                // We translate to position, Scale, then translate back by the viewBox origin
+                                const transformCmd = `translate(${transX.toFixed(3)}, ${transY.toFixed(3)}) scale(${scaleFactor.toFixed(5)}) translate(${-vbMinX}, ${-vbMinY})`;
+
+                                const innerContent = mjSvg.innerHTML;
+                                
+                                svgContent += `
+                                    <g transform="${transformCmd}">
+                                        ${innerContent}
+                                    </g>
+                                `;
+                            }
+                        } catch(e) {
+                            console.error("MathJax Error:", e);
+                        }
+                    }
+                    majorCount++;
+                }
+
+                lastValidX = currentX;
+
+                // Step Forward
+                let step = baseGap;
+                if (useCustomDist) {
+                    if (tickIndex < distArray.length) {
+                        step = distArray[tickIndex];
+                    } else {
+                        keepGoing = false;
+                    }
+                }
+
+                currentX += step;
+                tickIndex++;
+
+                // Safety break
+                if (tickIndex > 10000) keepGoing = false;
+            }
+
+            // Draw Top Baseline
+            svgContent += `<line x1="0" y1="0" x2="${lastValidX.toFixed(3)}" y2="0" stroke="black" stroke-width="0.5" />`;
+
+            // --- PADDING CALCULATION ---
+            const sidePadding = maxNumberHalfWidth + 0.5; 
+            const viewboxMinX = -sidePadding;
+            const totalSvgWidth = lastValidX + (sidePadding * 2);
+
+            // Final SVG wrapper
+            const finalSvg = `
+            <svg xmlns="http://www.w3.org/2000/svg" 
+                 xmlns:xlink="http://www.w3.org/1999/xlink"
+                 viewBox="${viewboxMinX.toFixed(3)} 0 ${totalSvgWidth.toFixed(3)} ${svgHeight}" 
+                 width="${totalSvgWidth.toFixed(3)}mm" 
+                 height="${svgHeight}mm">
+                ${svgContent}
+            </svg>
+            `;
+
+            const container = document.getElementById('preview-container');
+            saveGeneratedProjectToDashboard(finalSvg, "Ruler")
+            container.innerHTML = finalSvg;
+
+            // Update Download Link
+            const existingLink = document.getElementById('dl-link');
+            if(existingLink) existingLink.remove();
+
+            const blob = new Blob([finalSvg], {type: 'image/svg+xml'});
+            const url = URL.createObjectURL(blob);
+            
+            const dlBtn = document.createElement('a');
+            dlBtn.id = 'dl-link';
+            dlBtn.href = url;
+            dlBtn.download = `ruler_path_${parseInt(totalLen)}mm.svg`;
+            dlBtn.style.marginTop = "20px";
+            dlBtn.style.color = "#182a69";
+            dlBtn.style.fontWeight = "bold";
+            dlBtn.innerText = "⬇ Click here to Download SVG";
+            
+            container.appendChild(dlBtn);
+        }
+        
+        
+        function saveGeneratedProjectToDashboard(svgString, baseName) {
+            const projects = JSON.parse(localStorage.getItem('vc_projects') || '[]');
+            
+            const newProject = {
+                id: Date.now(),
+                name: baseName,
+                type: 'generator',
+                content: svgString
+            };
+
+            projects.push(newProject);
+            localStorage.setItem('vc_projects', JSON.stringify(projects));
+        }
+
+    </script>
+</body>
+</html>
