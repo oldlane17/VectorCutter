@@ -1,0 +1,17 @@
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+
+/editor/css/*
+  Cache-Control: public, max-age=86400
+
+/editor/js/*
+  Cache-Control: public, max-age=86400
+
+/components/*
+  Cache-Control: public, max-age=86400
+
+/*.svg
+  Content-Type: image/svg+xml; charset=utf-8
+  Cache-Control: public, max-age=86400

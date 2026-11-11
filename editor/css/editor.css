@@ -1,0 +1,1376 @@
+/* ==========================================================================
+   VectorCutter - SVG Editor Stylesheet
+   Extracted from editor_5.8.html
+   ========================================================================== */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1e1e1e;
+            color: white;
+            overflow: hidden;
+            user-select: none; /* Prevent text selection */
+            -webkit-user-select: none; /* Safari */
+            -moz-user-select: none; /* Firefox */
+            -ms-user-select: none; /* IE/Edge */
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Laser Mode Toggle */
+        .laser-mode-toggle {
+            position: absolute;
+            top: 5px;
+            right: 20px;
+            z-index: 1000;
+            background: #2d2d30;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .laser-mode-toggle:hover {
+            background: #3c3c3c;
+        }
+
+        .laser-mode-toggle.active {
+            background: #c72222;
+            border-color: #ff4444;
+        }
+
+        .laser-mode-toggle .toggle-switch {
+            width: 36px;
+            height: 18px;
+            background: #5a5a5a;
+            border-radius: 9px;
+            position: relative;
+            transition: all 0.2s;
+        }
+
+        .laser-mode-toggle.active .toggle-switch {
+            background: #ff4444;
+        }
+
+        .laser-mode-toggle .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: all 0.2s;
+        }
+
+        .laser-mode-toggle.active .toggle-switch::after {
+            left: 20px;
+        }
+
+        /* Menu Bar Styles */
+        .menu-bar {
+            background: #2d2d30;
+            border-bottom: 1px solid #3e3e42;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            height: 30px;
+            font-size: 13px;
+            flex-shrink: 0;
+            user-select: none;
+        }
+
+        .menu-item {
+            position: relative;
+            padding: 5px 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .menu-item:hover {
+            background: #3c3c3c;
+        }
+
+        .menu-item:hover .dropdown {
+            display: block;
+        }
+
+        .dropdown {
+            display: none;
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: #2d2d30;
+            border: 1px solid #3e3e42;
+            border-top: none;
+            min-width: 180px;
+            z-index: 100;
+        }
+
+        .dropdown-item {
+            padding: 8px 20px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dropdown-item:hover {
+            background: #094771;
+        }
+
+        .dropdown-item.disabled {
+            color: #5a5a5a;
+            cursor: default;
+        }
+
+        .dropdown-item.disabled:hover {
+            background: #2d2d30;
+        }
+
+        .shortcut {
+            font-size: 11px;
+            color: #969696;
+        }
+
+        .separator {
+            height: 1px;
+            background: #3e3e42;
+            margin: 4px 0;
+        }
+
+        /* Toolbar Styles */
+        .toolbar {
+            background: #252526;
+            border-bottom: 1px solid #3e3e42;
+            padding: 5px 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            height: 40px;
+            flex-shrink: 0;
+        }
+
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-right: 15px;
+            border-right: 1px solid #3e3e42;
+        }
+
+        .toolbar-group:last-child {
+            border-right: none;
+        }
+
+        .toolbar-button {
+            background: #2d2d30;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            padding: 6px 12px;
+            color: #cccccc;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            transition: all 0.2s;
+            min-width: 80px;
+            justify-content: center;
+        }
+
+        .toolbar-button:hover {
+            background: #37373d;
+            border-color: #007acc;
+        }
+
+        .toolbar-button.active {
+            background: #094771;
+            border-color: #007acc;
+        }
+
+        /* Add this to your existing CSS, preferably near .toolbar-button styles */
+
+        .toolbar-button img {
+            height: 14px;  /* Matches the previous font-icon size */
+            width: 14px;   /* maintain aspect ratio */
+            object-fit: contain;
+            pointer-events: none;
+            /* 
+            Filter Logic: 
+            1. brightness(0) turns it black. 
+            2. invert(100%) turns black to white.
+            This ensures the icon is white regardless of its original color.
+            */
+            filter: brightness(0) invert(100%);
+            
+            /* Optional: Slight transparency for inactive state to match text color */
+            opacity: 0.8; 
+            transition: opacity 0.2s;
+        }
+
+        /* Ensure full opacity when the button is active or hovered */
+        .toolbar-button:hover img,
+        .toolbar-button.active img {
+            opacity: 1;
+        }
+
+        /* Hide the old <i> tags if you keep them, or simply remove them from HTML */
+        .toolbar-button i {
+            display: none !important;
+        }
+
+        .toolbar-button i {
+            font-style: normal;
+            font-size: 14px;
+        }
+
+        .toolbar-separator {
+            width: 1px;
+            height: 20px;
+            background: #3e3e42;
+            margin: 0 5px;
+        }
+
+        .toolbar-label {
+            color: #969696;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        /* Main content area - fixed layout */
+        .content-area {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 80px; /* Narrow width for icons only */
+            background: #252526;
+            border-right: 1px solid #3e3e42;
+            padding: 10px 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Center icons horizontally */
+            overflow-y: auto;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            display: none;
+        }
+
+
+        .tool-group {
+            width: 100%;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #3e3e42; /* Separator line */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .tool-group:last-child {
+            border-bottom: none;
+        }
+
+        .tool-group h3 {
+            color: #cccccc;
+            margin-bottom: 15px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .tools {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+            align-items: center;
+        }
+
+                /* --- ICON BUTTON STYLES --- */
+        .tool {
+            width: 40px;
+            height: 40px;
+            padding: 8px; /* Padding around the icon */
+            background: #2d2d30;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+            position: relative; /* Essential for tooltip positioning */
+            transition: all 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .tool img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+            
+            /* 1. FORCE WHITE (Default State) */
+            /* This specific filter combination turns any color icon into pure white */
+            filter: brightness(0) saturate(100%) invert(100%);
+            transition: filter 0.2s;
+        }
+
+        .tool:hover img,
+        .tool.active img {
+            /* This specific filter sequence turns black/white into #007acc Blue */
+            filter: invert(30%) sepia(98%) saturate(1628%) hue-rotate(190deg) brightness(98%) contrast(101%);
+        }
+
+        .tool:hover {
+            background: #3e3e42;
+            border-color: #555;
+            z-index:999999;
+        }
+
+        .tool.active {
+            background: #094771;
+            border-color: #007acc;
+        }
+
+        /* --- HOVER TOOLTIP LOGIC --- */
+        
+
+
+
+
+        
+        /* Adjust Context Menu / Layout for narrower sidebar */
+        @media (max-width: 1200px) {
+            .context-menu { width: 240px; }
+        }
+
+        .properties {
+            margin-top: 20px;
+        }
+
+        .property-group {
+            margin-bottom: 15px;
+        }
+
+        .property-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #969696;
+        }
+
+        .coord-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .coord-inputs input {
+            width: 100%;
+        }
+
+        input[type="color"], input[type="number"], select, input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            background: #2d2d30;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            color: white;
+        }
+
+        /* Canvas Area */
+        .canvas-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1e1e1e;
+            overflow: hidden;
+        }
+
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: #1e1e1e;
+        }
+
+        
+        .canvas-container.panning {
+            cursor: grabbing;
+        }
+
+        #svgCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display:block;
+            background: rgba(255, 255, 255, 0.05); /* Very transparent white */
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .axis-line {
+            pointer-events: none;
+        }
+
+        .grid-label, .axis-label {
+            pointer-events: none;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        .axis-label {
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .grid-group, .axes-group {
+            pointer-events: none;
+        }
+        .selection-group {
+            pointer-events: all;
+            z-index: 100;
+        }
+
+        /* Selection handles */
+        .selection-handle {
+            fill: #007acc;
+            stroke: white;
+            stroke-width: 1;
+            cursor: move;
+            r: 6;
+        }
+
+        .selection-handle.resize {
+            cursor: nwse-resize;
+        }
+
+        .selection-handle.resize-n {
+            cursor: ns-resize;
+        }
+
+        .selection-handle.resize-s {
+            cursor: ns-resize;
+        }
+
+        .selection-handle.resize-e {
+            cursor: ew-resize;
+        }
+
+        .selection-handle.resize-w {
+            cursor: ew-resize;
+        }
+
+        .selection-handle.resize-ne {
+            cursor: nesw-resize;
+        }
+
+        .selection-handle.resize-sw {
+            cursor: nesw-resize;
+        }
+
+        .selection-handle.resize-se {
+            cursor: nwse-resize;
+        }
+
+        .selection-handle.resize-nw {
+            cursor: nwse-resize;
+        }
+
+        .selection-handle.rotate {
+            fill: #4CAF50;
+            cursor: grab;
+            r: 8;
+        }
+
+        .selection-rect {
+            fill: none;
+            stroke: #007acc;
+            stroke-width: 1;
+            stroke-dasharray: 5,5;
+            pointer-events: none;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            background: #007acc;
+            padding: 5px 20px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: #252526;
+            padding: 30px;
+            border-radius: 8px;
+            width: 400px;
+            max-width: 90%;
+        }
+
+        .modal h2 {
+            margin-bottom: 20px;
+            color: #cccccc;
+        }
+
+        .modal textarea {
+            width: 100%;
+            height: 200px;
+            background: #1e1e1e;
+            border: 1px solid #3e3e42;
+            color: white;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            resize: vertical;
+        }
+
+        .modal-buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        /* Add to your CSS */
+        .scale-modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .scale-modal {
+            background: #252526;
+            padding: 20px;
+            border-radius: 8px;
+            width: 300px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .scale-modal h3 {
+            margin-bottom: 15px;
+            color: #cccccc;
+            font-size: 16px;
+        }
+
+        .scale-input-group {
+            margin-bottom: 20px;
+        }
+
+        .scale-input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #969696;
+            font-size: 14px;
+        }
+
+        .scale-input-group input {
+            width: 100%;
+            padding: 10px;
+            background: #2d2d30;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            color: white;
+            font-size: 16px;
+            text-align: center;
+        }
+        button{
+            background: #2d2d30;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            padding: 6px 12px;
+            color: #cccccc;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            transition: all 0.2s;
+            min-width: 80px;
+            justify-content: center;
+        }
+        .scale-modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .scale-modal-buttons button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .scale-modal-buttons button:first-child {
+            background: #007acc;
+            color: white;
+        }
+
+        .scale-modal-buttons button:last-child {
+            background: #3e3e42;
+            color: white;
+        }
+
+        .scale-modal-buttons button:hover {
+            opacity: 0.9;
+        }
+
+
+        .selection-rect {
+            fill: none;
+            stroke: #007acc;
+            stroke-width: 1;
+            stroke-dasharray: 5,5;
+            pointer-events: all;
+        }
+
+        .selection-handle {
+            fill: white;
+            stroke: #007acc;
+            stroke-width: 2;
+            cursor: pointer;
+        }
+
+        .selection-handle.rotate {
+            fill: #007acc;
+            cursor: grab;
+        }
+
+        .selection-handle.resize {
+            cursor: nwse-resize;
+        }
+
+        .selection-handle.resize-n, .selection-handle.resize-s {
+            cursor: ns-resize;
+        }
+
+        .selection-handle.resize-e, .selection-handle.resize-w {
+            cursor: ew-resize;
+        }
+        .selection-group {
+            pointer-events: none;
+        }
+
+        .selection-rect {
+            fill: none;
+            stroke: #007acc;
+            stroke-width: 1;
+            stroke-dasharray: 5,5;
+            pointer-events: all;
+        }
+
+        .selection-handle {
+            fill: white;
+            stroke: #007acc;
+            stroke-width: 2;
+            pointer-events: all;
+        }
+
+        .selection-handle.rotate {
+            fill: #007acc;
+            cursor: grab;
+        }
+
+        /* Add this to your CSS */
+        .selection-area {
+            fill: rgba(0, 122, 204, 0.1);
+            stroke: #007acc;
+            stroke-width: 1;
+            stroke-dasharray: 5,5;
+            pointer-events: none;
+        }
+
+        /* In your CSS file */
+        .properties input:focus,
+        .properties textarea:focus,
+        .properties select:focus {
+            border-color: #007acc;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+        }
+
+        /* Context Menu Styles */
+        .context-menu {
+
+            position: relative; /* Required for the resizer positioning */
+            width: 280px;       /* Default width */
+            min-width: 200px;   /* Minimum width */
+            max-width: 600px;   /* Maximum width */
+        
+            background: #252526;
+            border-left: 1px solid #3e3e42;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            flex-shrink: 0;
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;
+        }
+
+        .context-menu::-webkit-scrollbar {
+            display: none;
+        }
+
+
+        .context-menu-header {
+            padding: 20px 20px 15px;
+            border-bottom: 1px solid #3e3e42;
+        }
+
+        .context-menu-header h3 {
+            color: #cccccc;
+            font-size: 14px;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .resizer {
+            width: 5px;
+            height: 100%;
+            background: transparent;
+            position: absolute;
+            left: 0;
+            top: 0;
+            cursor: col-resize; /* or ew-resize */
+            z-index: 1000;
+            transition: background 0.2s;
+        }
+
+        /* Hover effect to show user they can grab it */
+        .resizer:hover, .resizer.active {
+            background: #007acc;
+        }
+
+        .context-properties {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            max-height: 60vh;
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;
+        }
+        .context-properties::-webkit-scrollbar {
+            display:none;
+        }
+
+
+        .context-properties .no-selection {
+            text-align: center;
+            color: #969696;
+            padding: 40px 20px;
+        }
+
+        .context-properties .no-selection p:first-child {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #cccccc;
+        }
+
+        .context-properties .no-selection p:last-child {
+            font-size: 12px;
+        }
+
+        .element-property-group {
+            margin-bottom: 20px;
+        }
+
+        .element-property-group h4 {
+            color: #cccccc;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .element-property {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #3e3e42;
+        }
+
+        .element-property:last-child {
+            border-bottom: none;
+        }
+
+        .element-property .property-label {
+            color: #969696;
+            font-size: 12px;
+        }
+
+        .element-property .property-value {
+            min-width: 80px;
+            text-align: right;
+        }
+
+        .element-property .property-value input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Style for editable properties */
+        .element-property.editable:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+        }
+
+        .element-property .property-value input:focus {
+            border-color: #007acc;
+            outline: none;
+        }
+
+        .elements-list {
+            border-top: 1px solid #3e3e42;
+            height: 40vh;
+            display: flex;
+            flex-direction: column;
+            min-height: 200px;
+        }
+
+        .elements-list-header {
+            padding: 15px 20px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .elements-list-header h3 {
+            color: #cccccc;
+            font-size: 14px;
+            font-weight: 500;
+            margin: 0;
+        }
+
+        .element-count {
+            color: #969696;
+            font-size: 11px;
+            background: #2d2d30;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .elements-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 20px 20px;
+        }
+
+        .elements-container .empty-list {
+            text-align: center;
+            color: #969696;
+            padding: 20px;
+            font-size: 12px;
+        }
+
+        .element-item {
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            background: #2d2d30;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s;
+            font-size: 12px;
+        }
+
+        .element-item:hover {
+            background: #37373d;
+            border-color: #007acc;
+        }
+
+        .element-item.selected {
+            background: #094771;
+            border-color: #007acc;
+        }
+
+        .element-item .element-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #cccccc;
+        }
+
+        .element-item .element-name {
+            color: #cccccc;
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .element-item .element-index {
+            color: #969696;
+            font-size: 10px;
+            margin-left: 8px;
+        }
+
+
+        /* Add these styles to your existing CSS */
+
+        .context-properties input[type="color"] {
+            width: 60px;
+            height: 24px;
+            padding: 2px;
+            cursor: pointer;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            background: #2d2d30;
+        }
+
+        .context-properties input[type="color"]:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .context-properties input[type="color"]::-webkit-color-swatch {
+            border: 1px solid #5a5a5a;
+            border-radius: 3px;
+        }
+
+        .context-properties input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 2px;
+        }
+
+        .context-properties input[type="number"] {
+            width: 70px;
+            padding: 4px 8px;
+            background: #2d2d30;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            color: white;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .context-properties input[type="number"]:focus {
+            border-color: #007acc;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+        }
+
+
+        /* Update content-area to accommodate context menu */
+        .content-area {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .canvas-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #1e1e1e;
+            overflow: hidden;
+        }
+
+        @media (max-width: 1200px) {
+            .sidebar, .context-menu {
+                width: 240px;
+            }
+            
+            .sidebar, .context-properties, .elements-container {
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .sidebar, .context-menu {
+                display: none;
+            }
+            
+            .sidebar.active, .context-menu.active {
+                display: block;
+                position: absolute;
+                z-index: 1000;
+                height: 100%;
+                box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            }
+        }
+
+
+        /* Add these styles to your existing CSS */
+
+        /* Better input styling for context menu */
+        .element-property .property-value input[type="text"] {
+            width: 100%;
+            padding: 6px 8px;
+            background: #2d2d30;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            color: white;
+            font-size: 12px;
+            box-sizing: border-box;
+        }
+
+        .element-property .property-value select {
+            width: 100%;
+            padding: 6px 8px;
+            background: #2d2d30;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            color: white;
+            font-size: 12px;
+            box-sizing: border-box;
+            cursor: pointer;
+        }
+
+        .element-property .property-value select:focus {
+            border-color: #007acc;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+        }
+
+        .element-property .property-value textarea {
+            width: 100%;
+            padding: 8px;
+            background: #2d2d30;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            color: white;
+            font-size: 11px;
+            font-family: monospace;
+            resize: vertical;
+            min-height: 60px;
+            box-sizing: border-box;
+            line-height: 1.4;
+        }
+
+        .element-property .property-value textarea:focus {
+            border-color: #007acc;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+        }
+
+        /* Better number input styling */
+        .element-property .property-value input[type="number"] {
+            width: 80px;
+            padding: 6px 8px;
+            background: #2d2d30;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            color: white;
+            font-size: 12px;
+            text-align: right;
+        }
+
+        /* Color input styling */
+        .element-property .property-value input[type="color"] {
+            width: 60px;
+            height: 30px;
+            padding: 2px;
+            cursor: pointer;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            background: #2d2d30;
+        }
+
+        /* Ensure property-value has proper width */
+        .element-property .property-value {
+            min-width: 100px;
+            text-align: right;
+        }
+
+        .grid-line {
+            pointer-events: none; /* Don't interfere with drawing */
+        }
+        .grid-label {
+            pointer-events: none;
+            user-select: none;
+        }
+        .rotation-center-dot {
+            fill: #007acc !important;
+            stroke: white !important;
+            stroke-width: 2 !important;
+            r: 6 !important;
+            pointer-events: none !important;
+            z-index: 1000 !important;
+            opacity: 1 !important;
+        }
+
+        /* Make sure it's always on top */
+        .selection-group .rotation-center-dot {
+            fill: #007acc !important;
+        }
+
+        /* --- NEW GLOBAL TOOLTIP STYLE --- */
+        #global-tooltip {
+            position: fixed; /* Fixed relative to the viewport, ignoring sidebar scrolling */
+            left: 0;
+            top: 0;
+            background: #252526;
+            border: 1px solid #007acc;
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 9999; /* Ensures it sits on top of Canvas and everything else */
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.1s;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+        }
+
+        #global-tooltip.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+        /* Templates Grid Layout */
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+            overflow-y: auto;
+            padding: 10px;
+            flex: 1; /* Takes remaining height in modal */
+        }
+
+        /* Individual Template Card */
+        .template-card {
+            background: #2d2d30;
+            border: 1px solid #3e3e42;
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .template-card:hover {
+            background: #3e3e42;
+            border-color: #007acc;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        /* --- Add to your <style> block --- */
+
+        /* Generator Card Style - Different Color */
+        .template-card.generator-card {
+            background: #25332e; /* Dark Greenish tint */
+            border-color: #3e5046;
+        }
+
+        .template-card.generator-card:hover {
+            background: #2d4a3e;
+            border-color: #4CAF50; /* Bright Green highlight */
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+
+        .template-card.generator-card .template-name {
+            color: #81c784; /* Light green text */
+        }
+
+        /* Generator Icons (Simple SVG drawing within CSS/HTML) */
+        .generator-icon {
+            width: 60px;
+            height: 60px;
+            fill: none;
+            stroke: #81c784;
+            stroke-width: 2;
+        }
+
+        /* The SVG Preview Image */
+        .template-preview {
+            width: 100%;
+            height: 120px;
+            background: #1e1e1e; /* Darker background for the preview area */
+            border-radius: 4px;
+            margin-bottom: 10px;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .template-preview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+
+            filter: brightness(0) invert(1); 
+        }
+
+        /* Template Name Text */
+        .template-name {
+            color: #cccccc;
+            font-size: 13px;
+            text-align: center;
+            font-weight: 500;
+            word-break: break-word;
+        }
+
+        /* --- Add to your <style> block --- */
+
+        /* Action Button Container */
+        /* --- Add/Replace in your <style> block --- */
+
+/* Action Button Container */
+.element-actions {
+    display: flex;
+    gap: 2px; /* Very tight spacing between the two buttons */
+    margin-left: auto;
+    opacity: 0.4; /* Slightly more transparent when idle */
+    transition: opacity 0.2s;
+    align-items: center; /* Vertically align with text */
+}
+
+.element-item:hover .element-actions {
+    opacity: 1;
+}
+
+/* Individual Action Button */
+/* --- Replace this section in your <style> block --- */
+
+/* Individual Action Button */
+.action-btn {
+    /* FORCE SQUARE DIMENSIONS */
+    width: 20px !important;  /* Fixed small width */
+    height: 20px !important; /* Fixed small height */
+    min-width: 0 !important; /* OVERRIDE global button style */
+    padding: 2px !important; /* Small padding */
+    
+    /* Reset default button styles */
+    background: transparent;
+    border: 1px solid transparent; /* Transparent border to prevent layout shift on hover */
+    border-radius: 3px;
+    cursor: pointer;
+    
+    /* Flex center the icon */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+.action-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* The Icon Images */
+.action-btn img {
+    width: 14px !important;  /* Exact icon size */
+    height: 14px !important; /* Exact icon size */
+    object-fit: contain;
+    pointer-events: none;
+    display: block;
+    
+    /* Color: Light Gray */
+    filter: brightness(0) invert(0.7); 
+}
+
+.action-btn:hover img {
+    /* Color: White on hover */
+    filter: brightness(0) invert(1);
+}
+
+        /* Splitter Dropdown */
+        .splitter-dropdown {
+            position: fixed;
+            background: #252526;
+            border: 1px solid #007acc;
+            border-radius: 4px;
+            padding: 5px 0;
+            z-index: 20000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            min-width: 160px;
+        }
+
+        .splitter-item {
+            padding: 8px 15px;
+            font-size: 12px;
+            color: #cccccc;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .splitter-item:hover {
+            background: #094771;
+        }
+
+        .splitter-item.disabled {
+            color: #555;
+            cursor: default;
+            pointer-events: none;
+        }
+
+        /* Folder Logic */
+        .element-item.is-child {
+            /* Indentation handled via inline style in JS */
+            position: relative;
+        }
+
+        /* Optional: Vertical line for tree structure */
+        .element-item.is-child::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background: #3e3e42;
+        }
+

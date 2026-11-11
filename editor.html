@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VectorCutter - SVG Editor</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" >
+    <!-- ANDROID -->
+	<link href="/favicon.ico" type="image/x-icon" rel='icon' />
+    <!-- iOS -->
+    <link href="/favicon.ico" type="image/x-icon" rel='apple-touch-icon' />
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+    <!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GTM-M8HF2H2T');</script>
+    <!-- End Google Tag Manager -->
+    <!-- Editor Modular Stylesheet -->
+    <link rel="stylesheet" href="editor/css/editor.css">
+</head>
+<body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M8HF2H2T"
+    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+    <div class="container">
+        <!-- Laser Cutting Mode Toggle -->
+        <div class="laser-mode-toggle" id="laserModeToggle">
+            <span>Laser Cutting Mode</span>
+            <div class="toggle-switch"></div>
+        </div>
+
+        <!-- Menu Bar -->
+        <div class="menu-bar">
+            <div class="menu-item">
+                File
+                <div class="dropdown">
+                    <div class="dropdown-item" id="menuNew">New <span class="shortcut">Ctrl+N</span></div>
+                    <div class="dropdown-item" id="menuOpen">Open SVG</div>
+                    <div class="dropdown-item" id="menuSave">Export SVG <span class="shortcut">Ctrl+S</span></div>
+                    <div class="dropdown-item" id="menuDashboardSave">Save to Dashboard</div>
+                    <div class="dropdown-item" id="menuExport">Export PNG</div>
+                    <div class="separator"></div>
+                    <!-- <div class="dropdown-item" id="menuPrint">Print...</div>
+                    <div class="separator"></div> -->
+                    <div class="dropdown-item" id="menuExit">Exit</div>
+                </div>
+            </div>
+            <div class="menu-item">
+                Edit
+                <div class="dropdown">
+                    <div class="dropdown-item" id="menuUndo">Undo <span class="shortcut">Ctrl+Z</span></div>
+                    <div class="dropdown-item" id="menuRedo">Redo <span class="shortcut">Ctrl+Y</span></div>
+                    <div class="separator"></div>
+                    <div class="dropdown-item" id="menuCut">Cut <span class="shortcut">Ctrl+X</span></div>
+                    <div class="dropdown-item" id="menuCopy">Copy <span class="shortcut">Ctrl+C</span></div>
+                    <div class="dropdown-item" id="menuPaste">Paste <span class="shortcut">Ctrl+V</span></div>
+                    <div class="separator"></div>
+                    <div class="dropdown-item" id="menuSelectAll">Select All <span class="shortcut">Ctrl+A</span></div>
+                    <div class="dropdown-item" id="menuClearSelection">Clear Selection</div>
+                </div>
+            </div>
+            <div class="menu-item">
+                Modify
+                <div class="dropdown">
+                    <!-- <div class="dropdown-item" id="menuGroup">Group Elements <span class="shortcut">Ctrl+G</span></div>
+                    <div class="dropdown-item disabled" id="menuUngroup">Ungroup Elements <span class="shortcut">Ctrl+Shift+G</span></div>
+                    <div class="separator"></div> -->
+                    <div class="dropdown-item" id="menuRotate">Rotate Element</div>
+                    <div class="dropdown-item" id="menuScale">Scale Element</div>
+                    <div class="dropdown-item" id="menuFlipH">Flip Horizontal</div>
+                    <div class="dropdown-item" id="menuFlipV">Flip Vertical</div>
+                    <div class="separator"></div>
+                
+                </div>
+            </div>
+            <div class="menu-item">
+                View
+                <div class="dropdown">
+                    <div class="dropdown-item" id="menuZoomIn">Zoom In <span class="shortcut">Ctrl++</span></div>
+                    <div class="dropdown-item" id="menuZoomOut">Zoom Out <span class="shortcut">Ctrl+-</span></div>
+                    <div class="dropdown-item" id="menuResetZoom">Reset Zoom <span class="shortcut">Ctrl+0</span></div>
+                    <div class="separator"></div>
+                    <div class="dropdown-item" id="menuToggleGrid">Toggle Grid <span class="shortcut">Ctrl+G</span></div>
+                    
+                    <div class="separator"></div>
+                    <div class="dropdown-item" id="menuFullscreen">Fullscreen <span class="shortcut">F11</span></div>
+                </div>
+            </div>
+            <div class="menu-item" id="menuSettings">
+                Settings
+            </div>
+            <div class="menu-item">
+                Help
+                <div class="dropdown">
+                    
+                    <div class="dropdown-item" id="menuShortcuts">Keyboard Shortcuts</div>
+                    <div class="dropdown-item" id="menuAbout">About SVG Editor</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <!-- Locate this section inside <div class="toolbar"> -->
+
+            <div class="toolbar-group">
+                <span class="toolbar-label">Canvas Mode:</span>
+                
+                <!-- Updated Select Button -->
+                <button class="toolbar-button active" id="selectModeBtn" data-mode="select">
+                    <img src="sidebar/select.svg" alt="Select Icon"> Select
+                </button>
+                
+                <!-- Updated Pan Button -->
+                <button class="toolbar-button" id="panModeBtn" data-mode="pan">
+                    <img src="sidebar/pan.svg" alt="Pan Icon"> Pan
+                </button>
+            </div>
+            
+            <div class="toolbar-group">
+                <span class="toolbar-label">Grid:</span>
+                <button class="toolbar-button active" id="gridToggleBtn">
+                    <img src="sidebar/grid.svg" alt="Grid"> Grid On
+                </button>
+            </div>
+            
+            <div class="toolbar-group">
+                <span class="toolbar-label">Snap:</span>
+                <button class="toolbar-button" id="snapToggleBtn">
+                    <img src="sidebar/snap.svg" alt="Snap"> Snap Off
+                </button>
+            </div>
+            
+            <div class="toolbar-group">
+                <span class="toolbar-label">Zoom:</span>
+                <button class="toolbar-button" id="zoomInBtn" title="Zoom In">
+                    <img src="sidebar/zoom_in.svg" alt="Zoom In">
+                </button>
+                <button class="toolbar-button" id="zoomOutBtn" title="Zoom Out">
+                    <img src="sidebar/zoom_out.svg" alt="Zoom Out">
+                </button>
+                <button class="toolbar-button" id="zoomResetBtn" title="Reset Zoom">
+                    <img src="sidebar/refresh.svg" alt="Reset"> Reset
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="content-area">
+            <!-- Sidebar -->
+            <!-- Sidebar with Image Icons -->
+            <div class="sidebar">
+                <div class="tool-group">
+                    <div class="tools">
+                        <!-- Select Tool -->
+                        <div class="tool active" data-tool="select" data-title="Select Tool">
+                            <img src="sidebar/select.svg" alt="Select">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tool-group">
+                    <div class="tools">
+                        <!-- Shapes -->
+                        <div class="tool" data-tool="rectangle" data-title="Rectangle">
+                            <img src="sidebar/rectangle.svg" alt="Rectangle">
+                        </div>
+                        <div class="tool" data-tool="circle" data-title="Circle">
+                            <img src="sidebar/circle.svg" alt="Circle">
+                        </div>
+                        <div class="tool" data-tool="ellipse" data-title="Ellipse">
+                            <img src="sidebar/ellipse.svg" alt="Ellipse">
+                        </div>
+                        <div class="tool" data-tool="line" data-title="Line">
+                            <img src="sidebar/line.svg" alt="Line">
+                        </div>
+                        <div class="tool" data-tool="curve" data-title="Curve">
+                            <img src="sidebar/curve.svg" alt="Curve">
+                        </div>
+                        <div class="tool" data-tool="path" data-title="Path Tool">
+                            <img src="sidebar/path.svg" alt="Path">
+                        </div>
+                        <div class="tool" data-tool="text" data-title="Text Tool">
+                            <img src="sidebar/text.svg" alt="Text">
+                        </div>
+                    </div>
+                </div>
+                <div class="tool-group">
+                <div class="tool" id="templatesBtn" data-action="templates" data-title="Templates Library">
+                    <img src="sidebar/templates.svg" alt="Templates">
+                </div>
+                </div>
+
+                <div class="tool-group">
+                    <div class="tools">
+                        <!-- Actions -->
+                        <div class="tool" id="editCodeBtn" data-title="Edit SVG Code">
+                            <img src="sidebar/code.svg" alt="Edit Code">
+                        </div>
+                        <div class="tool" data-action="code" data-title="View Source">
+                            <img src="sidebar/code_blocks.svg" alt="View Source">
+                        </div>
+                    </div>
+                </div>
+                
+            
+
+                <!-- <div class="properties">
+                    
+                    <div class="tool-group">
+                        <h3>UNITS</h3>
+                        <div class="property-group">
+                            <label>Measurement Units</label>
+                            <select id="unitSelector">
+                                <option value="px">Pixels (px)</option>
+                                <option value="mm">Millimeters (mm)</option>
+                                <option value="cm">Centimeters (cm)</option>
+                                <option value="in">Inches (in)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div> -->
+            </div>
+            
+
+            <!-- Main Canvas Area -->
+            <div class="canvas-area">
+                <div class="canvas-container" id="canvasContainer">
+                    <svg id="svgCanvas" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;"></svg>
+                </div>
+
+                <div class="status-bar">
+                    <span id="cursorPos">X: 0, Y: 0</span>
+                    <!-- Inside <div class="status-bar"> -->
+                    <span id="unitInfo">Units: Millimeters (mm) - Drag background to pan | Ctrl+Scroll to zoom</span>
+                </div>
+            </div>
+
+            <!-- Add this after the canvas-area div -->
+            <div class="context-menu">
+                <div id="contextResizer" class="resizer"></div>
+                <div id="propertiesPanel" style="display: flex; flex-direction: column; height: 100%;">
+                    <div class="context-menu-header">
+                        <h3>ELEMENT PROPERTIES</h3>
+                    </div>
+                    <div class="context-properties" id="contextProperties">
+                        <!-- Dynamic content will be inserted here -->
+                        <div class="no-selection">
+                            <p>No element selected</p>
+                            <p>Select an element to view its properties</p>
+                        </div>
+                    </div>
+                    <div class="elements-list">
+                        <div class="elements-list-header">
+                            <h3>ELEMENTS LIST</h3>
+                            <span class="element-count" id="elementCount">0 elements</span>
+                        </div>
+                        <div class="elements-container" id="elementsList">
+                            <!-- Dynamic list of elements will be inserted here -->
+                            <div class="empty-list">
+                                <p>No elements created yet</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Code Editor Panel (Hidden) -->
+                <div id="codeEditorPanel" style="display: none; flex-direction: column; height: 100%; padding: 10px;">
+                    <div class="context-menu-header" style="padding: 10px 0;">
+                        <h3>LIVE CODE EDITOR</h3>
+                    </div>
+                    <textarea id="liveSvgCode" style="flex: 1; width: 100%; background: #1e1e1e; color: #d4d4d4; border: 1px solid #3e3e42; padding: 10px; font-family: monospace; resize: none; margin-bottom: 10px;"></textarea>
+                    <button id="applyCodeBtn" class="toolbar-button" style="width: 100%; justify-content: center; background: #007acc; color: white; border: none;">Apply Changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- </div> -->
+
+    <!-- Code Modal -->
+    <div class="modal" id="codeModal">
+        <div class="modal-content">
+            <h2>SVG Code</h2>
+            <textarea id="svgCode"></textarea>
+            <div class="modal-buttons">
+                <button onclick="closeModal()">Close</button>
+                <button onclick="copyCode()">Copy Code</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content" style="width: 300px;">
+            <h2 style="border-bottom: 1px solid #3e3e42; padding-bottom: 10px; margin-bottom: 20px;">Settings</h2>
+            
+            <div class="property-group" style="margin-bottom: 20px;">
+                <label style="display:block; margin-bottom:10px; color:#ccc;">Measurement Units</label>
+                <!-- ID MUST be 'unitSelector' so existing JS logic works automatically -->
+                <select id="unitSelector" style="width: 100%; padding: 8px; background: #2d2d30; border: 1px solid #3e3e42; color: white; border-radius: 4px;">
+                    <option value="px">Pixels (px)</option>
+                    <!-- ADD 'selected' attribute to the mm option -->
+                    <option value="mm" selected>Millimeters (mm)</option> 
+                    <option value="cm">Centimeters (cm)</option>
+                    <option value="in">Inches (in)</option>
+                </select>
+            </div>
+
+            <div class="modal-buttons">
+                <button onclick="document.getElementById('settingsModal').style.display='none'">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Templates Modal -->
+    <div class="modal" id="templatesModal">
+        <div class="modal-content" style="width: 800px; max-width: 90%; height: 80vh; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #3e3e42; padding-bottom: 15px; margin-bottom: 20px;">
+                <h2 style="margin:0;">Template Library</h2>
+                <button onclick="document.getElementById('templatesModal').style.display='none'" style="background:transparent; border:none; color:white; font-size:20px; cursor:pointer;">&times;</button>
+            </div>
+            
+            <!-- Grid Container -->
+            <div id="templatesGrid" class="templates-grid">
+                <!-- Templates will be injected here by JS -->
+            </div>
+
+            <div class="modal-buttons" style="margin-top: auto; padding-top: 20px;">
+                <button onclick="document.getElementById('templatesModal').style.display='none'">Close</button>
+            </div>
+        </div>
+    </div>
+    <!-- About Modal -->
+    <div class="modal" id="aboutModal">
+        <div class="modal-content">
+            <h2>About SVG Editor</h2>
+            <p style="margin-bottom: 20px; line-height: 1.5;">
+                SVG Editor is a powerful web-based tool for creating and editing Scalable Vector Graphics.<br><br>
+                Features include:
+                <ul style="margin-left: 20px; margin-bottom: 20px;">
+                    <li>Multiple shape tools</li>
+                    <li>Cartesian coordinate system</li>
+                    <li>Real-time property editing</li>
+                    <li>Drag and drop element movement</li>
+                    <li>Movable map with panning</li>
+                    <li>Multiple unit systems (px, mm, cm, in)</li>
+                    <li>Export to SVG and PNG</li>
+                    <li>Resize handles for elements</li>
+                    <li>Rotate functionality</li>
+                    <li>And more...</li>
+                </ul>
+                Version 5.8<br>
+                Thank you for using VectorCutter!<br>
+                Old Lane 17<br><br>
+                Thank you Martina :&#41;
+
+            </p>
+            <div class="modal-buttons">
+                <button onclick="closeAboutModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    
+
+    <!-- SVG Editor Modular Scripts -->
+    <script src="editor/js/editor-core.js"></script>
+    <script src="editor/js/editor-canvas.js"></script>
+    <script src="editor/js/editor-tools.js"></script>
+    <script src="editor/js/editor-selection.js"></script>
+    <script src="editor/js/editor-transform.js"></script>
+    <script src="editor/js/editor-properties.js"></script>
+    <script src="editor/js/editor-elements-tree.js"></script>
+    <script src="editor/js/editor-laser-mode.js"></script>
+    <script src="editor/js/editor-export.js"></script>
+    <script src="editor/js/editor-templates.js"></script>
+    <script src="editor/js/editor-code.js"></script>
+    <script src="editor/js/editor-init.js"></script>
+    <div id="global-tooltip"></div>
+</body>
+</html>

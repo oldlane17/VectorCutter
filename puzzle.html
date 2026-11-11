@@ -228,49 +228,16 @@ white-space: nowrap;
             .container { margin-top: 110px; }
         }
     </style>
+    <!-- Header & Footer Components -->
+    <link rel="stylesheet" href="components/layout.css">
+    <script src="components/header.js" defer></script>
+    <script src="components/footer.js" defer></script>
 </head>
 <body>
     <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M8HF2H2T"
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
-    <!-- Mobile Sidenav -->
-    <div id="mySidenav" class="sidenav">
-        <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
-        <a href="index.html">Home</a>
-        <a href="editor_5.8.html">Editor</a>
-        <div class="sidenav-divider"></div>
-        <span class="sidenav-header" style="color:#aaa; font-size:0.9rem; padding-left:32px;">GENERATORS</span>
-        <a href="advent_calendar.html" class="sidenav-subitem">Advent Calendar</a>
-        <a href="chessboard.html" class="sidenav-subitem">Chessboard</a>
-        <a href="puzzle.html" class="sidenav-subitem">Puzzle</a>
-        <a href="ruler.html" class="sidenav-subitem">Ruler Generator</a>
-    </div>
-
-    <!-- Main Navbar -->
-    <nav class="topnav">
-        <!-- Hamburger Menu (Mobile Only) -->
-        <span class="hamburger" onclick="openNav()">&#9776;</span>
-
-        <div class="nav-left">
-            <img src="favicon.png" alt="Logo" class="nav-logo" onerror="this.style.display='none'">
-            <span class="nav-title"><a href="index.html">VectorCutter - Old Lane 17</a></span>
-        </div>
-        
-        <!-- Desktop Links -->
-        <div class="nav-right">
-            <a href="index.html">Home</a>
-            <a href="editor_5.8.html" target="_blank">Editor</a>
-            <div class="dropdown">
-                <button class="dropbtn">Generators ▼</button>
-                <div class="dropdown-content">
-                    <a href="advent_calendar.html" target="_blank">Advent Calendar</a>
-                    <a href="chessboard.html" target="_blank">Chessboard</a>
-                    <a href="puzzle.html" target="_blank">Puzzle</a>
-                    <a href="ruler.html" target="_blank">Ruler</a>
-                </div>
-            </div>
-        </div>
-    </nav>
+    <site-header></site-header>
 
     <div class="container">
         
@@ -325,23 +292,7 @@ white-space: nowrap;
         </div>
     </div>
 
-    <div class='footer-row footer-row-1'>
-        <div class='footer-row-container' style="background-color:#182a69; width:100%">
-            <nav>
-                <a href='about.html'>About</a>  
-                <a href = "privacy-policies.html" >Privacy Policies </a>
-                <a href = "terms-of-service.html"> Terms of Service</a>
-                <a href = "legal-notice.html"> Legal Notice</a>
-                <a href='https://www.oldlane17.com/p/contact.html'>Contact</a> 
-                <a href="#" data-cc="show-preferencesModal">Cookie Settings</a>
-                <a href = "https://info.oldlane17.com/faq" >FAQ </a>
-                <a href = "https://info.oldlane17.com/social-media" >Social media </a>
-            </nav>
-        </div>
-        <div class='footer-row-container' style="background-color:#02133e; width:100%">
-            <p>© Copyright 2024-2026 Old Lane 17</p>
-        </div>
-    </div>
+    <site-footer></site-footer>
     <script>
         /* =========================================
            USER CONFIGURATION: CUSTOM LASH FOLDER
