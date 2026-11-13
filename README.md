@@ -17,7 +17,6 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square" alt="MIT License"/></a>
-  <a href="https://pages.cloudflare.com"><img src="https://img.shields.io/badge/deployed%20with-Cloudflare%20Pages-F38020.svg?logo=cloudflare&logoColor=white&style=flat-square" alt="Cloudflare Pages"/></a>
   <a href="#-contributing-to-vectorcutter"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square" alt="PRs Welcome"/></a>
   <img src="https://img.shields.io/badge/Vanilla%20JS-ES6+-F7DF1E.svg?logo=javascript&logoColor=black&style=flat-square" alt="Vanilla JavaScript"/>
   <img src="https://img.shields.io/badge/MathJax-3%20LaTeX-26A69A.svg?style=flat-square" alt="MathJax LaTeX"/>
