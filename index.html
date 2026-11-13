@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="VectorCutter — online SVG editor for laser cutting. LaTeX-compatible text plus generators for chessboards, rulers and advent calendars. Ready-to-cut precision files.">
-    <meta name="keywords" content="svg editor, laser cutting, LaTeX SVG, chessboard generator, ruler generator, advent calendar svg, vectorcutter">
+    <meta name="description" content="VectorCutter — online SVG editor and parametric generators for laser cutting, CNC and papercraft. Includes popup card creator, chessboards, rulers, puzzles, and advent calendars.">
+    <meta name="keywords" content="svg editor, laser cutting, popup card generator, papercraft, LaTeX SVG, chessboard generator, ruler generator, puzzle generator, advent calendar svg, vectorcutter">
     <title>VectorCutter - Old Lane 17</title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <!-- ANDROID -->
@@ -162,6 +162,60 @@
             color: white;
             margin-right: 15px;
             user-select: none;
+        }
+
+        /* --- GENERATORS SHOWCASE GRID --- */
+        .generators-showcase-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 22px;
+            margin-bottom: 50px;
+        }
+        .tool-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            backdrop-filter: blur(8px);
+            transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease;
+            text-decoration: none;
+            color: white;
+        }
+        .tool-card:hover {
+            transform: translateY(-4px);
+            background: rgba(255, 255, 255, 0.14);
+            border-color: rgba(255, 255, 255, 0.35);
+        }
+        .tool-card-icon {
+            font-size: 2.2rem;
+            margin-bottom: 12px;
+        }
+        .tool-card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: #ffffff;
+        }
+        .tool-card-desc {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.78);
+            line-height: 1.5;
+            margin-bottom: 16px;
+            flex-grow: 1;
+        }
+        .tool-card-badge {
+            display: inline-block;
+            align-self: flex-start;
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            background: rgba(160, 160, 255, 0.2);
+            border: 1px solid rgba(160, 160, 255, 0.4);
+            border-radius: 20px;
+            color: #d8d8ff;
+            font-weight: 500;
         }
 
         /* --- CONTAINER & ACTIONS --- */
@@ -360,6 +414,59 @@ white-space: nowrap;
                     <span>🪪 Pop-Up Card</span>
                 </a>
             </div>
+        </div>
+
+        <!-- Parametric Generators Showcase -->
+        <h2 class="projects-header">Parametric Generators & Tools</h2>
+        <div class="generators-showcase-grid">
+            <a href="editor.html" target="_blank" class="tool-card">
+                <div>
+                    <div class="tool-card-icon">📐</div>
+                    <div class="tool-card-title">SVG Vector Editor</div>
+                    <div class="tool-card-desc">Full-featured vector editor with paths, shapes, curves, MathJax LaTeX equations, snapping, and two-way live SVG code editing.</div>
+                </div>
+                <span class="tool-card-badge">Precision Editor</span>
+            </a>
+            <a href="popup.html" target="_blank" class="tool-card">
+                <div>
+                    <div class="tool-card-icon">🪪</div>
+                    <div class="tool-card-title">Pop-Up Card Generator</div>
+                    <div class="tool-card-desc">Layered 3D papercraft and pop-up card mechanism designer with cut, mountain, and valley score lines ready for laser cutting or plotting.</div>
+                </div>
+                <span class="tool-card-badge">Papercraft & Laser</span>
+            </a>
+            <a href="chessboard.html" target="_blank" class="tool-card">
+                <div>
+                    <div class="tool-card-icon">♟️</div>
+                    <div class="tool-card-title">Chessboard Generator</div>
+                    <div class="tool-card-desc">Parametric chessboard designer with configurable square dimensions (mm), notation borders, and optional engraving layers.</div>
+                </div>
+                <span class="tool-card-badge">Wood & Acrylic</span>
+            </a>
+            <a href="ruler.html" target="_blank" class="tool-card">
+                <div>
+                    <div class="tool-card-icon">📏</div>
+                    <div class="tool-card-title">Ruler Generator</div>
+                    <div class="tool-card-desc">Metric (mm/cm) and Imperial (inch) ruler designer with custom tick intervals, fine calibrations, and font engravings.</div>
+                </div>
+                <span class="tool-card-badge">Measuring Tool</span>
+            </a>
+            <a href="puzzle.html" target="_blank" class="tool-card">
+                <div>
+                    <div class="tool-card-icon">🧩</div>
+                    <div class="tool-card-title">Puzzle Generator</div>
+                    <div class="tool-card-desc">Jigsaw puzzle creator with adjustable rows, columns, piece dimensions, and tab/blank interlocking curves.</div>
+                </div>
+                <span class="tool-card-badge">Interlocking Cut</span>
+            </a>
+            <a href="advent_calendar.html" target="_blank" class="tool-card">
+                <div>
+                    <div class="tool-card-icon">📅</div>
+                    <div class="tool-card-title">Advent Calendar</div>
+                    <div class="tool-card-desc">Parametric door matrix layout with numbered doors, hinge tabs, and custom engraving bounds.</div>
+                </div>
+                <span class="tool-card-badge">Hinged Matrix</span>
+            </a>
         </div>
 
         <!-- Dynamic Projects Section -->

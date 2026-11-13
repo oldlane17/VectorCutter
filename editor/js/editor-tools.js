@@ -325,6 +325,26 @@ Object.assign(SVGEditor.prototype, {
         window.addEventListener('mouseup', this.handleMouseUp.bind(this));
         this.canvasContainer.addEventListener('wheel', this.handleWheel.bind(this), { passive: false });
 
+        // Double click on text or LaTeX to edit immediately
+        this.canvasContainer.addEventListener('dblclick', (e) => {
+            let target = e.target;
+            if (target.tagName && target.tagName.toLowerCase() === 'tspan' && target.parentElement && target.parentElement.tagName.toLowerCase() === 'text') {
+                target = target.parentElement;
+            }
+            const latexParent = target.closest ? target.closest('[data-type="latex"]') : null;
+            const textEl = (target.tagName && target.tagName.toLowerCase() === 'text') ? target : latexParent;
+            if (textEl) {
+                this.selectElement(textEl);
+                setTimeout(() => {
+                    const textInput = document.getElementById('contextTextContent');
+                    if (textInput) {
+                        textInput.focus();
+                        textInput.select();
+                    }
+                }, 60);
+            }
+        });
+
         // Cursor position tracking
         this.canvasContainer.addEventListener('mousemove', (e) => {
             const svgPoint = this.screenToSVG(e.clientX, e.clientY);

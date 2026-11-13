@@ -916,15 +916,35 @@ Object.assign(SVGEditor.prototype, {
                             newElement.setAttribute('transform', `${parts[0]} rotate(${rotMatch[1]}) scale${parts[1]}`);
                         }
 
+                        const activeEl = document.activeElement;
+                        const wasTextContent = activeEl && activeEl.id === 'contextTextContent';
+                        const selStart = wasTextContent ? activeEl.selectionStart : null;
+                        const selEnd = wasTextContent ? activeEl.selectionEnd : null;
+
                         element.parentNode.replaceChild(newElement, element);
                         this.selectedElements = [newElement];
                         this.selectedElement = newElement;
                         this.selectElement(newElement);
+
+                        if (wasTextContent) {
+                            const textInput = document.getElementById('contextTextContent');
+                            if (textInput) {
+                                textInput.focus();
+                                if (selStart !== null && selEnd !== null) {
+                                    textInput.setSelectionRange(selStart, selEnd);
+                                }
+                            }
+                        }
                         return;
                     }
                 }
             } else if (currentIsLatex && !isNowLatex) {
                 // Switch from Latex to Text
+                const activeEl = document.activeElement;
+                const wasTextContent = activeEl && activeEl.id === 'contextTextContent';
+                const selStart = wasTextContent ? activeEl.selectionStart : null;
+                const selEnd = wasTextContent ? activeEl.selectionEnd : null;
+
                 const ns = "http://www.w3.org/2000/svg";
                 const newText = document.createElementNS(ns, 'text');
                 const t = element.getAttribute('transform') || '';
@@ -939,6 +959,16 @@ Object.assign(SVGEditor.prototype, {
                 this.selectedElements = [newText];
                 this.selectedElement = newText;
                 this.selectElement(newText);
+
+                if (wasTextContent) {
+                    const textInput = document.getElementById('contextTextContent');
+                    if (textInput) {
+                        textInput.focus();
+                        if (selStart !== null && selEnd !== null) {
+                            textInput.setSelectionRange(selStart, selEnd);
+                        }
+                    }
+                }
                 return;
             } else if (!currentIsLatex) {
                 // Standard Text Update
@@ -957,10 +987,24 @@ Object.assign(SVGEditor.prototype, {
             }
 
             // --- 3. HANDLE CENTER POSITION UPDATES ---
-            if (textCenterXInput && textCenterYInput) {
+            const isCenterEdit = activeId === 'contextTextCenterX' || activeId === 'contextTextCenterY';
+            if (isCenterEdit && textCenterXInput && textCenterYInput) {
                  const targetCX = parseFloat(textCenterXInput.value) * this.unitFactors[this.currentUnits];
                  const targetCY = parseFloat(textCenterYInput.value) * this.unitFactors[this.currentUnits];
                  this.moveElement(element, targetCX, targetCY);
+            }
+
+            // If editing text content, update the displayed width & height inputs without jumping
+            if (activeId === 'contextTextContent') {
+                try {
+                    const newBbox = element.getBBox();
+                    if (newBbox && newBbox.width > 0) {
+                        const twInput = document.getElementById('contextTextWidth');
+                        const thInput = document.getElementById('contextTextHeight');
+                        if (twInput) twInput.value = this.formatUnitValue(newBbox.width);
+                        if (thInput) thInput.value = this.formatUnitValue(newBbox.height);
+                    }
+                } catch(e) {}
             }
             
             this.updateSelectionHandles();
@@ -2440,8 +2484,13 @@ Object.assign(SVGEditor.prototype, {
                 e.stopPropagation();
             }
             
-            // Enter key to commit changes immediately
+            // Enter key to commit changes
             if (e.key === 'Enter') {
+                // In textarea, allow Enter to insert newline unless Ctrl/Meta is pressed
+                if (input.tagName === 'TEXTAREA' && !e.ctrlKey && !e.metaKey) {
+                    e.stopPropagation();
+                    return;
+                }
                 if (updateTimeout) {
                     clearTimeout(updateTimeout);
                     updateTimeout = null;
