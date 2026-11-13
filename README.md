@@ -162,7 +162,7 @@ npx serve .
 ```
 
 **Using VS Code:**
-Install the [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer) extension, open `index.html`, and click **Go Live**.
+Install the [Live Server](https://marketplace.visualstudio.com/items?itemName=ms-vscode.live-server) extension, open `index.html`, and click **Go Live**.
 
 ---
 
@@ -170,14 +170,9 @@ Install the [Live Server](https://marketplace.visualstudio.com/items?itemName=ri
 ## 🤝 Contributing to VectorCutter
 
 > **🌟 Everyone is welcome to contribute!**  
-> Whether you are an experienced web developer, a laser cutting hobbyist, a teacher, a mathematician, or making your very first pull request on GitHub — we'd love to have you participate.
+> Whether you are an experienced web developer, a laser cutting hobbyist, a teacher, a mathematician, or making your very first pull request on GitHub — we'd love to have you participate. This repo has the goal to create a free alternative to be creative and share it :)
 
-### Why contributing to VectorCutter is fun and easy:
-- **No build fatigue:** You don't need to fiddle with Webpack, Vite, Babel, npm dependencies, or TypeScript compile errors.
-- **Instant feedback:** Edit an HTML, CSS, or JS file, refresh your browser, and you immediately see the result.
-- **Real-world impact:** Thousands of makers, woodworkers, leathercrafters, and educators use these SVGs for physical laser cutting and CNC fabrication.
 
----
 
 ### 🎯 Exciting Ideas for Contributions
 
