@@ -41,7 +41,7 @@
         <div id="mySidenav" class="sidenav" role="navigation" aria-label="Mobile Navigation">
             <a href="javascript:void(0)" class="closebtn" onclick="closeNav()" aria-label="Close menu">&times;</a>
             <a href="index.html" class="${isHome ? 'active' : ''}">Home</a>
-            <a href="editor_5.8.html" target="_blank" class="${isEditor ? 'active' : ''}">Editor</a>
+            <a href="editor.html" target="_blank" class="${isEditor ? 'active' : ''}">Editor</a>
             <div class="sidenav-divider"></div>
             <span class="sidenav-header" style="color:#aaa; font-size:0.9rem; padding-left:32px;">GENERATORS</span>
             <a href="advent_calendar.html" class="sidenav-subitem ${isAdvent ? 'active' : ''}">Advent Calendar</a>
@@ -64,7 +64,7 @@
 
             <div class="nav-right">
                 <a href="index.html" class="${isHome ? 'active' : ''}">Home</a>
-                <a href="editor_5.8.html" target="_blank" class="${isEditor ? 'active' : ''}">Editor</a>
+                <a href="editor.html" target="_blank" class="${isEditor ? 'active' : ''}">Editor</a>
                 <div class="dropdown">
                     <button class="dropbtn" aria-haspopup="true" aria-expanded="false">Generators ▼</button>
                     <div class="dropdown-content" role="menu">
