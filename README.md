@@ -30,7 +30,6 @@
   <a href="#-tools--generators">🧰 Tools</a> ·
   <a href="#-modular-architecture">🧩 Architecture</a> ·
   <a href="#-quickstart">🚀 Quickstart</a> ·
-  <a href="#-cloudflare-pages-deployment">⚡ Cloudflare Pages</a> ·
   <a href="#-contributing-to-vectorcutter">🤝 Contributing</a> ·
   <a href="#-license">📄 License</a>
 </p>
@@ -96,7 +95,7 @@ VectorCutter/
 │       └── editor-init.js          # Modal helpers, clipboard copy, URL parameter autoloading
 ├── index.html                      # Project dashboard & launcher
 ├── editor.html                     # Primary SVG Editor entrypoint (clean, modular HTML)
-├── editor_5.8.html                 # Backwards-compatibility redirect to editor.html
+├── editor_5.8.html                 # Backwards-compatibility redirect to editor.html (legacy)
 ├── chessboard.html                 # Chessboard generator
 ├── ruler.html                      # Ruler generator
 ├── puzzle.html                     # Puzzle generator
@@ -168,23 +167,6 @@ Install the [Live Server](https://marketplace.visualstudio.com/items?itemName=ri
 
 ---
 
-## ⚡ Cloudflare Pages Deployment
-
-VectorCutter is optimized for continuous deployment through **Cloudflare Pages**:
-
-1. **Automatic Git Sync:** Pushing commits to `main` triggers an automatic, instant build and deployment.
-2. **Zero-Build Configuration:** Because VectorCutter is 100% static, the deployment requires no build command or external package manager.
-3. **`wrangler.toml` Manifest:**
-   ```toml
-   name = "vectorcutter"
-   compatibility_date = "2024-01-01"
-   pages_build_output_dir = "."
-   ```
-4. **URL Routing & Caching:**
-   - [`_redirects`](_redirects) maps `/editor`, `/editor/`, and `/editor_5.8.html` to `/editor.html`.
-   - [`_headers`](_headers) enforces strict security headers (`X-Content-Type-Options`, `X-Frame-Options`) and enables high-performance browser caching for JS, CSS, and SVG assets.
-
----
 
 ## 🤝 Contributing to VectorCutter
 
