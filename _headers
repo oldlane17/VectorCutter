@@ -3,6 +3,9 @@
   X-Frame-Options: SAMEORIGIN
   Referrer-Policy: strict-origin-when-cross-origin
 
+/editor_5.8.html
+  Cache-Control: no-store
+
 /editor/css/*
   Cache-Control: public, max-age=86400
 

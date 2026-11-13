@@ -397,47 +397,42 @@ Object.assign(SVGEditor.prototype, {
     },
 
     handleWheel(e) {
-        // Only zoom when Ctrl key is pressed (standard zoom gesture)
-        if (!e.ctrlKey) {
-            // Allow normal scrolling without zooming
-            return;
-        }
-        
-        // Prevent default behavior to avoid browser zoom
+        // Always prevent default to stop browser scrolling / page navigation
         e.preventDefault();
-        
-        // Determine zoom factor based on scroll direction
-        let zoomFactor;
-        if (e.deltaY !== 0) {
-            // Vertical scroll - zoom in/out
-            zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;
-        } else if (e.deltaX !== 0) {
-            // Horizontal scroll - zoom in/out (but only when Ctrl is pressed)
-            zoomFactor = e.deltaX > 0 ? 1.1 : 0.9;
+        e.stopPropagation();
+
+        if (e.ctrlKey || e.metaKey) {
+            // Zoom mode (Ctrl + scroll)
+            let zoomFactor;
+            if (e.deltaY !== 0) {
+                zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;
+            } else if (e.deltaX !== 0) {
+                zoomFactor = e.deltaX > 0 ? 1.1 : 0.9;
+            } else {
+                return;
+            }
+
+            const svgPoint = this.screenToSVG(e.clientX, e.clientY);
+            const newWidth = this.viewBox.width * zoomFactor;
+            const newHeight = this.viewBox.height * zoomFactor;
+            const mouseX = (svgPoint.x - this.viewBox.x) / this.viewBox.width;
+            const mouseY = (svgPoint.y - this.viewBox.y) / this.viewBox.height;
+
+            this.viewBox.x = svgPoint.x - mouseX * newWidth;
+            this.viewBox.y = svgPoint.y - mouseY * newHeight;
+            this.viewBox.width = newWidth;
+            this.viewBox.height = newHeight;
+            this.zoomLevel = 1200 / this.viewBox.width;
+            this.updateViewBox();
+
         } else {
-            // No scroll delta, don't zoom
-            return;
+            // Pan mode (plain scroll / trackpad swipe)
+            const scaleX = this.viewBox.width / this.canvas.clientWidth;
+            const scaleY = this.viewBox.height / this.canvas.clientHeight;
+            this.viewBox.x += e.deltaX * scaleX;
+            this.viewBox.y += e.deltaY * scaleY;
+            this.updateViewBox();
         }
-        
-        const svgPoint = this.screenToSVG(e.clientX, e.clientY);
-        
-        // Calculate new viewBox dimensions
-        const newWidth = this.viewBox.width * zoomFactor;
-        const newHeight = this.viewBox.height * zoomFactor;
-        
-        // Calculate the mouse position relative to the viewBox
-        const mouseX = (svgPoint.x - this.viewBox.x) / this.viewBox.width;
-        const mouseY = (svgPoint.y - this.viewBox.y) / this.viewBox.height;
-        
-        // Adjust viewBox to zoom toward mouse position
-        this.viewBox.x = svgPoint.x - mouseX * newWidth;
-        this.viewBox.y = svgPoint.y - mouseY * newHeight;
-        this.viewBox.width = newWidth;
-        this.viewBox.height = newHeight;
-        
-        this.zoomLevel = 1200 / this.viewBox.width; // Base width is 1200
-        
-        this.updateViewBox();
     },
 
     startPanning(clientX, clientY) {
@@ -550,7 +545,7 @@ Object.assign(SVGEditor.prototype, {
         
         // Update the unit info in status bar to include mode
         document.getElementById('unitInfo').textContent = 
-            `Units: ${this.getUnitDisplayName()} | Mode: ${modeText} | ${gridText} | ${snapText} | Drag background to pan | Ctrl+Scroll to zoom`;
+            `Units: ${this.getUnitDisplayName()} | Mode: ${modeText} | ${gridText} | ${snapText} | Scroll to pan | Ctrl+Scroll to zoom`;
     }
 
 });

@@ -20,6 +20,14 @@
             -ms-user-select: none; /* IE/Edge */
         }
 
+        /* Allow text selection in form controls */
+        input, textarea, select, [contenteditable] {
+            user-select: text;
+            -webkit-user-select: text;
+            -moz-user-select: text;
+            -ms-user-select: text;
+        }
+
         .container {
             display: flex;
             flex-direction: column;
@@ -545,6 +553,12 @@
             max-width: 90%;
         }
 
+        .modal-content input,
+        .modal-content textarea,
+        .modal-content select {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
         .modal h2 {
             margin-bottom: 20px;
             color: #cccccc;
@@ -618,7 +632,7 @@
             font-size: 16px;
             text-align: center;
         }
-        button{
+        .toolbar-button, .modal-buttons button, .scale-modal-buttons button{
             background: #2d2d30;
             border: 1px solid #3e3e42;
             border-radius: 4px;
@@ -663,60 +677,9 @@
         }
 
 
-        .selection-rect {
-            fill: none;
-            stroke: #007acc;
-            stroke-width: 1;
-            stroke-dasharray: 5,5;
-            pointer-events: all;
-        }
 
-        .selection-handle {
-            fill: white;
-            stroke: #007acc;
-            stroke-width: 2;
-            cursor: pointer;
-        }
 
-        .selection-handle.rotate {
-            fill: #007acc;
-            cursor: grab;
-        }
 
-        .selection-handle.resize {
-            cursor: nwse-resize;
-        }
-
-        .selection-handle.resize-n, .selection-handle.resize-s {
-            cursor: ns-resize;
-        }
-
-        .selection-handle.resize-e, .selection-handle.resize-w {
-            cursor: ew-resize;
-        }
-        .selection-group {
-            pointer-events: none;
-        }
-
-        .selection-rect {
-            fill: none;
-            stroke: #007acc;
-            stroke-width: 1;
-            stroke-dasharray: 5,5;
-            pointer-events: all;
-        }
-
-        .selection-handle {
-            fill: white;
-            stroke: #007acc;
-            stroke-width: 2;
-            pointer-events: all;
-        }
-
-        .selection-handle.rotate {
-            fill: #007acc;
-            cursor: grab;
-        }
 
         /* Add this to your CSS */
         .selection-area {
