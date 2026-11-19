@@ -79,12 +79,19 @@
             <div class="menu-item">
                 View
                 <div class="dropdown">
-                    <div class="dropdown-item" id="menuZoomIn">Zoom In <span class="shortcut">Ctrl++</span></div>
-                    <div class="dropdown-item" id="menuZoomOut">Zoom Out <span class="shortcut">Ctrl+-</span></div>
-                    <div class="dropdown-item" id="menuResetZoom">Reset Zoom <span class="shortcut">Ctrl+0</span></div>
+                    <div class="dropdown-item" id="menuZoomIn">Zoom In <span class="shortcut">+</span></div>
+                    <div class="dropdown-item" id="menuZoomOut">Zoom Out <span class="shortcut">-</span></div>
+                    <div class="dropdown-item" id="menuResetZoom">Reset Zoom</div>
+                    <div class="dropdown-item" id="menuZoomRealSize">Real Size (1:1 in mm) <span class="shortcut">Ctrl+0</span></div>
+                    <div class="dropdown-item" id="menuCalibrateScreen">Calibrate This Screen...</div>
+                    <div class="separator"></div>
+                    <div class="dropdown-item" id="menuFitAll">Zoom to Fit All <span class="shortcut">Ctrl+Shift+F</span></div>
+                    <div class="dropdown-item" id="menuFitSelected">Zoom to Fit Selected <span class="shortcut">Ctrl+F</span></div>
+                    <div class="separator"></div>
+                    <div class="dropdown-item" id="menuScrollTrackpad"><span id="checkScrollTrackpad">✓ </span>Trackpad: Scroll to Pan</div>
+                    <div class="dropdown-item" id="menuScrollMouse"><span id="checkScrollMouse"></span>Mouse: Scroll to Zoom</div>
                     <div class="separator"></div>
                     <div class="dropdown-item" id="menuToggleGrid">Toggle Grid <span class="shortcut">Ctrl+G</span></div>
-                    
                     <div class="separator"></div>
                     <div class="dropdown-item" id="menuFullscreen">Fullscreen <span class="shortcut">F11</span></div>
                 </div>
@@ -365,6 +372,33 @@
     </div>
 
     
+
+    <!-- Calibrate Screen Modal -->
+    <div class="modal" id="calibrateModal">
+        <div class="modal-content" style="width: 480px; max-width: 95%;">
+            <h2>Calibrate Screen for 1:1 Real Size</h2>
+            <p style="font-size: 13px; color: #bbb; margin: 10px 0 15px; line-height: 1.4;">
+                Hold a standard credit card (or ID card, exactly 85.6 mm × 53.98 mm) up to your screen. Adjust the slider until the blue rectangle matches the card.
+            </p>
+            <div style="display: flex; justify-content: center; align-items: center; margin: 15px 0; background: #181818; padding: 20px; border-radius: 6px; overflow: hidden;">
+                <div id="calibrateCard" style="width: 323px; height: 204px; background: rgba(0, 122, 204, 0.25); border: 2px dashed #007acc; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #9cdcfe; font-size: 13px; font-weight: 500; text-align: center; box-sizing: border-box;">
+                    Standard Credit Card<br><span style="font-size: 11px; opacity: 0.8;">85.6 mm × 53.98 mm</span>
+                </div>
+            </div>
+            <div class="property-group" style="margin-bottom: 15px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: #ccc; font-size: 12px;">
+                    <span>Card Width: <strong id="calibrateWidthVal">323</strong> px</span>
+                    <span id="calibrateDpiVal" style="color: #9cdcfe; font-weight: bold;">96 DPI</span>
+                </div>
+                <input type="range" id="calibrateSlider" min="200" max="600" value="323" style="width: 100%;">
+            </div>
+            <div class="modal-buttons">
+                <button id="calibrateResetBtn" style="background: #3e3e42; color: #ccc;">Reset 96 DPI</button>
+                <button id="calibrateCancelBtn">Cancel</button>
+                <button id="calibrateSaveBtn" style="background: #007acc; color: white;">Save & Apply 1:1</button>
+            </div>
+        </div>
+    </div>
 
     <!-- SVG Editor Modular Scripts -->
     <script src="editor/js/editor-core.js"></script>

@@ -122,6 +122,7 @@ class SVGEditor {
         
         this.updateViewBox();
         this.updateCanvasCursor();
+        this.initScrollMode();
         this.setupShiftKeyListener();
         this.setupKeyboardModifiers();
         this.updateContextMenu();
@@ -319,6 +320,18 @@ class SVGEditor {
         document.getElementById('menuZoomIn').addEventListener('click', () => this.zoomIn());
         document.getElementById('menuZoomOut').addEventListener('click', () => this.zoomOut());
         document.getElementById('menuResetZoom').addEventListener('click', () => this.resetZoom());
+        const menuZoomRealSize = document.getElementById('menuZoomRealSize');
+        if (menuZoomRealSize) menuZoomRealSize.addEventListener('click', () => this.zoomToRealSize());
+        const menuCalibrateScreen = document.getElementById('menuCalibrateScreen');
+        if (menuCalibrateScreen) menuCalibrateScreen.addEventListener('click', () => this.showCalibrateScreenDialog());
+        const menuFitAll = document.getElementById('menuFitAll');
+        if (menuFitAll) menuFitAll.addEventListener('click', () => this.zoomToFitAll());
+        const menuFitSelected = document.getElementById('menuFitSelected');
+        if (menuFitSelected) menuFitSelected.addEventListener('click', () => this.zoomToFitSelected());
+        const menuScrollTrackpad = document.getElementById('menuScrollTrackpad');
+        if (menuScrollTrackpad) menuScrollTrackpad.addEventListener('click', () => this.setScrollMode('trackpad', true));
+        const menuScrollMouse = document.getElementById('menuScrollMouse');
+        if (menuScrollMouse) menuScrollMouse.addEventListener('click', () => this.setScrollMode('mouse', true));
         document.getElementById('menuToggleGrid').addEventListener('click', () => this.toggleGridFromToolbar());
         document.getElementById('menuFullscreen').addEventListener('click', () => this.toggleFullscreen());
         
@@ -360,12 +373,19 @@ class SVGEditor {
    // Find this method in your class and replace it entirely
 
     setupKeyboardModifiers() {
-        // Track Ctrl and Shift keys
+        // Track Ctrl, Shift and Space keys
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Control') {
                 this.ctrlKeyPressed = true;
             } else if (e.key === 'Shift') {
                 this.shiftKeyPressed = true;
+            } else if (e.key === ' ') {
+                const activeEl = document.activeElement;
+                const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT' || activeEl.isContentEditable);
+                if (!isInput && !this.isSpaceDown) {
+                    this.isSpaceDown = true;
+                    this.canvasContainer.style.cursor = 'grab';
+                }
             }
         });
 
@@ -374,6 +394,12 @@ class SVGEditor {
                 this.ctrlKeyPressed = false;
             } else if (e.key === 'Shift') {
                 this.shiftKeyPressed = false;
+            } else if (e.key === ' ') {
+                this.isSpaceDown = false;
+                if (this.isPanning && this.canvasMode !== 'pan') {
+                    this.stopPanning();
+                }
+                this.updateCanvasCursor();
             }
         });
     }
@@ -461,7 +487,15 @@ class SVGEditor {
                     break;
                 case '0':
                     e.preventDefault();
-                    this.resetZoom();
+                    this.zoomToRealSize();
+                    break;
+                case 'f':
+                    e.preventDefault();
+                    if (e.shiftKey) {
+                        this.zoomToFitAll();
+                    } else {
+                        this.zoomToFitSelected();
+                    }
                     break;
                 case '+':
                 case '=':
@@ -497,6 +531,20 @@ class SVGEditor {
                     e.preventDefault();
                     this.pasteFromClipboard();
                     break;
+            }
+        }
+        
+        // Plain zoom shortcuts without Ctrl
+        if (!isInputField && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            if (e.key === '=' || e.key === '+') {
+                e.preventDefault();
+                this.zoomIn();
+                return;
+            }
+            if (e.key === '-' || e.key === '_') {
+                e.preventDefault();
+                this.zoomOut();
+                return;
             }
         }
         

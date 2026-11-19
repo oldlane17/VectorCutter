@@ -396,44 +396,117 @@ Object.assign(SVGEditor.prototype, {
         }
     },
 
+    initScrollMode() {
+        const savedMode = localStorage.getItem('vc_scroll_mode') || 'trackpad';
+        this.scrollMode = savedMode;
+        this.updateScrollModeUI();
+    },
+
+    setScrollMode(mode, persist = true) {
+        this.scrollMode = mode;
+        if (persist) {
+            localStorage.setItem('vc_scroll_mode', mode);
+        }
+        this.updateScrollModeUI();
+        this.updateStatusBarMode();
+    },
+
+    updateScrollModeUI() {
+        const checkTrackpad = document.getElementById('checkScrollTrackpad');
+        const checkMouse = document.getElementById('checkScrollMouse');
+        if (checkTrackpad) {
+            checkTrackpad.textContent = this.scrollMode === 'trackpad' ? '✓ ' : '';
+        }
+        if (checkMouse) {
+            checkMouse.textContent = this.scrollMode === 'mouse' ? '✓ ' : '';
+        }
+    },
+
     handleWheel(e) {
-        // Always prevent default to stop browser scrolling / page navigation
         e.preventDefault();
         e.stopPropagation();
 
-        if (e.ctrlKey || e.metaKey) {
-            // Zoom mode (Ctrl + scroll)
-            let zoomFactor;
-            if (e.deltaY !== 0) {
-                zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;
-            } else if (e.deltaX !== 0) {
-                zoomFactor = e.deltaX > 0 ? 1.1 : 0.9;
+        if (!this.hasDetectedScrollMode && !localStorage.getItem('vc_scroll_mode')) {
+            const isFractional = (e.deltaY % 1 !== 0) || (e.deltaX % 1 !== 0);
+            const hasHorizontal = Math.abs(e.deltaX) > 0;
+            const isPixelMode = e.deltaMode === 0 && Math.abs(e.deltaY) < 50;
+            if (isFractional || hasHorizontal || isPixelMode) {
+                this.setScrollMode('trackpad', true);
             } else {
-                return;
+                this.setScrollMode('mouse', true);
             }
-
-            const svgPoint = this.screenToSVG(e.clientX, e.clientY);
-            const newWidth = this.viewBox.width * zoomFactor;
-            const newHeight = this.viewBox.height * zoomFactor;
-            const mouseX = (svgPoint.x - this.viewBox.x) / this.viewBox.width;
-            const mouseY = (svgPoint.y - this.viewBox.y) / this.viewBox.height;
-
-            this.viewBox.x = svgPoint.x - mouseX * newWidth;
-            this.viewBox.y = svgPoint.y - mouseY * newHeight;
-            this.viewBox.width = newWidth;
-            this.viewBox.height = newHeight;
-            this.zoomLevel = 1200 / this.viewBox.width;
-            this.updateViewBox();
-
-        } else {
-            // Pan mode (plain scroll / trackpad swipe)
-            const scaleX = this.viewBox.width / this.canvas.clientWidth;
-            const scaleY = this.viewBox.height / this.canvas.clientHeight;
-            this.viewBox.x += e.deltaX * scaleX;
-            this.viewBox.y += e.deltaY * scaleY;
-            this.updateViewBox();
+            this.hasDetectedScrollMode = true;
         }
-    },
+
+        let dx = e.deltaX;
+        let dy = e.deltaY;
+        if (e.deltaMode === 1) {
+            dx *= 24;
+            dy *= 24;
+        } else if (e.deltaMode === 2) {
+            dx *= 400;
+            dy *= 400;
+        }
+
+        const isZoomGesture = e.ctrlKey || e.metaKey;
+
+        if (this.scrollMode === 'trackpad') {
+            if (isZoomGesture) {
+                const zoomFactor = Math.min(Math.max(Math.exp(dy * 0.005), 0.7), 1.4);
+                this.zoomTowards(e.clientX, e.clientY, zoomFactor);
+            } else if (e.shiftKey) {
+                this.panBy(dy !== 0 ? dy : dx, 0);
+            } else {
+                this.panBy(dx, dy);
+            }
+        } else {
+            if (isZoomGesture) {
+                const zoomFactor = Math.min(Math.max(Math.exp(dy * 0.005), 0.7), 1.4);
+                this.zoomTowards(e.clientX, e.clientY, zoomFactor);
+            } else if (e.shiftKey) {
+                this.panBy(dy !== 0 ? dy : dx, 0);
+            } else if (e.altKey) {
+                this.panBy(0, dy !== 0 ? dy : dx);
+            } else {
+                const zoomFactor = dy > 0 ? 1.15 : 0.87;
+                this.zoomTowards(e.clientX, e.clientY, zoomFactor);
+            }
+        }
+    },
+
+    panBy(screenDx, screenDy) {
+        const rect = this.canvas.getBoundingClientRect();
+        const clientW = rect.width || this.canvas.clientWidth || 1;
+        const clientH = rect.height || this.canvas.clientHeight || 1;
+        const scaleX = this.viewBox.width / clientW;
+        const scaleY = this.viewBox.height / clientH;
+        this.viewBox.x += screenDx * scaleX;
+        this.viewBox.y += screenDy * scaleY;
+        this.updateViewBox();
+    },
+
+    zoomTowards(clientX, clientY, factor) {
+        const svgPoint = this.screenToSVG(clientX, clientY);
+        const minWidth = 12;
+        const maxWidth = 120000;
+
+        let newWidth = this.viewBox.width * factor;
+        if (newWidth < minWidth) newWidth = minWidth;
+        if (newWidth > maxWidth) newWidth = maxWidth;
+
+        const actualFactor = newWidth / this.viewBox.width;
+        const newHeight = this.viewBox.height * actualFactor;
+
+        const mouseX = (svgPoint.x - this.viewBox.x) / this.viewBox.width;
+        const mouseY = (svgPoint.y - this.viewBox.y) / this.viewBox.height;
+
+        this.viewBox.x = svgPoint.x - mouseX * newWidth;
+        this.viewBox.y = svgPoint.y - mouseY * newHeight;
+        this.viewBox.width = newWidth;
+        this.viewBox.height = newHeight;
+        this.zoomLevel = 1200 / this.viewBox.width;
+        this.updateViewBox();
+    },
 
     startPanning(clientX, clientY) {
         this.isPanning = true;
@@ -441,7 +514,7 @@ Object.assign(SVGEditor.prototype, {
         this.panStartY = clientY;
         this.canvasContainer.classList.add('panning');
         this.canvasContainer.style.cursor = 'grabbing';
-    },
+    },
 
     pan(clientX, clientY) {
         if (!this.isPanning) return;
@@ -449,103 +522,253 @@ Object.assign(SVGEditor.prototype, {
         const dx = clientX - this.panStartX;
         const dy = clientY - this.panStartY;
         
-        // Convert screen delta to SVG delta
-        const svgDeltaX = (dx / this.canvas.clientWidth) * this.viewBox.width;
-        const svgDeltaY = (dy / this.canvas.clientHeight) * this.viewBox.height;
+        const scaleX = this.viewBox.width / (this.canvas.clientWidth || 1);
+        const scaleY = this.viewBox.height / (this.canvas.clientHeight || 1);
         
-        // Update viewBox
-        this.viewBox.x -= svgDeltaX;
-        this.viewBox.y -= svgDeltaY;
+        this.viewBox.x -= dx * scaleX;
+        this.viewBox.y -= dy * scaleY;
         
         this.panStartX = clientX;
         this.panStartY = clientY;
         
         this.updateViewBox();
-    },
+    },
 
     stopPanning() {
         this.isPanning = false;
         this.canvasContainer.classList.remove('panning');
         this.updateCanvasCursor();
-    },
+    },
 
     zoomIn() {
-        // Zoom in = smaller viewBox (objects appear larger)
-        this.zoomAtCenter(0.8); // Changed from 1.2 to 0.8
-    },
+        this.zoomAtCenter(0.8);
+    },
 
     zoomOut() {
-        // Zoom out = larger viewBox (objects appear smaller)
-        this.zoomAtCenter(1.2); // Changed from 0.8 to 1.2
-    },
+        this.zoomAtCenter(1.2);
+    },
 
     zoomAtCenter(zoomFactor) {
         const centerX = this.viewBox.x + this.viewBox.width / 2;
         const centerY = this.viewBox.y + this.viewBox.height / 2;
         
-        this.viewBox.width *= zoomFactor;
-        this.viewBox.height *= zoomFactor;
-        this.viewBox.x = centerX - this.viewBox.width / 2;
-        this.viewBox.y = centerY - this.viewBox.height / 2;
+        const minWidth = 12;
+        const maxWidth = 120000;
+        let newWidth = this.viewBox.width * zoomFactor;
+        if (newWidth < minWidth) newWidth = minWidth;
+        if (newWidth > maxWidth) newWidth = maxWidth;
+        const actualFactor = newWidth / this.viewBox.width;
+        const newHeight = this.viewBox.height * actualFactor;
+
+        this.viewBox.width = newWidth;
+        this.viewBox.height = newHeight;
+        this.viewBox.x = centerX - newWidth / 2;
+        this.viewBox.y = centerY - newHeight / 2;
+        this.zoomLevel = 1200 / this.viewBox.width;
         
-        this.updateViewBox(); // This will update grid and axes with new zoom level
-    },
+        this.updateViewBox();
+    },
 
     resetZoom() {
-        // Get actual available space
         const rect = this.canvasContainer.getBoundingClientRect();
-        
-        // Reset to 1:1 scale, centered at 0,0
         this.viewBox = {
             x: -rect.width / 2,
             y: -rect.height / 2,
-            width: rect.width,
-            height: rect.height
+            width: rect.width || 1200,
+            height: rect.height || 900
         };
-        
         this.zoomLevel = 1;
         this.updateViewBox();
-    }
+    },
 
+    zoomToRealSize() {
+        const rect = this.canvasContainer.getBoundingClientRect();
+        const clientW = rect.width || this.canvas.clientWidth || 1200;
+        const clientH = rect.height || this.canvas.clientHeight || 900;
+        
+        const dpmm = parseFloat(localStorage.getItem('vc_screen_dpmm')) || (96 / 25.4);
+        const svgUnitsPerMm = this.unitFactors['mm'] || 3.779527559;
+        
+        const targetViewWidth = (clientW / dpmm) * svgUnitsPerMm;
+        const targetViewHeight = (clientH / dpmm) * svgUnitsPerMm;
+        
+        const centerX = this.viewBox.x + this.viewBox.width / 2;
+        const centerY = this.viewBox.y + this.viewBox.height / 2;
+        
+        this.viewBox = {
+            x: centerX - targetViewWidth / 2,
+            y: centerY - targetViewHeight / 2,
+            width: targetViewWidth,
+            height: targetViewHeight
+        };
+        this.zoomLevel = 1200 / this.viewBox.width;
+        this.updateViewBox();
+    },
 
+    showCalibrateScreenDialog() {
+        let modal = document.getElementById('calibrateModal');
+        if (!modal) return;
+        
+        const slider = document.getElementById('calibrateSlider');
+        const card = document.getElementById('calibrateCard');
+        const widthVal = document.getElementById('calibrateWidthVal');
+        const dpiVal = document.getElementById('calibrateDpiVal');
+        
+        const currentDpmm = parseFloat(localStorage.getItem('vc_screen_dpmm')) || (96 / 25.4);
+        const currentCardWidthPx = Math.round(85.6 * currentDpmm);
+        
+        const updateCard = (px) => {
+            const w = Math.max(150, Math.min(800, px));
+            const h = Math.round(w * (53.98 / 85.6));
+            if (card) {
+                card.style.width = w + "px";
+                card.style.height = h + "px";
+            }
+            if (widthVal) widthVal.textContent = w;
+            const dpi = Math.round((w / 85.6) * 25.4);
+            if (dpiVal) dpiVal.textContent = dpi + " DPI";
+        };
+        
+        if (slider) {
+            slider.value = currentCardWidthPx;
+            updateCard(currentCardWidthPx);
+            slider.oninput = (e) => updateCard(parseFloat(e.target.value));
+        }
+        
+        const saveBtn = document.getElementById('calibrateSaveBtn');
+        if (saveBtn) {
+            saveBtn.onclick = () => {
+                const w = parseFloat(slider.value);
+                const newDpmm = w / 85.6;
+                localStorage.setItem('vc_screen_dpmm', newDpmm);
+                modal.style.display = 'none';
+                this.zoomToRealSize();
+            };
+        }
+        
+        const resetBtn = document.getElementById('calibrateResetBtn');
+        if (resetBtn) {
+            resetBtn.onclick = () => {
+                const defaultPx = Math.round(85.6 * (96 / 25.4));
+                slider.value = defaultPx;
+                updateCard(defaultPx);
+            };
+        }
+        
+        const cancelBtn = document.getElementById('calibrateCancelBtn');
+        if (cancelBtn) {
+            cancelBtn.onclick = () => {
+                modal.style.display = 'none';
+            };
+        }
+        
+        modal.style.display = 'flex';
+    },
 
-    // Menu Functions (stubs)
-    // printDocument() {
-    //     window.print();
-    // },
+    zoomToFitAll() {
+        const bbox = this.getUserElementsBBox();
+        if (!bbox || (bbox.width === 0 && bbox.height === 0)) {
+            this.resetZoom();
+            return;
+        }
+        
+        const clientW = this.canvasContainer.clientWidth || 1200;
+        const clientH = this.canvasContainer.clientHeight || 900;
+        const aspect = clientW / clientH;
+        
+        const padding = Math.max(bbox.width, bbox.height) * 0.15 + 30;
+        let fitW = bbox.width + padding * 2;
+        let fitH = bbox.height + padding * 2;
+        
+        if (fitW / fitH > aspect) {
+            fitH = fitW / aspect;
+        } else {
+            fitW = fitH * aspect;
+        }
+        
+        const cx = bbox.x + bbox.width / 2;
+        const cy = bbox.y + bbox.height / 2;
+        
+        this.viewBox = {
+            x: cx - fitW / 2,
+            y: cy - fitH / 2,
+            width: fitW,
+            height: fitH
+        };
+        this.zoomLevel = 1200 / this.viewBox.width;
+        this.updateViewBox();
+    },
+
+    zoomToFitSelected() {
+        if (!this.selectedElements || this.selectedElements.length === 0) {
+            this.zoomToFitAll();
+            return;
+        }
+        
+        const bbox = this.getGroupBoundingBox();
+        if (!bbox || (bbox.width === 0 && bbox.height === 0)) {
+            this.zoomToFitAll();
+            return;
+        }
+        
+        const clientW = this.canvasContainer.clientWidth || 1200;
+        const clientH = this.canvasContainer.clientHeight || 900;
+        const aspect = clientW / clientH;
+        
+        const padding = Math.max(bbox.width, bbox.height) * 0.2 + 25;
+        let fitW = bbox.width + padding * 2;
+        let fitH = bbox.height + padding * 2;
+        
+        if (fitW / fitH > aspect) {
+            fitH = fitW / aspect;
+        } else {
+            fitW = fitH * aspect;
+        }
+        
+        const cx = bbox.x + bbox.width / 2;
+        const cy = bbox.y + bbox.height / 2;
+        
+        this.viewBox = {
+            x: cx - fitW / 2,
+            y: cy - fitH / 2,
+            width: fitW,
+            height: fitH
+        };
+        this.zoomLevel = 1200 / this.viewBox.width;
+        this.updateViewBox();
+    },
 
     zoomToElement(element) {
         if (!element.getBBox) return;
         
-        // Calculate Global Bounding Box (accounting for transforms)
         const bbox = element.getBBox();
-        const globalBox = this.getElementBoundingBoxInCanvasSpace(element, bbox); // Method exists from previous steps
+        const globalBox = this.getElementBoundingBoxInCanvasSpace ? 
+            this.getElementBoundingBoxInCanvasSpace(element, bbox) : bbox;
         
-        // Determine Padding (e.g., 20% of size)
-        const padding = Math.max(globalBox.width, globalBox.height) * 0.4;
+        const padding = Math.max(globalBox.width, globalBox.height) * 0.4 + 20;
         
-        // Set ViewBox centered on element
         this.viewBox = {
             x: globalBox.x - padding,
             y: globalBox.y - padding,
             width: globalBox.width + (padding * 2),
             height: globalBox.height + (padding * 2)
         };
-        
+        this.zoomLevel = 1200 / this.viewBox.width;
         this.updateViewBox();
         this.selectElement(element);
-    }
-
-    // 2. Show Splitter Menu,
+    },
 
     updateStatusBarMode() {
         const modeText = this.canvasMode === 'select' ? 'Select Mode' : 'Pan Mode';
         const gridText = this.gridEnabled ? 'Grid On' : 'Grid Off';
         const snapText = this.snapEnabled ? 'Snap On' : 'Snap Off';
+        const scrollText = this.scrollMode === 'trackpad' ? 'Trackpad: Scroll to Pan' : 'Mouse: Scroll to Zoom';
         
-        // Update the unit info in status bar to include mode
-        document.getElementById('unitInfo').textContent = 
-            `Units: ${this.getUnitDisplayName()} | Mode: ${modeText} | ${gridText} | ${snapText} | Scroll to pan | Ctrl+Scroll to zoom`;
+        const unitInfo = document.getElementById('unitInfo');
+        if (unitInfo) {
+            const uName = this.getUnitDisplayName ? this.getUnitDisplayName() : this.currentUnits;
+            unitInfo.textContent = 
+                'Units: ' + uName + ' | Mode: ' + modeText + ' | ' + gridText + ' | ' + snapText + ' | ' + scrollText;
+        }
     }
-
 });

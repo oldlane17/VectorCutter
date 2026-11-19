@@ -79,7 +79,8 @@ Object.assign(SVGEditor.prototype, {
             target = target.parentElement;
         }
 
-        if (this.canvasMode === 'pan') {
+        if (e.button === 1 || this.isSpaceDown || this.canvasMode === 'pan') {
+            e.preventDefault();
             this.startPanning(e.clientX, e.clientY);
             return;
         }
@@ -318,12 +319,76 @@ Object.assign(SVGEditor.prototype, {
         });
 
         // Canvas events
-        // Canvas events
         this.canvasContainer.addEventListener('mousedown', this.handleMouseDown.bind(this));
         this.canvasContainer.addEventListener('mousemove', this.handleMouseMove.bind(this));
         // Use window for mouseup to catch releases outside the canvas
         window.addEventListener('mouseup', this.handleMouseUp.bind(this));
         this.canvasContainer.addEventListener('wheel', this.handleWheel.bind(this), { passive: false });
+
+        // Touch two-finger pan & pinch-zoom
+        let touchStartDist = null;
+        let touchStartCenter = null;
+        let touchStartViewBox = null;
+
+        this.canvasContainer.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                const t1 = e.touches[0];
+                const t2 = e.touches[1];
+                touchStartDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+                touchStartCenter = {
+                    x: (t1.clientX + t2.clientX) / 2,
+                    y: (t1.clientY + t2.clientY) / 2
+                };
+                touchStartViewBox = { ...this.viewBox };
+            }
+        }, { passive: false });
+
+        this.canvasContainer.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 2 && touchStartDist && touchStartCenter && touchStartViewBox) {
+                e.preventDefault();
+                const t1 = e.touches[0];
+                const t2 = e.touches[1];
+                const curDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+                const curCenter = {
+                    x: (t1.clientX + t2.clientX) / 2,
+                    y: (t1.clientY + t2.clientY) / 2
+                };
+
+                const scale = touchStartDist / Math.max(1, curDist);
+                const screenDx = curCenter.x - touchStartCenter.x;
+                const screenDy = curCenter.y - touchStartCenter.y;
+
+                const centerSVG = this.screenToSVG(curCenter.x, curCenter.y);
+                const minWidth = 12;
+                const maxWidth = 120000;
+                let newWidth = touchStartViewBox.width * scale;
+                if (newWidth < minWidth) newWidth = minWidth;
+                if (newWidth > maxWidth) newWidth = maxWidth;
+                const newHeight = touchStartViewBox.height * (newWidth / touchStartViewBox.width);
+
+                const mouseXRatio = (centerSVG.x - touchStartViewBox.x) / touchStartViewBox.width;
+                const mouseYRatio = (centerSVG.y - touchStartViewBox.y) / touchStartViewBox.height;
+
+                const scaleX = newWidth / (this.canvas.clientWidth || 1);
+                const scaleY = newHeight / (this.canvas.clientHeight || 1);
+
+                this.viewBox.width = newWidth;
+                this.viewBox.height = newHeight;
+                this.viewBox.x = centerSVG.x - mouseXRatio * newWidth - (screenDx * scaleX);
+                this.viewBox.y = centerSVG.y - mouseYRatio * newHeight - (screenDy * scaleY);
+                this.zoomLevel = 1200 / this.viewBox.width;
+                this.updateViewBox();
+            }
+        }, { passive: false });
+
+        this.canvasContainer.addEventListener('touchend', (e) => {
+            if (e.touches.length < 2) {
+                touchStartDist = null;
+                touchStartCenter = null;
+                touchStartViewBox = null;
+            }
+        });
 
         // Double click on text or LaTeX to edit immediately
         this.canvasContainer.addEventListener('dblclick', (e) => {
