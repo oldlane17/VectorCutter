@@ -158,80 +158,132 @@
         <!-- Main Content Area -->
         <div class="content-area">
             <!-- Sidebar -->
-            <!-- Sidebar with Image Icons -->
-            <div class="sidebar">
-                <div class="tool-group">
-                    <div class="tools">
-                        <!-- Select Tool -->
-                        <div class="tool active" data-tool="select" data-title="Select Tool">
-                            <img src="sidebar/select.svg" alt="Select">
+            <div class="sidebar" id="mainSidebar">
+                <!-- Sidebar Top Controls: Search & Collapse -->
+                <div class="sidebar-header">
+                    <div class="sidebar-search-box">
+                        <input type="text" id="sidebarSearch" placeholder="Search shapes / tools (/)" title="Press / to search">
+                    </div>
+                    <button class="sidebar-collapse-toggle" id="sidebarCollapseBtn" title="Collapse sidebar">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Section 1: Shapes & Tools -->
+                <div class="sidebar-section" id="sectionShapes">
+                    <div class="sidebar-section-header">
+                        <span>SHAPES & TOOLS</span>
+                        <span class="section-arrow">▼</span>
+                    </div>
+                    <div class="sidebar-section-content">
+                        <div class="tools">
+                            <div class="tool active" data-tool="select" data-title="Select Tool">
+                                <img src="sidebar/select.svg" alt="Select">
+                                <span class="tool-label">Select</span>
+                                <span class="tool-shortcut">V</span>
+                            </div>
+                            <div class="tool" data-tool="rectangle" data-title="Rectangle">
+                                <img src="sidebar/rectangle.svg" alt="Rectangle">
+                                <span class="tool-label">Rectangle</span>
+                                <span class="tool-shortcut">R</span>
+                            </div>
+                            <div class="tool" data-tool="circle" data-title="Circle">
+                                <img src="sidebar/circle.svg" alt="Circle">
+                                <span class="tool-label">Circle</span>
+                                <span class="tool-shortcut">C</span>
+                            </div>
+                            <div class="tool" data-tool="ellipse" data-title="Ellipse">
+                                <img src="sidebar/ellipse.svg" alt="Ellipse">
+                                <span class="tool-label">Ellipse</span>
+                            </div>
+                            <div class="tool" data-tool="line" data-title="Line">
+                                <img src="sidebar/line.svg" alt="Line">
+                                <span class="tool-label">Line</span>
+                                <span class="tool-shortcut">L</span>
+                            </div>
+                            <div class="tool" data-tool="curve" data-title="Curve / Node Edit">
+                                <img src="sidebar/curve.svg" alt="Curve">
+                                <span class="tool-label">Curve / Node</span>
+                                <span class="tool-shortcut">N</span>
+                            </div>
+                            <div class="tool" data-tool="path" data-title="Path Tool / Pen">
+                                <img src="sidebar/path.svg" alt="Path">
+                                <span class="tool-label">Pen / Path</span>
+                                <span class="tool-shortcut">P</span>
+                            </div>
+                            <div class="tool" data-tool="text" data-title="Text Tool">
+                                <img src="sidebar/text.svg" alt="Text">
+                                <span class="tool-label">Text</span>
+                                <span class="tool-shortcut">T</span>
+                            </div>
+                        </div>
+                        <div class="sidebar-browse-btn" id="browseShapesBtn" title="Browse all shapes & presets">
+                            <img src="sidebar/templates.svg" alt="Library" style="width:14px; height:14px;">
+                            <span>Browse All Shapes...</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="tool-group">
-                    <div class="tools">
-                        <!-- Shapes -->
-                        <div class="tool" data-tool="rectangle" data-title="Rectangle">
-                            <img src="sidebar/rectangle.svg" alt="Rectangle">
-                        </div>
-                        <div class="tool" data-tool="circle" data-title="Circle">
-                            <img src="sidebar/circle.svg" alt="Circle">
-                        </div>
-                        <div class="tool" data-tool="ellipse" data-title="Ellipse">
-                            <img src="sidebar/ellipse.svg" alt="Ellipse">
-                        </div>
-                        <div class="tool" data-tool="line" data-title="Line">
-                            <img src="sidebar/line.svg" alt="Line">
-                        </div>
-                        <div class="tool" data-tool="curve" data-title="Curve">
-                            <img src="sidebar/curve.svg" alt="Curve">
-                        </div>
-                        <div class="tool" data-tool="path" data-title="Path Tool">
-                            <img src="sidebar/path.svg" alt="Path">
-                        </div>
-                        <div class="tool" data-tool="text" data-title="Text Tool">
-                            <img src="sidebar/text.svg" alt="Text">
-                        </div>
+                <!-- Section 2: Components -->
+                <div class="sidebar-section" id="sectionComponents">
+                    <div class="sidebar-section-header">
+                        <span>COMPONENTS</span>
+                        <span class="section-arrow">▼</span>
                     </div>
-                </div>
-                <div class="tool-group">
-                <div class="tool" id="templatesBtn" data-action="templates" data-title="Templates Library">
-                    <img src="sidebar/templates.svg" alt="Templates">
-                </div>
+                    <div class="sidebar-section-content">
+                        <div class="components-list" id="sidebarComponentsList">
+                            <div class="component-item active" data-component-id="main">
+                                <span class="comp-icon">📄</span>
+                                <span class="comp-name">Component 1</span>
+                            </div>
+                        </div>
+                        <button class="add-component-btn" id="addComponentBtn" title="Add Component / Page">
+                            + Add Component
+                        </button>
+                    </div>
                 </div>
 
-                <div class="tool-group">
-                    <div class="tools">
-                        <!-- Actions -->
-                        <div class="tool" id="editCodeBtn" data-title="Edit SVG Code">
-                            <img src="sidebar/code.svg" alt="Edit Code">
+                <!-- Section 3: Project -->
+                <div class="sidebar-section" id="sectionProject">
+                    <div class="sidebar-section-header">
+                        <span>PROJECT</span>
+                        <span class="section-arrow">▼</span>
+                    </div>
+                    <div class="sidebar-section-content">
+                        <div class="project-entry" id="projectReadmeBtn">
+                            <span>📝</span> <span>Read Me / Notes</span>
                         </div>
-                        <div class="tool" data-action="code" data-title="View Source">
-                            <img src="sidebar/code_blocks.svg" alt="View Source">
+                        <div class="project-entry" id="projectSettingsBtn">
+                            <span>⚙️</span> <span>Units & Settings</span>
                         </div>
                     </div>
                 </div>
-                
-            
 
-                <!-- <div class="properties">
-                    
-                    <div class="tool-group">
-                        <h3>UNITS</h3>
-                        <div class="property-group">
-                            <label>Measurement Units</label>
-                            <select id="unitSelector">
-                                <option value="px">Pixels (px)</option>
-                                <option value="mm">Millimeters (mm)</option>
-                                <option value="cm">Centimeters (cm)</option>
-                                <option value="in">Inches (in)</option>
-                            </select>
+                <!-- Developer Tools / SVG Source -->
+                <div class="sidebar-section">
+                    <div class="sidebar-section-header">
+                        <span>DEVELOPER</span>
+                        <span class="section-arrow">▼</span>
+                    </div>
+                    <div class="sidebar-section-content">
+                        <div class="tools">
+                            <div class="tool" id="editCodeBtn" data-title="Edit SVG Code">
+                                <img src="sidebar/code.svg" alt="Edit Code">
+                                <span class="tool-label">Edit SVG Code</span>
+                            </div>
+                            <div class="tool" data-action="code" data-title="View Source">
+                                <img src="sidebar/code_blocks.svg" alt="View Source">
+                                <span class="tool-label">View Source</span>
+                            </div>
                         </div>
                     </div>
-                </div> -->
+                </div>
             </div>
-            
+
+            <!-- Left Resizer Divider -->
+            <div id="sidebarResizer" class="resizer sidebar-resizer" title="Drag to resize sidebar (double-click to reset)"></div>
 
             <!-- Main Canvas Area -->
             <div class="canvas-area">
@@ -412,6 +464,7 @@
     <script src="editor/js/editor-export.js"></script>
     <script src="editor/js/editor-templates.js"></script>
     <script src="editor/js/editor-quickbar.js"></script>
+    <script src="editor/js/editor-sidebar-resize.js"></script>
     <script src="editor/js/editor-code.js"></script>
     <script src="editor/js/editor-init.js"></script>
     <div id="global-tooltip"></div>

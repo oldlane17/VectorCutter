@@ -124,6 +124,7 @@ class SVGEditor {
         this.updateCanvasCursor();
         this.initScrollMode();
         this.initQuickbar();
+        this.setupSidebarResizing();
         this.setupShiftKeyListener();
         this.setupKeyboardModifiers();
         this.updateContextMenu();
