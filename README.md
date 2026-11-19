@@ -233,7 +233,6 @@ Enhance [`editor/js/`](editor/js/):
 7. **Submit a Pull Request**  
    Go to your fork on GitHub and click **Compare & pull request**. Describe your changes, add a screenshot or GIF if applicable, and submit!
 
-> **Friendly Promise:** Don't worry if your code isn't 100% polished! We are happy to review, offer suggestions, and help you get your pull request merged.
 
 ---
 

@@ -801,179 +801,185 @@ Object.assign(SVGEditor.prototype, {
 
     addTextCoordinateListeners(element) {
         let pendingUpdate = null;
-        
-        const updateText = async () => {
-            if (pendingUpdate) clearTimeout(pendingUpdate);
-            
-            const textContentInput = document.getElementById('contextTextContent');
-            const textFontSizeInput = document.getElementById('contextTextFontSize');
-            const textWidthInput = document.getElementById('contextTextWidth');
-            const textHeightInput = document.getElementById('contextTextHeight');
-            const textCenterXInput = document.getElementById('contextTextCenterX');
-            const textCenterYInput = document.getElementById('contextTextCenterY');
-            
-            if (!textContentInput) return;
 
-            const rawText = textContentInput.value;
-            const isNowLatex = this.isLatexString(rawText);
-            const currentIsLatex = element.getAttribute('data-type') === 'latex';
-            const bbox = element.getBBox();
+        const isLatex = element.getAttribute('data-text-mode') === 'latex' || element.getAttribute('data-type') === 'latex';
 
-            // Detect active input
-            const activeId = document.activeElement ? document.activeElement.id : '';
-            const isWidthEdit = activeId === 'contextTextWidth';
-            const isHeightEdit = activeId === 'contextTextHeight';
-            const isFontEdit = activeId === 'contextTextFontSize';
-            
-            // --- 1. HANDLE DIMENSION/FONT SIZE UPDATES ---
-            if ((isWidthEdit || isHeightEdit || isFontEdit) && bbox.width > 0 && bbox.height > 0) {
-                
-                if (currentIsLatex) {
-                    let newScale = 1;
-                    const t = element.getAttribute('transform') || '';
-                    const sm = t.match(/scale\(([-\d.]+)/);
-                    const currentScale = sm ? parseFloat(sm[1]) : 1;
-                    
-                    if (isWidthEdit) {
-                        const targetW = parseFloat(textWidthInput.value) * this.unitFactors[this.currentUnits];
-                        newScale = targetW / bbox.width;
-                    } else if (isHeightEdit) {
-                        const targetH = parseFloat(textHeightInput.value) * this.unitFactors[this.currentUnits];
-                        newScale = targetH / bbox.height;
-                    } else if (isFontEdit) {
-                        newScale = parseFloat(textFontSizeInput.value) / 1000;
-                    } else {
-                        newScale = currentScale;
-                    }
+        // --- 1. MODE SWITCH: Plain Text <-> LaTeX ---
+        const btnModePlain = document.getElementById('btnTextModePlain');
+        const btnModeLatex = document.getElementById('btnTextModeLatex');
 
-                    let newTransform = t.includes('scale') ? t.replace(/scale\([^\)]+\)/, '') : t;
-                    newTransform = newTransform.trim() + ` scale(${newScale})`;
-                    element.setAttribute('transform', newTransform);
-                    
-                    // Update inputs to reflect new reality
-                    const s = newScale;
-                    if(!isWidthEdit && textWidthInput) this.updateInputValue('contextTextWidth', this.formatUnitValue(bbox.width * s));
-                    if(!isHeightEdit && textHeightInput) this.updateInputValue('contextTextHeight', this.formatUnitValue(bbox.height * s));
-                    if(!isFontEdit && textFontSizeInput) this.updateInputValue('contextTextFontSize', Math.round(s * 1000));
+        if (btnModePlain) {
+            btnModePlain.addEventListener('click', async () => {
+                if (!isLatex) return; // already plain
 
-                } else {
-                    // Standard Text Logic
-                    const currentFontSize = parseFloat(element.getAttribute('font-size') || 16);
-                    let newFontSize = currentFontSize;
-                    
-                    if (isWidthEdit) {
-                        const targetW = parseFloat(textWidthInput.value) * this.unitFactors[this.currentUnits];
-                        newFontSize = currentFontSize * (targetW / bbox.width);
-                    } else if (isHeightEdit) {
-                        const targetH = parseFloat(textHeightInput.value) * this.unitFactors[this.currentUnits];
-                        newFontSize = currentFontSize * (targetH / bbox.height);
-                    } else if (isFontEdit) {
-                        newFontSize = parseFloat(textFontSizeInput.value);
-                    }
-                    
-                    element.setAttribute('font-size', newFontSize);
-                    
-                    const ratio = newFontSize / currentFontSize;
-                    if(!isWidthEdit && textWidthInput) this.updateInputValue('contextTextWidth', this.formatUnitValue(bbox.width * ratio));
-                    if(!isHeightEdit && textHeightInput) this.updateInputValue('contextTextHeight', this.formatUnitValue(bbox.height * ratio));
-                }
-            }
+                const rawFormula = element.getAttribute('data-latex') || element.textContent || '';
+                const cleanContent = rawFormula.replace(/^\$\$|\$\$$/g, '').trim();
 
-            // --- 2. HANDLE CONTENT CHANGE ---
-            if (isNowLatex) {
-                const oldContent = currentIsLatex ? element.getAttribute('data-latex') : element.textContent;
-                
-                if (!currentIsLatex || oldContent !== rawText) {
-                    let currentX, currentY;
-                    if (currentIsLatex) {
-                        const t = element.getAttribute('transform') || '';
-                        const tm = t.match(/translate\(([-\d.]+),\s*([-\d.]+)\)/);
-                        currentX = tm ? parseFloat(tm[1]) : 0;
-                        currentY = tm ? parseFloat(tm[2]) : 0;
-                    } else {
-                        currentX = parseFloat(element.getAttribute('x')) || 0;
-                        currentY = parseFloat(element.getAttribute('y')) || 0;
-                    }
+                const bbox = element.getBBox();
+                const transform = element.getAttribute('transform') || '';
+                const tm = transform.match(/translate\(([-\d.]+),\s*([-\d.]+)\)/);
+                const x = tm ? parseFloat(tm[1]) : (bbox.x || 0);
+                const y = tm ? parseFloat(tm[2]) : (bbox.y || 0);
 
-                    let fontSize = 16;
-                    if (textFontSizeInput && textFontSizeInput.value) {
-                        fontSize = parseFloat(textFontSizeInput.value);
-                    } else if (currentIsLatex) {
-                        const t = element.getAttribute('transform') || '';
-                        const sm = t.match(/scale\(([-\d.]+)/);
-                        const s = sm ? parseFloat(sm[1]) : 1;
-                        fontSize = s * 1000;
-                    }
-
-                    const newElement = await this.createLatexElement(rawText, currentX, currentY, fontSize, '#000000');
-
-                    if (newElement) {
-                        const oldTransform = element.getAttribute('transform') || '';
-                        const rotMatch = oldTransform.match(/rotate\(([-\d.]+)/);
-                        if (rotMatch) {
-                            const t = newElement.getAttribute('transform');
-                            const parts = t.split('scale');
-                            newElement.setAttribute('transform', `${parts[0]} rotate(${rotMatch[1]}) scale${parts[1]}`);
-                        }
-
-                        const activeEl = document.activeElement;
-                        const wasTextContent = activeEl && activeEl.id === 'contextTextContent';
-                        const selStart = wasTextContent ? activeEl.selectionStart : null;
-                        const selEnd = wasTextContent ? activeEl.selectionEnd : null;
-
-                        element.parentNode.replaceChild(newElement, element);
-                        this.selectedElements = [newElement];
-                        this.selectedElement = newElement;
-                        this.selectElement(newElement);
-
-                        if (wasTextContent) {
-                            const textInput = document.getElementById('contextTextContent');
-                            if (textInput) {
-                                textInput.focus();
-                                if (selStart !== null && selEnd !== null) {
-                                    textInput.setSelectionRange(selStart, selEnd);
-                                }
-                            }
-                        }
-                        return;
-                    }
-                }
-            } else if (currentIsLatex && !isNowLatex) {
-                // Switch from Latex to Text
-                const activeEl = document.activeElement;
-                const wasTextContent = activeEl && activeEl.id === 'contextTextContent';
-                const selStart = wasTextContent ? activeEl.selectionStart : null;
-                const selEnd = wasTextContent ? activeEl.selectionEnd : null;
+                // Restore previous plain text properties if saved
+                const savedFont = element.getAttribute('data-plain-font') || 'Arial';
+                const savedSize = element.getAttribute('data-plain-size') || '24';
+                const savedWeight = element.getAttribute('data-plain-weight') || 'normal';
+                const savedStyle = element.getAttribute('data-plain-style') || 'normal';
+                const savedAnchor = element.getAttribute('data-plain-anchor') || 'start';
 
                 const ns = "http://www.w3.org/2000/svg";
                 const newText = document.createElementNS(ns, 'text');
-                const t = element.getAttribute('transform') || '';
-                const tm = t.match(/translate\(([-\d.]+),\s*([-\d.]+)\)/);
-                newText.setAttribute('x', tm ? tm[1] : 0);
-                newText.setAttribute('y', tm ? tm[2] : 0);
-                newText.textContent = rawText;
-                newText.setAttribute('font-size', textFontSizeInput ? textFontSizeInput.value : 16);
-                newText.setAttribute('fill', '#000000');
-                newText.setAttribute('font-family', 'Arial');
+                newText.setAttribute('x', x);
+                newText.setAttribute('y', y);
+                newText.setAttribute('font-family', savedFont);
+                newText.setAttribute('font-size', savedSize);
+                newText.setAttribute('font-weight', savedWeight);
+                newText.setAttribute('font-style', savedStyle);
+                newText.setAttribute('text-anchor', savedAnchor);
+                newText.setAttribute('fill', element.getAttribute('fill') || '#000000');
+                newText.setAttribute('data-text-mode', 'plain');
+                newText.setAttribute('data-latex', rawFormula); // preserve formula
+                newText.textContent = cleanContent;
+
                 element.parentNode.replaceChild(newText, element);
                 this.selectedElements = [newText];
                 this.selectedElement = newText;
                 this.selectElement(newText);
+                this.saveState();
+            });
+        }
 
-                if (wasTextContent) {
-                    const textInput = document.getElementById('contextTextContent');
-                    if (textInput) {
-                        textInput.focus();
-                        if (selStart !== null && selEnd !== null) {
-                            textInput.setSelectionRange(selStart, selEnd);
-                        }
+        if (btnModeLatex) {
+            btnModeLatex.addEventListener('click', async () => {
+                if (isLatex) return; // already latex
+
+                const rawText = element.textContent || '';
+                const x = parseFloat(element.getAttribute('x') || 0);
+                const y = parseFloat(element.getAttribute('y') || 0);
+                const fontSize = parseFloat(element.getAttribute('font-size') || 24);
+                const fill = element.getAttribute('fill') || '#000000';
+
+                // Preserve plain text attributes
+                const prevFont = element.getAttribute('font-family') || 'Arial';
+                const prevWeight = element.getAttribute('font-weight') || 'normal';
+                const prevStyle = element.getAttribute('font-style') || 'normal';
+                const prevAnchor = element.getAttribute('text-anchor') || 'start';
+
+                // Formulate LaTeX string
+                let formula = element.getAttribute('data-latex');
+                if (!formula) {
+                    if (rawText.includes('\\') || rawText.includes('^') || rawText.includes('_') || rawText.includes('{')) {
+                        formula = rawText;
+                    } else {
+                        formula = `\\text{${rawText}}`;
                     }
                 }
-                return;
-            } else if (!currentIsLatex) {
-                // Standard Text Update
+
+                const newElement = await this.createLatexElement(formula, x, y, fontSize, fill);
+                if (newElement) {
+                    newElement.setAttribute('data-text-mode', 'latex');
+                    newElement.setAttribute('data-plain-font', prevFont);
+                    newElement.setAttribute('data-plain-size', fontSize);
+                    newElement.setAttribute('data-plain-weight', prevWeight);
+                    newElement.setAttribute('data-plain-style', prevStyle);
+                    newElement.setAttribute('data-plain-anchor', prevAnchor);
+
+                    element.parentNode.replaceChild(newElement, element);
+                    this.selectedElements = [newElement];
+                    this.selectedElement = newElement;
+                    this.selectElement(newElement);
+                    this.saveState();
+                }
+            });
+        }
+
+        // --- 2. UPDATE TEXT CONTENT / FORMULA ---
+        const updateText = async () => {
+            if (pendingUpdate) clearTimeout(pendingUpdate);
+
+            const textContentInput = document.getElementById('contextTextContent');
+            if (!textContentInput) return;
+            const rawText = textContentInput.value;
+
+            if (isLatex) {
+                // LaTeX Live Update with Error Handling
+                const cleanTex = rawText.replace(/^\$\$|\$\$$/g, '').trim();
+                const displayStyle = element.getAttribute('data-latex-style') || 'displaystyle';
+                const styledTex = displayStyle === 'block' || displayStyle === 'displaystyle' ?
+                    `\\displaystyle ${cleanTex}` : cleanTex;
+
+                try {
+                    if (!window.MathJax) return;
+                    const testContainer = await MathJax.tex2svgPromise(styledTex);
+                    const errorEl = testContainer.querySelector('.MathJax_Error') || testContainer.querySelector('[data-mjx-error]');
+
+                    const errorBox = document.getElementById('latexErrorBox');
+                    const okBox = document.getElementById('latexStatusOk');
+
+                    if (errorEl) {
+                        if (errorBox) {
+                            errorBox.textContent = errorEl.getAttribute('title') || errorEl.textContent || 'LaTeX syntax error';
+                            errorBox.style.display = 'block';
+                        }
+                        if (okBox) okBox.style.display = 'none';
+                        return; // Do not render invalid LaTeX to canvas
+                    } else {
+                        if (errorBox) errorBox.style.display = 'none';
+                        if (okBox) okBox.style.display = 'flex';
+                    }
+
+                    // Re-render valid formula
+                    const t = element.getAttribute('transform') || '';
+                    const tm = t.match(/translate\(([-\d.]+),\s*([-\d.]+)\)/);
+                    const curX = tm ? parseFloat(tm[1]) : 0;
+                    const curY = tm ? parseFloat(tm[2]) : 0;
+
+                    const sm = t.match(/scale\(([-\d.]+)/);
+                    const curScale = sm ? parseFloat(sm[1]) : 0.024;
+                    const curFontSize = curScale * 1000;
+
+                    const newEl = await this.createLatexElement(cleanTex, curX, curY, curFontSize, element.getAttribute('fill') || '#000000');
+                    if (newEl) {
+                        newEl.setAttribute('data-text-mode', 'latex');
+                        newEl.setAttribute('data-latex-style', displayStyle);
+
+                        // Transfer plain-text backup attributes
+                        ['data-plain-font', 'data-plain-size', 'data-plain-weight', 'data-plain-style', 'data-plain-anchor'].forEach(a => {
+                            if (element.hasAttribute(a)) newEl.setAttribute(a, element.getAttribute(a));
+                        });
+
+                        const activeEl = document.activeElement;
+                        const wasContent = activeEl && activeEl.id === 'contextTextContent';
+                        const selStart = wasContent ? activeEl.selectionStart : null;
+                        const selEnd = wasContent ? activeEl.selectionEnd : null;
+
+                        element.parentNode.replaceChild(newEl, element);
+                        this.selectedElements = [newEl];
+                        this.selectedElement = newEl;
+                        this.selectElement(newEl);
+
+                        if (wasContent) {
+                            const ti = document.getElementById('contextTextContent');
+                            if (ti) {
+                                ti.focus();
+                                if (selStart !== null) ti.setSelectionRange(selStart, selEnd);
+                            }
+                        }
+                    }
+                } catch (err) {
+                    const errorBox = document.getElementById('latexErrorBox');
+                    const okBox = document.getElementById('latexStatusOk');
+                    if (errorBox) {
+                        errorBox.textContent = err.message || 'Error compiling LaTeX';
+                        errorBox.style.display = 'block';
+                    }
+                    if (okBox) okBox.style.display = 'none';
+                }
+            } else {
+                // Plain Text update
                 if (element.textContent !== rawText) {
-                    element.textContent = ''; 
+                    element.textContent = '';
                     const lines = rawText.split('\n');
                     const currentX = element.getAttribute('x') || '0';
                     lines.forEach((line, i) => {
@@ -983,56 +989,188 @@ Object.assign(SVGEditor.prototype, {
                         if (i > 0) tspan.setAttribute('dy', '1.2em');
                         element.appendChild(tspan);
                     });
+                    this.updateSelectionHandles();
+                    this.updateContextMenuValues();
                 }
             }
-
-            // --- 3. HANDLE CENTER POSITION UPDATES ---
-            const isCenterEdit = activeId === 'contextTextCenterX' || activeId === 'contextTextCenterY';
-            if (isCenterEdit && textCenterXInput && textCenterYInput) {
-                 const targetCX = parseFloat(textCenterXInput.value) * this.unitFactors[this.currentUnits];
-                 const targetCY = parseFloat(textCenterYInput.value) * this.unitFactors[this.currentUnits];
-                 this.moveElement(element, targetCX, targetCY);
-            }
-
-            // If editing text content, update the displayed width & height inputs without jumping
-            if (activeId === 'contextTextContent') {
-                try {
-                    const newBbox = element.getBBox();
-                    if (newBbox && newBbox.width > 0) {
-                        const twInput = document.getElementById('contextTextWidth');
-                        const thInput = document.getElementById('contextTextHeight');
-                        if (twInput) twInput.value = this.formatUnitValue(newBbox.width);
-                        if (thInput) thInput.value = this.formatUnitValue(newBbox.height);
-                    }
-                } catch(e) {}
-            }
-            
-            this.updateSelectionHandles();
         };
 
-        // Attach listeners for geometry and content
         this.addInputWithEditingState('contextTextContent', () => {
             if (pendingUpdate) clearTimeout(pendingUpdate);
-            pendingUpdate = setTimeout(updateText, 500);
+            pendingUpdate = setTimeout(updateText, 350);
         });
-        this.addInputWithEditingState('contextTextWidth', updateText);
-        this.addInputWithEditingState('contextTextHeight', updateText);
-        this.addInputWithEditingState('contextTextFontSize', updateText);
-        this.addInputWithEditingState('contextTextCenterX', updateText);
-        this.addInputWithEditingState('contextTextCenterY', updateText);
 
-        // FIX: Add Font Family Listener with UI updates
-        const textFontFamilyInput = document.getElementById('contextTextFontFamily');
-        if (textFontFamilyInput) {
-            textFontFamilyInput.addEventListener('change', () => {
-                element.setAttribute('font-family', textFontFamilyInput.value);
-                // Trigger updates to resize the selection box and update width/height inputs
+        // --- 3. GEOMETRY INPUTS (Width, Height, Center X, Center Y, Font Size) ---
+        const updateGeometry = () => {
+            const bbox = element.getBBox();
+            const textWidthInput = document.getElementById('contextTextWidth');
+            const textHeightInput = document.getElementById('contextTextHeight');
+            const textFontSizeInput = document.getElementById('contextTextFontSize');
+            const textCenterXInput = document.getElementById('contextTextCenterX');
+            const textCenterYInput = document.getElementById('contextTextCenterY');
+            const activeId = document.activeElement ? document.activeElement.id : '';
+
+            if (activeId === 'contextTextFontSize' && textFontSizeInput) {
+                const newPt = parseFloat(textFontSizeInput.value);
+                if (newPt > 0) {
+                    if (isLatex) {
+                        const newScale = newPt / 1000;
+                        const t = element.getAttribute('transform') || '';
+                        const stripped = t.replace(/scale\([^\)]+\)/, '').trim();
+                        element.setAttribute('transform', `${stripped} scale(${newScale})`);
+                    } else {
+                        element.setAttribute('font-size', newPt);
+                    }
+                    this.updateSelectionHandles();
+                    this.updateContextMenuValues();
+                }
+            } else if ((activeId === 'contextTextWidth' || activeId === 'contextTextHeight') && bbox.width > 0 && bbox.height > 0) {
+                if (isLatex) {
+                    const t = element.getAttribute('transform') || '';
+                    const sm = t.match(/scale\(([-\d.]+)/);
+                    const curScale = sm ? parseFloat(sm[1]) : 0.024;
+                    let targetScale = curScale;
+
+                    if (activeId === 'contextTextWidth' && textWidthInput) {
+                        const targetW = parseFloat(textWidthInput.value) * this.unitFactors[this.currentUnits];
+                        targetScale = targetW / bbox.width;
+                    } else if (activeId === 'contextTextHeight' && textHeightInput) {
+                        const targetH = parseFloat(textHeightInput.value) * this.unitFactors[this.currentUnits];
+                        targetScale = targetH / bbox.height;
+                    }
+
+                    const stripped = t.replace(/scale\([^\)]+\)/, '').trim();
+                    element.setAttribute('transform', `${stripped} scale(${targetScale})`);
+                } else {
+                    const curFontSize = parseFloat(element.getAttribute('font-size') || 16);
+                    let newFontSize = curFontSize;
+                    if (activeId === 'contextTextWidth' && textWidthInput) {
+                        const targetW = parseFloat(textWidthInput.value) * this.unitFactors[this.currentUnits];
+                        newFontSize = curFontSize * (targetW / bbox.width);
+                    } else if (activeId === 'contextTextHeight' && textHeightInput) {
+                        const targetH = parseFloat(textHeightInput.value) * this.unitFactors[this.currentUnits];
+                        newFontSize = curFontSize * (targetH / bbox.height);
+                    }
+                    element.setAttribute('font-size', Math.max(1, newFontSize));
+                }
                 this.updateSelectionHandles();
                 this.updateContextMenuValues();
+            } else if ((activeId === 'contextTextCenterX' || activeId === 'contextTextCenterY') && textCenterXInput && textCenterYInput) {
+                const targetCX = parseFloat(textCenterXInput.value) * this.unitFactors[this.currentUnits];
+                const targetCY = parseFloat(textCenterYInput.value) * this.unitFactors[this.currentUnits];
+                this.moveElement(element, targetCX, targetCY);
+            }
+        };
+
+        this.addInputWithEditingState('contextTextWidth', updateGeometry);
+        this.addInputWithEditingState('contextTextHeight', updateGeometry);
+        this.addInputWithEditingState('contextTextFontSize', updateGeometry);
+        this.addInputWithEditingState('contextTextCenterX', updateGeometry);
+        this.addInputWithEditingState('contextTextCenterY', updateGeometry);
+
+        // --- 4. PLAIN TEXT STYLING CONTROLS ---
+        if (!isLatex) {
+            const fontSelect = document.getElementById('contextTextFontFamily');
+            if (fontSelect && this.populateFontSelector) { this.populateFontSelector(fontSelect, element.getAttribute('font-family') || 'Arial'); }
+            if (fontSelect) {
+                fontSelect.addEventListener('change', () => {
+                    element.setAttribute('font-family', fontSelect.value);
+                    this.updateSelectionHandles();
+                    this.updateContextMenuValues();
+                    this.saveState();
+                });
+            }
+
+            const btnBold = document.getElementById('btnTextBold');
+            if (btnBold) {
+                btnBold.addEventListener('click', () => {
+                    const cur = element.getAttribute('font-weight');
+                    const next = cur === 'bold' ? 'normal' : 'bold';
+                    element.setAttribute('font-weight', next);
+                    btnBold.classList.toggle('active', next === 'bold');
+                    this.updateSelectionHandles();
+                    this.saveState();
+                });
+            }
+
+            const btnItalic = document.getElementById('btnTextItalic');
+            if (btnItalic) {
+                btnItalic.addEventListener('click', () => {
+                    const cur = element.getAttribute('font-style');
+                    const next = cur === 'italic' ? 'normal' : 'italic';
+                    element.setAttribute('font-style', next);
+                    btnItalic.classList.toggle('active', next === 'italic');
+                    this.updateSelectionHandles();
+                    this.saveState();
+                });
+            }
+
+            const btnAlignLeft = document.getElementById('btnTextAlignLeft');
+            const btnAlignCenter = document.getElementById('btnTextAlignCenter');
+            const btnAlignRight = document.getElementById('btnTextAlignRight');
+
+            [
+                { btn: btnAlignLeft, val: 'start' },
+                { btn: btnAlignCenter, val: 'middle' },
+                { btn: btnAlignRight, val: 'end' }
+            ].forEach(({ btn, val }) => {
+                if (btn) {
+                    btn.addEventListener('click', () => {
+                        element.setAttribute('text-anchor', val);
+                        [btnAlignLeft, btnAlignCenter, btnAlignRight].forEach(b => b?.classList.remove('active'));
+                        btn.classList.add('active');
+                        this.updateSelectionHandles();
+                        this.saveState();
+                    });
+                }
             });
+
+            const letterSpacingInput = document.getElementById('contextTextLetterSpacing');
+            if (letterSpacingInput) {
+                letterSpacingInput.addEventListener('input', () => {
+                    element.setAttribute('letter-spacing', `${letterSpacingInput.value}px`);
+                    this.updateSelectionHandles();
+                });
+            }
+
+            const weldCheck = document.getElementById('contextTextWelding');
+            if (weldCheck) {
+                weldCheck.addEventListener('change', () => {
+                    element.setAttribute('data-weld', weldCheck.checked ? 'true' : 'false');
+                    this.saveState();
+                });
+            }
+        } else {
+            // --- 5. LATEX SPECIFIC CONTROLS ---
+            const btnBlock = document.getElementById('btnLatexBlock');
+            const btnInline = document.getElementById('btnLatexInline');
+
+            if (btnBlock) {
+                btnBlock.addEventListener('click', () => {
+                    element.setAttribute('data-latex-style', 'displaystyle');
+                    btnBlock.classList.add('active');
+                    btnInline?.classList.remove('active');
+                    updateText();
+                });
+            }
+
+            if (btnInline) {
+                btnInline.addEventListener('click', () => {
+                    element.setAttribute('data-latex-style', 'textstyle');
+                    btnInline.classList.add('active');
+                    btnBlock?.classList.remove('active');
+                    updateText();
+                });
+            }
+
+            const btnConvert = document.getElementById('btnLatexConvertToPaths');
+            if (btnConvert) {
+                btnConvert.addEventListener('click', () => {
+                    this.convertSelectionToPaths();
+                });
+            }
         }
-    }
-    // Line coordinate listeners - updated to handle center,
+    },
 
     addLineCoordinateListeners(element) {
         let pendingUpdate = null;
@@ -1949,44 +2087,49 @@ Object.assign(SVGEditor.prototype, {
     },
 
     getTextProperties(element) {
-        // Check if this is a LaTeX group or standard text
-        const isLatex = element.getAttribute('data-type') === 'latex';
-        
-        let textContent = '';
-        let fontFamily = 'Arial';
-        let fontSize = 16;
-        
-        // Get geometric info
+        const isLatexAttr = element.getAttribute('data-type') === 'latex';
+        let textMode = element.getAttribute('data-text-mode');
+        if (!textMode) {
+            textMode = isLatexAttr ? 'latex' : 'plain';
+            element.setAttribute('data-text-mode', textMode);
+        }
+        const isLatex = textMode === 'latex';
+
         const bbox = element.getBBox();
-        
-        // Calculate VISUAL Position and Size (accounting for transforms)
         let scaleX = 1;
         let scaleY = 1;
         let x = 0;
         let y = 0;
-        
+        let fontSize = 16;
+        let fontFamily = 'Arial';
+        let textContent = '';
+        let isBold = false;
+        let isItalic = false;
+        let textAlign = 'start';
+        let vAlign = 'auto';
+        let letterSpacing = '0';
+        let lineHeight = '1.2';
+        let isWelded = element.getAttribute('data-weld') === 'true';
+        let displayStyle = element.getAttribute('data-latex-style') || 'displaystyle';
+
         if (isLatex) {
             const transform = element.getAttribute('transform') || '';
-            
-            // Parse Translate
             const translateMatch = transform.match(/translate\(([-\d.]+),\s*([-\d.]+)\)/);
             if (translateMatch) {
                 x = parseFloat(translateMatch[1]);
                 y = parseFloat(translateMatch[2]);
             }
-            
-            // Parse Scale (Handle both uniform "scale(s)" and non-uniform "scale(sx, sy)")
             const scaleMatch = transform.match(/scale\(([-\d.]+)(?:,\s*([-\d.]+))?\)/);
             if (scaleMatch) {
                 scaleX = parseFloat(scaleMatch[1]);
                 scaleY = scaleMatch[2] ? parseFloat(scaleMatch[2]) : scaleX;
             }
-            
-            // LaTeX "FontSize" proxy is the visual height
             fontSize = bbox.height * scaleY;
             textContent = element.getAttribute('data-latex') || '';
+            if (!textContent && element.textContent) textContent = element.textContent;
+            // Clean $$ for display
+            textContent = textContent.replace(/^\$\$|\$\$$/g, '').trim();
         } else {
-            // Standard Text
             x = parseFloat(element.getAttribute('x') || 0);
             y = parseFloat(element.getAttribute('y') || 0);
             textContent = element.textContent || '';
@@ -1996,19 +2139,31 @@ Object.assign(SVGEditor.prototype, {
             }
             fontSize = parseFloat(element.getAttribute('font-size') || 16);
             fontFamily = element.getAttribute('font-family') || 'Arial';
+            isBold = (element.getAttribute('font-weight') === 'bold' || element.style.fontWeight === 'bold');
+            isItalic = (element.getAttribute('font-style') === 'italic' || element.style.fontStyle === 'italic');
+            textAlign = element.getAttribute('text-anchor') || 'start';
+            vAlign = element.getAttribute('dominant-baseline') || 'auto';
+            letterSpacing = element.getAttribute('letter-spacing') || '0';
         }
 
-        // Calculate visual dimensions
         const visualWidth = bbox.width * scaleX;
         const visualHeight = bbox.height * scaleY;
-        
-        // Visual Center (for the center inputs)
-        const centerX = x + (bbox.x + bbox.width/2) * scaleX;
-        const centerY = y + (bbox.y + bbox.height/2) * scaleY;
+        const centerX = x + (bbox.x + bbox.width / 2) * scaleX;
+        const centerY = y + (bbox.y + bbox.height / 2) * scaleY;
+
+        // Size in mm and pt (72 pt = 25.4 mm)
+        const sizePt = Math.round(fontSize);
+        const sizeMm = (sizePt * 25.4 / 72).toFixed(1);
 
         return `
             <div class="element-property-group">
-                <h4>${isLatex ? 'LaTeX Object' : 'Text'} Geometry</h4>
+                <!-- Mode Switch: Text vs LaTeX -->
+                <div class="text-mode-segmented">
+                    <button type="button" class="segment-btn ${!isLatex ? 'active' : ''}" id="btnTextModePlain">Text</button>
+                    <button type="button" class="segment-btn ${isLatex ? 'active' : ''}" id="btnTextModeLatex">LaTeX</button>
+                </div>
+
+                <h4>${isLatex ? 'LaTeX Formula Geometry' : 'Text Geometry'}</h4>
                 <div class="element-property">
                     <span class="property-label">Width:</span>
                     <span class="property-value">
@@ -2034,38 +2189,105 @@ Object.assign(SVGEditor.prototype, {
                     </span>
                 </div>
             </div>
+
             <div class="element-property-group">
-                <h4>Content ${isLatex ? '(LaTeX)' : ''}</h4>
+                <h4>${isLatex ? 'LaTeX Math Equation' : 'Text Properties'}</h4>
+
                 ${!isLatex ? `
+                <!-- PLAIN TEXT MODE CONTROLS -->
+                <div class="element-property">
+                    <span class="property-label">Font Family:</span>
+                    <span class="property-value">
+                        <select id="contextTextFontFamily" style="width:100%;">
+                            <option value="Arial" ${fontFamily === 'Arial' ? 'selected' : ''}>Arial (Sans)</option>
+                            <option value="Times New Roman" ${fontFamily === 'Times New Roman' ? 'selected' : ''}>Times New Roman (Serif)</option>
+                            <option value="Courier New" ${fontFamily === 'Courier New' ? 'selected' : ''}>Courier New (Mono)</option>
+                            <option value="Georgia" ${fontFamily === 'Georgia' ? 'selected' : ''}>Georgia</option>
+                            <option value="Impact" ${fontFamily === 'Impact' ? 'selected' : ''}>Impact</option>
+                            <option value="Comic Sans MS" ${fontFamily === 'Comic Sans MS' ? 'selected' : ''}>Comic Sans MS</option>
+                            <option value="Trebuchet MS" ${fontFamily === 'Trebuchet MS' ? 'selected' : ''}>Trebuchet MS</option>
+                            <option value="Verdana" ${fontFamily === 'Verdana' ? 'selected' : ''}>Verdana</option>
+                        </select>
+                    </span>
+                </div>
+
                 <div class="element-property">
                     <span class="property-label">Font Size:</span>
                     <span class="property-value">
-                        <input type="number" id="contextTextFontSize" value="${Math.round(fontSize)}" step="1" min="1">
-                    </span>
-                </div>` : ''}
-                 <div class="element-property">
-                    <span class="property-value" style="width: 100%;">
-                        <textarea id="contextTextContent" 
-                            rows="3" 
-                            style="width: 100%; font-size: 12px; font-family: ${isLatex ? 'monospace' : 'inherit'}"
-                            placeholder="${isLatex ? '$$ \\frac{a}{b} $$' : 'Enter text...'}">${textContent}</textarea>
+                        <input type="number" id="contextTextFontSize" value="${sizePt}" step="1" min="1" style="width:65px;">
+                        <span class="text-pt-mm-hint">pt (${sizeMm} mm)</span>
                     </span>
                 </div>
-                 ${!isLatex ? `
+
                 <div class="element-property">
-                    <span class="property-label">Font:</span>
+                    <span class="property-label">Style:</span>
                     <span class="property-value">
-                        <select id="contextTextFontFamily">
-                            <option value="Arial" ${fontFamily === 'Arial' ? 'selected' : ''}>Arial</option>
-                            <option value="Times New Roman" ${fontFamily === 'Times New Roman' ? 'selected' : ''}>Times New Roman</option>
-                            <option value="Courier New" ${fontFamily === 'Courier New' ? 'selected' : ''}>Courier New</option>
-                        </select>
+                        <div class="text-btn-row">
+                            <button type="button" class="text-style-btn ${isBold ? 'active' : ''}" id="btnTextBold" title="Bold"><strong>B</strong></button>
+                            <button type="button" class="text-style-btn ${isItalic ? 'active' : ''}" id="btnTextItalic" title="Italic"><em>I</em></button>
+                        </div>
                     </span>
-                </div>` : '<div style="font-size:10px; color:#666; margin-top:5px;">Edit dimensions to scale, or content to update render.</div>'}
+                </div>
+
+                <div class="element-property">
+                    <span class="property-label">Align:</span>
+                    <span class="property-value">
+                        <div class="text-btn-row">
+                            <button type="button" class="text-style-btn ${textAlign === 'start' ? 'active' : ''}" id="btnTextAlignLeft" title="Align Left">Left</button>
+                            <button type="button" class="text-style-btn ${textAlign === 'middle' ? 'active' : ''}" id="btnTextAlignCenter" title="Align Center">Center</button>
+                            <button type="button" class="text-style-btn ${textAlign === 'end' ? 'active' : ''}" id="btnTextAlignRight" title="Align Right">Right</button>
+                        </div>
+                    </span>
+                </div>
+
+                <div class="element-property">
+                    <span class="property-label">Letter Spacing:</span>
+                    <span class="property-value">
+                        <input type="number" id="contextTextLetterSpacing" value="${parseFloat(letterSpacing) || 0}" step="0.5" style="width:70px;">
+                        <span style="font-size:10px; color:#888;">px</span>
+                    </span>
+                </div>
+
+                <div class="element-property">
+                    <span class="property-label">Welding:</span>
+                    <span class="property-value" style="display:flex; align-items:center; gap:6px;">
+                        <input type="checkbox" id="contextTextWelding" ${isWelded ? 'checked' : ''}>
+                        <label for="contextTextWelding" style="font-size:11px; color:#aaa; cursor:pointer;" title="Merge overlapping outlines (essential for cursive script fonts in laser cutting)">Weld Glyphs</label>
+                    </span>
+                </div>
+                ` : `
+                <!-- LATEX MODE CONTROLS -->
+                <div class="element-property">
+                    <span class="property-label">Display Style:</span>
+                    <span class="property-value">
+                        <div class="text-btn-row">
+                            <button type="button" class="text-style-btn ${displayStyle === 'displaystyle' ? 'active' : ''}" id="btnLatexBlock" title="Block / Display Style (\displaystyle)">Block</button>
+                            <button type="button" class="text-style-btn ${displayStyle === 'textstyle' ? 'active' : ''}" id="btnLatexInline" title="Inline Style (\textstyle)">Inline</button>
+                        </div>
+                    </span>
+                </div>
+                `}
+
+                <div class="element-property" style="margin-top:8px;">
+                    <span class="property-label" style="display:block; margin-bottom:4px;">${isLatex ? 'LaTeX Formula Source:' : 'Text Content:'}</span>
+                    <span class="property-value" style="width: 100%;">
+                        <textarea id="contextTextContent" 
+                            rows="4" 
+                            style="width: 100%; font-size: 12px; font-family: ${isLatex ? 'monospace' : 'inherit'}; background:#1e1e1e; border:1px solid #3e3e42; color:#fff; border-radius:4px; padding:6px; box-sizing:border-box;"
+                            placeholder="${isLatex ? 'e.g. \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}' : 'Enter text...'}">${textContent}</textarea>
+                    </span>
+                </div>
+
+                ${isLatex ? `
+                <div class="latex-error-box" id="latexErrorBox"></div>
+                <div class="latex-status-ok" id="latexStatusOk">✓ MathJax Vector Render Active</div>
+                <button type="button" id="btnLatexConvertToPaths" class="toolbar-button" style="width:100%; margin-top:10px; justify-content:center; background:#2d2d30; border:1px solid #007acc; color:#9cdcfe;">
+                    Convert Formula to Paths
+                </button>
+                ` : ''}
             </div>
         `;
-    }
-    // Check if string is wrapped in $$...$$,
+    },
 
     isLatexString(str) {
         // Fix: Only check start. This prevents showing raw "$$..." while typing the end.

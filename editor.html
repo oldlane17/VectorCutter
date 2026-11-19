@@ -42,6 +42,7 @@
                     <div class="dropdown-item" id="menuSave">Export SVG <span class="shortcut">Ctrl+S</span></div>
                     <div class="dropdown-item" id="menuDashboardSave">Save to Dashboard</div>
                     <div class="dropdown-item" id="menuExport">Export PNG</div>
+                    <div class="dropdown-item" id="menuExportDXF">Export DXF (Laser/CNC)</div>
                     <div class="separator"></div>
                     <!-- <div class="dropdown-item" id="menuPrint">Print...</div>
                     <div class="separator"></div> -->
@@ -60,6 +61,18 @@
                     <div class="separator"></div>
                     <div class="dropdown-item" id="menuSelectAll">Select All <span class="shortcut">Ctrl+A</span></div>
                     <div class="dropdown-item" id="menuClearSelection">Clear Selection</div>
+                    <div class="separator"></div>
+                    <div class="dropdown-item" id="menuDuplicate">Duplicate <span class="shortcut">Ctrl+D</span></div>
+                    <div class="dropdown-item" id="menuDelete">Delete <span class="shortcut">Del</span></div>
+                    <div class="separator"></div>
+                    <div class="dropdown-item" id="menuGroup">Group <span class="shortcut">Ctrl+G</span></div>
+                    <div class="dropdown-item" id="menuUngroup">Ungroup <span class="shortcut">Ctrl+Shift+G</span></div>
+                    <div class="separator"></div>
+                    <div class="dropdown-item" id="menuBringFront">Bring to Front</div>
+                    <div class="dropdown-item" id="menuSendBack">Send to Back</div>
+                    <div class="separator"></div>
+                    <div class="dropdown-item" id="menuConvertToPaths">Convert to Paths</div>
+                    <div class="dropdown-item" id="menuSimplifyPaths">Simplify Paths</div>
                 </div>
             </div>
             <div class="menu-item">
@@ -73,6 +86,12 @@
                     <div class="dropdown-item" id="menuFlipH">Flip Horizontal</div>
                     <div class="dropdown-item" id="menuFlipV">Flip Vertical</div>
                     <div class="separator"></div>
+                    <div class="dropdown-item" id="menuBooleanUnion">Boolean Union (Weld)</div>
+                    <div class="dropdown-item" id="menuBooleanDiff">Boolean Difference</div>
+                    <div class="dropdown-item" id="menuBooleanIntersect">Boolean Intersect</div>
+                    <div class="separator"></div>
+                    <div class="dropdown-item" id="menuKerfOffset">Kerf Offset (Inset/Outset)...</div>
+                    <div class="dropdown-item" id="menuOutlineStroke">Outline Stroke</div>
                 
                 </div>
             </div>
@@ -104,6 +123,7 @@
                 <div class="dropdown">
                     
                     <div class="dropdown-item" id="menuShortcuts">Keyboard Shortcuts</div>
+                    <div class="dropdown-item" id="menuShapeLibrary">Browse Shape Library...</div>
                     <div class="dropdown-item" id="menuAbout">About SVG Editor</div>
                 </div>
             </div>
@@ -465,6 +485,10 @@
     <script src="editor/js/editor-templates.js"></script>
     <script src="editor/js/editor-quickbar.js"></script>
     <script src="editor/js/editor-sidebar-resize.js"></script>
+    <script src="editor/js/editor-fonts.js"></script>
+    <script src="editor/js/editor-boolean.js"></script>
+    <script src="editor/js/editor-shapes-library.js"></script>
+    <script src="editor/js/editor-dxf.js"></script>
     <script src="editor/js/editor-code.js"></script>
     <script src="editor/js/editor-init.js"></script>
     <div id="global-tooltip"></div>

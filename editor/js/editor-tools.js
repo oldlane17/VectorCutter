@@ -14,7 +14,8 @@ Object.assign(SVGEditor.prototype, {
             strokeWidth: 2,
             opacity: 1
         };
-    },
+    }
+,
 
     setCanvasMode(mode) {
         this.canvasMode = mode;
@@ -28,12 +29,14 @@ Object.assign(SVGEditor.prototype, {
         
         // Show mode in status bar
         this.updateStatusBarMode();
-    },
+    }
+,
 
     toggleCanvasMode() {
         const newMode = this.canvasMode === 'select' ? 'pan' : 'select';
         this.setCanvasMode(newMode);
-    },
+    }
+,
 
     toggleGridFromToolbar() {
         this.gridEnabled = !this.gridEnabled;
@@ -47,7 +50,8 @@ Object.assign(SVGEditor.prototype, {
         // Update the SVG grid
         this.updateGrid();
         this.updateStatusBarMode();
-    },
+    }
+,
 
     toggleSnap() {
         this.snapEnabled = !this.snapEnabled;
@@ -67,7 +71,8 @@ Object.assign(SVGEditor.prototype, {
         this.updateStatusBarMode();
     }
     
-    // Add methods to manage editing state,
+    // Add methods to manage editing state
+,
 
     handleMouseDown(e) {
         let svgPoint = this.screenToSVG(e.clientX, e.clientY);
@@ -200,7 +205,8 @@ Object.assign(SVGEditor.prototype, {
             this.updateContextMenu();
             return;
         }
-    },
+    }
+,
 
     handleMouseMove(e) {
         let svgPoint = this.screenToSVG(e.clientX, e.clientY);
@@ -255,7 +261,8 @@ Object.assign(SVGEditor.prototype, {
                 this.updateContextMenuValues();
             }
         }
-    },
+    }
+,
 
     handleMouseUp(e) {
         // Handle path drawing completion
@@ -299,7 +306,8 @@ Object.assign(SVGEditor.prototype, {
         if (this.currentElement || this.selectedElement) {
             this.saveState(); 
         }
-    }  ,
+    }  
+,
 
     bindEvents() {
         // Tool selection
@@ -423,7 +431,8 @@ Object.assign(SVGEditor.prototype, {
         document.getElementById('applyCodeBtn').addEventListener('click', () => this.applyCodeToCanvas());
 
         document.querySelector('[data-action="code"]').addEventListener('click', () => this.showCode());
-    },
+    }
+,
 
     createNewElement() {
         if (this.currentTool === 'path') {
@@ -486,7 +495,8 @@ Object.assign(SVGEditor.prototype, {
             this.selectElement(this.currentElement);
         }
         // Removed this.saveState() to prevent saving empty/intermediate states
-    },
+    }
+,
 
     updateElementDimensions(currentX, currentY) {
         if (!this.currentElement) return;
@@ -536,7 +546,8 @@ Object.assign(SVGEditor.prototype, {
                 break;
         }
     }
-    // Add this new method to your class,
+    // Add this new method to your class
+,
 
     startPathDrawing(startX, startY) {
         const ns = "http://www.w3.org/2000/svg";
@@ -554,7 +565,8 @@ Object.assign(SVGEditor.prototype, {
         
         // Debug log
         console.log('Path drawing started at:', startX, startY);
-    },
+    }
+,
 
     updatePathDrawing() {
         if (!this.currentElement || !this.pathPoints || this.pathPoints.length < 2) return;

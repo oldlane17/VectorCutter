@@ -125,6 +125,8 @@ class SVGEditor {
         this.initScrollMode();
         this.initQuickbar();
         this.setupSidebarResizing();
+        if (this.initFonts) this.initFonts();
+        if (this.initShapeLibrary) this.initShapeLibrary();
         this.setupShiftKeyListener();
         this.setupKeyboardModifiers();
         this.updateContextMenu();
@@ -336,6 +338,44 @@ class SVGEditor {
         if (menuScrollMouse) menuScrollMouse.addEventListener('click', () => this.setScrollMode('mouse', true));
         document.getElementById('menuToggleGrid').addEventListener('click', () => this.toggleGridFromToolbar());
         document.getElementById('menuFullscreen').addEventListener('click', () => this.toggleFullscreen());
+        // File menu
+        const menuExportDXF = document.getElementById('menuExportDXF');
+        if (menuExportDXF) menuExportDXF.addEventListener('click', () => this.exportDXF());
+
+        // Edit menu
+        const menuDuplicate = document.getElementById('menuDuplicate');
+        if (menuDuplicate) menuDuplicate.addEventListener('click', () => this.duplicateSelected());
+        const menuDelete = document.getElementById('menuDelete');
+        if (menuDelete) menuDelete.addEventListener('click', () => this.deleteSelectedElements());
+        const menuGroup = document.getElementById('menuGroup');
+        if (menuGroup) menuGroup.addEventListener('click', () => this.groupSelected());
+        const menuUngroup = document.getElementById('menuUngroup');
+        if (menuUngroup) menuUngroup.addEventListener('click', () => this.ungroupSelected());
+        const menuBringFront = document.getElementById('menuBringFront');
+        if (menuBringFront) menuBringFront.addEventListener('click', () => this.bringToFront());
+        const menuSendBack = document.getElementById('menuSendBack');
+        if (menuSendBack) menuSendBack.addEventListener('click', () => this.sendToBack());
+        const menuConvertToPaths = document.getElementById('menuConvertToPaths');
+        if (menuConvertToPaths) menuConvertToPaths.addEventListener('click', () => this.convertSelectionToPaths());
+        const menuSimplifyPaths = document.getElementById('menuSimplifyPaths');
+        if (menuSimplifyPaths) menuSimplifyPaths.addEventListener('click', () => this.simplifySelectedPaths());
+
+        // Modify menu
+        const menuBooleanUnion = document.getElementById('menuBooleanUnion');
+        if (menuBooleanUnion) menuBooleanUnion.addEventListener('click', () => this.booleanUnion());
+        const menuBooleanDiff = document.getElementById('menuBooleanDiff');
+        if (menuBooleanDiff) menuBooleanDiff.addEventListener('click', () => this.booleanDifference());
+        const menuBooleanIntersect = document.getElementById('menuBooleanIntersect');
+        if (menuBooleanIntersect) menuBooleanIntersect.addEventListener('click', () => this.booleanIntersect());
+        const menuKerfOffset = document.getElementById('menuKerfOffset');
+        if (menuKerfOffset) menuKerfOffset.addEventListener('click', () => this.applyKerfOffset());
+        const menuOutlineStroke = document.getElementById('menuOutlineStroke');
+        if (menuOutlineStroke) menuOutlineStroke.addEventListener('click', () => this.outlineStroke());
+
+        // Help menu
+        const menuShapeLibrary = document.getElementById('menuShapeLibrary');
+        if (menuShapeLibrary) menuShapeLibrary.addEventListener('click', () => this.showShapeLibraryModal());
+
         
 
         // Settings Menu Handler
