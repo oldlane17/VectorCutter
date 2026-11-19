@@ -772,7 +772,8 @@ Object.assign(SVGEditor.prototype, {
             
             if (transform) {
                 this.selectionGroup.setAttribute('transform', transform);
-            }
+                if (this.updateQuickbarState) this.updateQuickbarState();
+    }
 
             // --- FIX START: Add Curve Control Handle ---
             if (this.getElementType(element) === 'curve') {

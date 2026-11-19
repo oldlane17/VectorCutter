@@ -1336,4 +1336,206 @@
             width: 1px;
             background: #3e3e42;
         }
+
+        /* ==========================================================================
+           Floating Quick-tools Bar (Cuttle-style)
+           ========================================================================== */
+        .quick-toolbar {
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 900;
+            display: flex;
+            align-items: center;
+            background: rgba(35, 35, 38, 0.94);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: 28px;
+            padding: 4px 8px;
+            gap: 4px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 2px 6px rgba(0, 0, 0, 0.35);
+            user-select: none;
+            transition: box-shadow 0.2s, opacity 0.2s;
+        }
+
+        .quick-toolbar.collapsed .quick-toolbar-content {
+            display: none !important;
+        }
+
+        .quick-drag-handle {
+            cursor: grab;
+            padding: 6px 3px;
+            color: #888;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .quick-drag-handle:active {
+            cursor: grabbing;
+        }
+
+        .quick-toolbar-content {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .quick-group {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .quick-btn {
+            background: transparent;
+            border: 1px solid transparent;
+            color: #cccccc;
+            width: 30px;
+            height: 30px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+            padding: 0;
+        }
+
+        .quick-btn img {
+            width: 15px;
+            height: 15px;
+            object-fit: contain;
+            filter: brightness(0) invert(100%);
+            opacity: 0.85;
+            pointer-events: none;
+        }
+
+        .quick-btn svg {
+            width: 15px;
+            height: 15px;
+            pointer-events: none;
+        }
+
+        .quick-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .quick-btn.active {
+            background: #007acc;
+            color: #ffffff;
+            border-color: #0098ff;
+        }
+
+        .quick-btn.active img {
+            opacity: 1;
+        }
+
+        .quick-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .quick-divider {
+            width: 1px;
+            height: 18px;
+            background: rgba(255, 255, 255, 0.16);
+            margin: 0 3px;
+        }
+
+        .quick-collapse-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            margin-left: 2px;
+            color: #888;
+        }
+
+        .quick-collapse-btn:hover {
+            color: #fff;
+        }
+
+        /* Quickbar Dropdown Menu */
+        .quick-dropdown-container {
+            position: relative;
+        }
+
+        .quick-dropdown-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #252528;
+            border: 1px solid #3e3e42;
+            border-radius: 6px;
+            min-width: 190px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            padding: 6px 0;
+        }
+
+        .quick-dropdown-menu.show {
+            display: block;
+        }
+
+        .quick-menu-header {
+            font-size: 10px;
+            font-weight: 600;
+            color: #888;
+            padding: 4px 14px 2px;
+            letter-spacing: 0.5px;
+        }
+
+        .quick-menu-item {
+            padding: 6px 14px;
+            font-size: 12px;
+            color: #ccc;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .quick-menu-item:hover:not(.disabled) {
+            background: #094771;
+            color: #fff;
+        }
+
+        .quick-menu-item.disabled {
+            color: #555;
+            cursor: not-allowed;
+        }
+
+        .quick-menu-separator {
+            height: 1px;
+            background: #3e3e42;
+            margin: 4px 0;
+        }
+
+        /* Mobile Responsive Bottom Docking */
+        @media (max-width: 768px) {
+            .quick-toolbar {
+                top: auto !important;
+                bottom: 12px !important;
+                left: 50% !important;
+                transform: translateX(-50%) !important;
+                max-width: 95vw;
+                overflow-x: auto;
+                border-radius: 20px;
+                padding: 6px 10px;
+            }
+
+            .quick-btn {
+                min-width: 40px;
+                min-height: 40px;
+            }
+
+            .quick-drag-handle {
+                display: none;
+            }
+        }
 

@@ -123,6 +123,7 @@ class SVGEditor {
         this.updateViewBox();
         this.updateCanvasCursor();
         this.initScrollMode();
+        this.initQuickbar();
         this.setupShiftKeyListener();
         this.setupKeyboardModifiers();
         this.updateContextMenu();
@@ -473,13 +474,23 @@ class SVGEditor {
                     e.preventDefault();
                     this.newDocument();
                     break;
+                case 'd':
+                    e.preventDefault();
+                    if (this.duplicateSelected) this.duplicateSelected();
+                    break;
                 case 's':
                     e.preventDefault();
                     this.saveSVG();
                     break;
                 case 'g':
                     e.preventDefault();
-                    this.toggleGridFromToolbar();
+                    if (e.shiftKey) {
+                        if (this.ungroupSelected) this.ungroupSelected();
+                    } else if (this.selectedElements && this.selectedElements.length > 1) {
+                        if (this.groupSelected) this.groupSelected();
+                    } else {
+                        this.toggleGridFromToolbar();
+                    }
                     break;
                 case 'a':
                     e.preventDefault(); // Stop browser from selecting page text
@@ -531,6 +542,23 @@ class SVGEditor {
                     e.preventDefault();
                     this.pasteFromClipboard();
                     break;
+            }
+        }
+        
+        // Tool shortcuts (V, N, P, R, C, T)
+        if (!isInputField && !e.ctrlKey && !e.metaKey && !e.altKey) {
+            const key = e.key.toLowerCase();
+            const toolMap = { 'v': 'select', 'n': 'curve', 'p': 'path', 'r': 'rectangle', 'c': 'circle', 't': 'text' };
+            if (toolMap[key]) {
+                const targetTool = toolMap[key];
+                const toolBtn = document.querySelector(`.tool[data-tool="${targetTool}"]`);
+                if (toolBtn) toolBtn.click();
+                else {
+                    this.currentTool = targetTool;
+                    this.updateCanvasCursor();
+                }
+                if (this.updateQuickbarActiveTool) this.updateQuickbarActiveTool();
+                return;
             }
         }
         
