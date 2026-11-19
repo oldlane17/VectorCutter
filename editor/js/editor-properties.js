@@ -25,7 +25,8 @@ Object.assign(SVGEditor.prototype, {
         } else {
             this.showNoSelectionMessage(contextProperties);
         }
-    },
+    }
+,
 
     updateContextMenuRotationCenter() {
         if (this.selectedElements.length === 1) {
@@ -53,7 +54,8 @@ Object.assign(SVGEditor.prototype, {
             }
         }
     }
-    // --- REPLACE THIS METHOD IN SVGEditor CLASS ---,
+    // --- REPLACE THIS METHOD IN SVGEditor CLASS ---
+,
 
     updateRotationCenterDot(bbox, element) {
         const ns = "http://www.w3.org/2000/svg";
@@ -102,7 +104,8 @@ Object.assign(SVGEditor.prototype, {
         centerDot.style.pointerEvents = 'none'; 
         
         this.selectionGroup.appendChild(centerDot);
-    },
+    }
+,
 
     updateContextMenuValues() {
         if (this.selectedElements.length === 0) return;
@@ -269,7 +272,8 @@ Object.assign(SVGEditor.prototype, {
             }
             this.updateStyleInputs(element);
         }
-    },
+    }
+,
 
     updatePropertiesFromContext() {
         // Update the left sidebar controls to match (if they still exist)
@@ -296,7 +300,8 @@ Object.assign(SVGEditor.prototype, {
                 opacityInput.value = element.getAttribute('opacity') || '1';
             }
         }
-    },
+    }
+,
 
     updateProperties() {
         if (!this.selectedElement) return;
@@ -315,7 +320,8 @@ Object.assign(SVGEditor.prototype, {
             this.selectedElement.dataset.originalFill = this.properties.fill;
             this.selectedElement.dataset.originalStroke = this.properties.stroke;
         }
-    },
+    }
+,
 
     updateSingleElementProperties(contextProperties) {
         const element = this.selectedElements[0];
@@ -401,7 +407,8 @@ Object.assign(SVGEditor.prototype, {
         setTimeout(() => {
             this.addPropertyEventListeners(element);
         }, 0);
-    },
+    }
+,
 
     updateMultipleElementsProperties(contextProperties) {
         const bbox = this.getGroupBoundingBox();
@@ -434,7 +441,8 @@ Object.assign(SVGEditor.prototype, {
                 </div>
             </div>
         `;
-    },
+    }
+,
 
     showNoSelectionMessage(contextProperties) {
         contextProperties.innerHTML = `
@@ -443,7 +451,8 @@ Object.assign(SVGEditor.prototype, {
                 <p>Select an element to view its properties</p>
             </div>
         `;
-    },
+    }
+,
 
     addPropertyEventListeners(element) {
         // Fill Color
@@ -494,7 +503,8 @@ Object.assign(SVGEditor.prototype, {
         
         // Also add coordinate change listeners (Existing logic)
         this.addCoordinateEventListeners(element);
-    },
+    }
+,
 
     addCoordinateEventListeners(element) {
         const tagName = element.tagName.toLowerCase();
@@ -537,7 +547,8 @@ Object.assign(SVGEditor.prototype, {
                  }
                 break;
         }
-    },
+    }
+,
 
     addCenterCoordinateListeners(element) {
         const tagName = element.tagName.toLowerCase();
@@ -567,7 +578,8 @@ Object.assign(SVGEditor.prototype, {
     
     // Rectangle coordinate listeners
     // Rectangle coordinate listeners (using center coordinates)
-// Update the updateRect function to be more efficient,
+// Update the updateRect function to be more efficient
+,
 
     addRectCoordinateListeners(element) {
         let pendingUpdate = null;
@@ -647,7 +659,8 @@ Object.assign(SVGEditor.prototype, {
         this.addInputWithEditingState('contextRectHeight', updateRect);
         this.addInputWithEditingState('contextRectRotation', updateRect);
     }
-    // You'll need to update the getRectProperties method to include inputs:,
+    // You'll need to update the getRectProperties method to include inputs:
+,
 
     addCircleCoordinateListeners(element) {
         let pendingUpdate = null;
@@ -717,7 +730,8 @@ Object.assign(SVGEditor.prototype, {
         this.addInputWithEditingState('contextCircleCenterY', updateCircle);
         this.addInputWithEditingState('contextCircleR', updateCircle);
         this.addInputWithEditingState('contextCircleRotation', updateCircle);
-    },
+    }
+,
 
     addEllipseCoordinateListeners(element) {
         let pendingUpdate = null;
@@ -797,7 +811,8 @@ Object.assign(SVGEditor.prototype, {
     // Text coordinate listeners
     // Text coordinate listeners - updated to handle both position and center
     // Updated: Fixes Font Family changing and maintains previous geometry/content logic
-    // Updated: Fixes Font Family changing, updates selection area, and maintains previous geometry logic,
+    // Updated: Fixes Font Family changing, updates selection area, and maintains previous geometry logic
+,
 
     addTextCoordinateListeners(element) {
         let pendingUpdate = null;
@@ -1081,6 +1096,13 @@ Object.assign(SVGEditor.prototype, {
                 });
             }
 
+            const btnBrowseFonts = document.getElementById('btnBrowseFonts');
+            if (btnBrowseFonts) {
+                btnBrowseFonts.addEventListener('click', () => {
+                    if (this.showFontPickerModal) this.showFontPickerModal();
+                });
+            }
+
             const btnBold = document.getElementById('btnTextBold');
             if (btnBold) {
                 btnBold.addEventListener('click', () => {
@@ -1266,7 +1288,8 @@ Object.assign(SVGEditor.prototype, {
         this.addInputWithEditingState('contextLineCenterX', updateLine);
         this.addInputWithEditingState('contextLineCenterY', updateLine);
         this.addInputWithEditingState('contextLineRotation', updateLine);
-    },
+    }
+,
 
     CoordinateListeners(element) {
         let pendingUpdate = null;
@@ -1338,7 +1361,8 @@ Object.assign(SVGEditor.prototype, {
         this.addInputWithEditingState('contextCurveY2', updateCurve);
         this.addInputWithEditingState('contextCurveRotation', updateCurve);
     }
-    // Path coordinate listeners,
+    // Path coordinate listeners
+,
 
     addPathCoordinateListeners(element) {
         let pendingUpdate = null;
@@ -1500,7 +1524,8 @@ Object.assign(SVGEditor.prototype, {
                 }
             });
         }
-    },
+    }
+,
 
     addCurveCoordinateListeners(element) {
         let pendingUpdate = null;
@@ -1565,7 +1590,8 @@ Object.assign(SVGEditor.prototype, {
         this.addInputWithEditingState('contextCurveX2', updateCurve);
         this.addInputWithEditingState('contextCurveY2', updateCurve);
         this.addInputWithEditingState('contextCurveRotation', updateCurve);
-    },
+    }
+,
 
     addStructureCoordinateListeners(element) {
         let pendingUpdate = null;
@@ -1666,7 +1692,8 @@ Object.assign(SVGEditor.prototype, {
         this.addInputWithEditingState('contextStructureCenterX', updateStructure);
         this.addInputWithEditingState('contextStructureCenterY', updateStructure);
         this.addInputWithEditingState('contextStructureRotation', updateStructure);
-    },
+    }
+,
 
     getRectProperties(element) {
         const x = parseFloat(element.getAttribute('x') || 0);
@@ -1754,7 +1781,8 @@ Object.assign(SVGEditor.prototype, {
                 </div>
             </div>
         `;
-    },
+    }
+,
 
     getCircleProperties(element) {
         const cx = parseFloat(element.getAttribute('cx') || 0);
@@ -1826,7 +1854,8 @@ Object.assign(SVGEditor.prototype, {
                 </div>
             </div>
         `;
-    },
+    }
+,
 
     getEllipseProperties(element) {
         const cx = parseFloat(element.getAttribute('cx') || 0);
@@ -1910,7 +1939,8 @@ Object.assign(SVGEditor.prototype, {
                 </div>
             </div>
         `;
-    },
+    }
+,
 
     getCurveProperties(element) {
         const d = element.getAttribute('d') || '';
@@ -1982,7 +2012,8 @@ Object.assign(SVGEditor.prototype, {
                 </div>
             </div>
         `;
-    },
+    }
+,
 
     getLineProperties(element) {
         const x1 = parseFloat(element.getAttribute('x1') || 0);
@@ -2084,7 +2115,8 @@ Object.assign(SVGEditor.prototype, {
                 </div>
             </div>
         `;
-    },
+    }
+,
 
     getTextProperties(element) {
         const isLatexAttr = element.getAttribute('data-type') === 'latex';
@@ -2197,8 +2229,8 @@ Object.assign(SVGEditor.prototype, {
                 <!-- PLAIN TEXT MODE CONTROLS -->
                 <div class="element-property">
                     <span class="property-label">Font Family:</span>
-                    <span class="property-value">
-                        <select id="contextTextFontFamily" style="width:100%;">
+                    <span class="property-value" style="display:flex; gap:4px; width:100%;">
+                        <select id="contextTextFontFamily" style="flex:1; min-width:0;">
                             <option value="Arial" ${fontFamily === 'Arial' ? 'selected' : ''}>Arial (Sans)</option>
                             <option value="Times New Roman" ${fontFamily === 'Times New Roman' ? 'selected' : ''}>Times New Roman (Serif)</option>
                             <option value="Courier New" ${fontFamily === 'Courier New' ? 'selected' : ''}>Courier New (Mono)</option>
@@ -2208,6 +2240,7 @@ Object.assign(SVGEditor.prototype, {
                             <option value="Trebuchet MS" ${fontFamily === 'Trebuchet MS' ? 'selected' : ''}>Trebuchet MS</option>
                             <option value="Verdana" ${fontFamily === 'Verdana' ? 'selected' : ''}>Verdana</option>
                         </select>
+                        <button type="button" id="btnBrowseFonts" title="Browse 40+ Laser Fonts..." style="padding:2px 7px; background:#2d2d30; border:1px solid #3e3e42; color:#9cdcfe; border-radius:3px; cursor:pointer; font-size:12px;">🔤</button>
                     </span>
                 </div>
 
@@ -2294,7 +2327,8 @@ Object.assign(SVGEditor.prototype, {
         return str.trim().startsWith('$$');
     }
 
-    // Convert LaTeX string to SVG Element,
+    // Convert LaTeX string to SVG Element
+,
 
     async createLatexElement(latexString, x, y, fontSize, fill) {
         if (!window.MathJax) {
@@ -2355,7 +2389,8 @@ Object.assign(SVGEditor.prototype, {
             console.error('MathJax conversion failed:', err);
             return null;
         }
-    },
+    }
+,
 
     getPathProperties(element) {
         const d = element.getAttribute('d') || '';
@@ -2454,7 +2489,8 @@ Object.assign(SVGEditor.prototype, {
                 </div>
             </div>
         `;
-    },
+    }
+,
 
     getStructureProperties(element) {
         // Get geometric info using bounding box
@@ -2528,7 +2564,8 @@ Object.assign(SVGEditor.prototype, {
                 </div>
             </div>
         `;
-    },
+    }
+,
 
     getStyleProperties(element) {
         const fill = element.getAttribute('fill') || 'none';
@@ -2590,7 +2627,8 @@ Object.assign(SVGEditor.prototype, {
                 </div>
             </div>
         `;
-    },
+    }
+,
 
     updateStyleInputs(element) {
         const fill = element.getAttribute('fill') || 'none';
@@ -2605,21 +2643,25 @@ Object.assign(SVGEditor.prototype, {
         this.updateInputValue('contextOpacity', opacity);
     }
 
-    // Add this to your class or script,
+    // Add this to your class or script
+,
 
     startEditingInput(inputId) {
         this.editingInputs.add(inputId);
-    },
+    }
+,
 
     stopEditingInput(inputId) {
         this.editingInputs.delete(inputId);
-    },
+    }
+,
 
     isEditingInput(inputId) {
         return this.editingInputs.has(inputId);
     }
 
-    // Update the updateInputValue method again:,
+    // Update the updateInputValue method again:
+,
 
     updateInputValue(inputId, value) {
         const input = document.getElementById(inputId);
@@ -2640,7 +2682,8 @@ Object.assign(SVGEditor.prototype, {
         
         // Update the value
         input.value = valueStr;
-    },
+    }
+,
 
     addInputWithEditingState(inputId, onChangeCallback) {
         const input = document.getElementById(inputId);
@@ -2735,11 +2778,13 @@ Object.assign(SVGEditor.prototype, {
         }
         
         return input;
-    },
+    }
+,
 
     updateUnitInfo() {
         this.updateStatusBarMode();
-    },
+    }
+,
 
     getUnitDisplayName() {
         switch(this.currentUnits) {
@@ -2749,7 +2794,8 @@ Object.assign(SVGEditor.prototype, {
             case 'in': return 'Inches (in)';
             default: return 'Pixels (px)';
         }
-    },
+    }
+,
 
     getElementType(element) {
         if (!element) return '';
@@ -2757,7 +2803,8 @@ Object.assign(SVGEditor.prototype, {
             return 'curve';
         }
         return element.tagName.toLowerCase();
-    },
+    }
+,
 
     getElementDisplayName(element, index) {
         const tagName = element.tagName.toLowerCase();
@@ -2812,7 +2859,8 @@ Object.assign(SVGEditor.prototype, {
             default:
                 return `${baseName} ${index + 1}`;
         }
-    },
+    }
+,
 
     getElementIcon(tagName) {
         const icons = {
@@ -2839,7 +2887,8 @@ Object.assign(SVGEditor.prototype, {
 
     // --- ADD THESE METHODS TO SVGEditor ---
 
-    // 1. Zoom/Locate Element,
+    // 1. Zoom/Locate Element
+,
 
     setupTooltips() {
         const tooltip = document.getElementById('global-tooltip');
@@ -2873,7 +2922,8 @@ Object.assign(SVGEditor.prototype, {
     }
     
     
-    // Helper method to update input value without triggering change event,
+    // Helper method to update input value without triggering change event
+,
 
     applyProperties(element) {
         if (this.laserMode) {

@@ -90,6 +90,18 @@ VectorCutter/
 │       ├── editor-laser-mode.js    # Laser cutting mode toggle & recursive stroke/fill overrides
 │       ├── editor-export.js        # Clean SVG serialization, text flattening, PNG export
 │       ├── editor-templates.js     # Parametric Star & N-Gon shape generators, starter SVGs
+│       ├── editor-quickbar.js      # Floating draggable quick-tools bar (transforms, exact 90° rotation, alignment)
+│       ├── editor-sidebar-resize.js # Adaptive resizable left/right sidebars with icon-only mode & localStorage
+│       ├── editor-fonts.js         # 40+ OFL/Apache font registry, lazy-loading, searchable picker, user uploads
+│       ├── editor-boolean.js       # Boolean Union, Difference, Intersect, Exclude (XOR), Kerf offset, Weld & Score
+│       ├── editor-shapes-library.js # 25+ parametric presets (gear, heart, arrow, badges, icons) & library modal
+│       ├── editor-patterns.js      # Linear repeat, rotational circular repeat, grid matrix, mirror repeat
+│       ├── editor-production.js    # Laser color swatches, perforation dashed lines, material kerf, sheet nesting
+│       ├── editor-components.js    # Multi-artboard components list, extract as component, Read Me, Units & Settings
+│       ├── editor-text-tools.js    # Text along path (offset & flip), text within box auto-fit, draggable line guides
+│       ├── editor-trace.js         # Client-side PNG/JPG image tracing to vector outline (edge-detection)
+│       ├── editor-qol.js           # Command palette (Ctrl+K), shortcuts cheatsheet (?), context menu, dimension badges
+│       ├── editor-dxf.js           # Client-side AutoCAD R12 ASCII DXF export and import for lasers and CNCs
 │       ├── editor-code.js          # Live SVG code viewer, code modal, two-way code updates
 │       └── editor-init.js          # Modal helpers, clipboard copy, URL parameter autoloading
 ├── index.html                      # Project dashboard & launcher

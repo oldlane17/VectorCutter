@@ -73,6 +73,9 @@
                     <div class="separator"></div>
                     <div class="dropdown-item" id="menuConvertToPaths">Convert to Paths</div>
                     <div class="dropdown-item" id="menuSimplifyPaths">Simplify Paths</div>
+                    <div class="separator"></div>
+                    <div class="dropdown-item" id="menuExtractComponent">Extract as Component</div>
+                    <div class="dropdown-item" id="menuTraceImage">Trace Image to Vector (Beta)...</div>
                 </div>
             </div>
             <div class="menu-item">
@@ -92,7 +95,27 @@
                     <div class="separator"></div>
                     <div class="dropdown-item" id="menuKerfOffset">Kerf Offset (Inset/Outset)...</div>
                     <div class="dropdown-item" id="menuOutlineStroke">Outline Stroke</div>
-                
+                    <div class="dropdown-item" id="menuBooleanExclude">Boolean Exclude (XOR)</div>
+                    <div class="dropdown-item" id="menuMergePaths">Merge Selected Paths</div>
+                    <div class="dropdown-item" id="menuRemoveHoles">Remove Holes</div>
+                    <div class="dropdown-item" id="menuRoundCorners">Round Corners (Fillet)...</div>
+                    <div class="dropdown-item" id="menuChamfer">Chamfer Corners...</div>
+                    <div class="dropdown-item" id="menuWeldScore">Weld & Score</div>
+                    <div class="dropdown-item" id="menuFitWithin">Fit Within Shape</div>
+                    <div class="separator"></div>
+                    <div class="dropdown-item" id="menuLinearRepeat">Linear Repeat Pattern...</div>
+                    <div class="dropdown-item" id="menuRotRepeat">Rotational Repeat Pattern...</div>
+                    <div class="dropdown-item" id="menuGridRepeat">Grid / Tile Repeat Pattern...</div>
+                    <div class="dropdown-item" id="menuMirrorRepeat">Mirror Repeat</div>
+                    <div class="separator"></div>
+                    <div class="dropdown-item" id="menuDashedLine">Dashed Lines (Perforation)...</div>
+                    <div class="dropdown-item" id="menuNestSheet">Sheet Nesting (Shelf Packing)...</div>
+                    <div class="dropdown-item" id="menuLayeredStack">Layered Stack (3D)...</div>
+                    <div class="dropdown-item" id="menuFlattenPaths">Flatten to Plain Paths</div>
+                    <div class="separator"></div>
+                    <div class="dropdown-item" id="menuTextAlongPath">Text Along Path</div>
+                    <div class="dropdown-item" id="menuTextWithinBox">Text Within Box...</div>
+                    <div class="dropdown-item" id="menuAttachAnchor">Attach to Anchor (Right)</div>
                 </div>
             </div>
             <div class="menu-item">
@@ -122,7 +145,10 @@
                 Help
                 <div class="dropdown">
                     
-                    <div class="dropdown-item" id="menuShortcuts">Keyboard Shortcuts</div>
+                    <div class="dropdown-item" id="menuCommandPalette">Command Palette <span class="shortcut">Ctrl+K</span></div>
+                    <div class="dropdown-item" id="menuShortcuts">Keyboard Shortcuts <span class="shortcut">?</span></div>
+                    <div class="dropdown-item" id="menuReadmeNotes">Project Read Me / Notes</div>
+                    <div class="dropdown-item" id="menuProjectSettings">Units & Settings...</div>
                     <div class="dropdown-item" id="menuShapeLibrary">Browse Shape Library...</div>
                     <div class="dropdown-item" id="menuAbout">About SVG Editor</div>
                 </div>
@@ -488,6 +514,12 @@
     <script src="editor/js/editor-fonts.js"></script>
     <script src="editor/js/editor-boolean.js"></script>
     <script src="editor/js/editor-shapes-library.js"></script>
+    <script src="editor/js/editor-patterns.js"></script>
+    <script src="editor/js/editor-production.js"></script>
+    <script src="editor/js/editor-components.js"></script>
+    <script src="editor/js/editor-text-tools.js"></script>
+    <script src="editor/js/editor-trace.js"></script>
+    <script src="editor/js/editor-qol.js"></script>
     <script src="editor/js/editor-dxf.js"></script>
     <script src="editor/js/editor-code.js"></script>
     <script src="editor/js/editor-init.js"></script>

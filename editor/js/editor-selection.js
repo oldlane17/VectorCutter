@@ -23,7 +23,8 @@ Object.assign(SVGEditor.prototype, {
         this.selectionRectElement.setAttribute('stroke-width', '1');
         this.selectionRectElement.setAttribute('stroke-dasharray', '5,5');
         this.canvas.appendChild(this.selectionRectElement);
-    },
+    }
+,
 
     finishAreaSelection() {
         if (!this.selectionRectStart || !this.selectionRectElement) return;
@@ -80,7 +81,8 @@ Object.assign(SVGEditor.prototype, {
             this.updateSelectionHandles();
             this.updateContextMenu(); // Update the sidebar
         }
-    },
+    }
+,
 
     updateAreaSelection(clientX, clientY) {
         if (!this.selectionRectStart || !this.selectionRectElement) return;
@@ -95,14 +97,16 @@ Object.assign(SVGEditor.prototype, {
         this.selectionRectElement.setAttribute('y', y);
         this.selectionRectElement.setAttribute('width', width);
         this.selectionRectElement.setAttribute('height', height);
-    },
+    }
+,
 
     rectanglesIntersect(rect1, rect2) {
         return !(rect2.x > rect1.x + rect1.width || 
                 rect2.x + rect2.width < rect1.x || 
                 rect2.y > rect1.y + rect1.height ||
                 rect2.y + rect2.height < rect1.y);
-    },
+    }
+,
 
     selectElement(element) {
         // Remove ALL selection visuals first
@@ -147,7 +151,8 @@ Object.assign(SVGEditor.prototype, {
         }
     }
     
-    // Add new method to get transformed bounding box,
+    // Add new method to get transformed bounding box
+,
 
     selectAllElements() {
         // 1. Get all valid user elements (groups, paths, shapes, etc.)
@@ -179,7 +184,8 @@ Object.assign(SVGEditor.prototype, {
         
         // 6. Focus the container so keyboard shortcuts (like Delete) work immediately
         this.canvasContainer.focus();
-    },
+    }
+,
 
     selectAll() {
         // For demonstration, we'll select all non-axis elements
@@ -191,7 +197,8 @@ Object.assign(SVGEditor.prototype, {
                 element.style.outline = '2px dashed #007acc';
             }
         });
-    },
+    }
+,
 
     clearSelection() {
         // Clear outline from all elements
@@ -208,16 +215,22 @@ Object.assign(SVGEditor.prototype, {
         // Clear selection group transform
         if (this.selectionGroup) {
             this.selectionGroup.removeAttribute('transform');
+        const badge = document.getElementById('canvasSelectionBadge');
+        if (badge) badge.style.display = 'none';
+        const statusSize = document.getElementById('statusSelectionSize');
+        if (statusSize) statusSize.textContent = 'No selection';
         }
         
         // Update context menu to show "no selection"
         this.updateContextMenu();
-    },
+    }
+,
 
     deleteSelectedElements() {
         // Delete with confirmation for Del key
         this.performDeleteElements(true);
-    },
+    }
+,
 
     performDeleteElements(askConfirm = true) {
         if (this.selectedElements.length === 0) return;
@@ -235,7 +248,8 @@ Object.assign(SVGEditor.prototype, {
         this.clearSelection();
         this.saveState();
         this.updateContextMenu();
-    },
+    }
+,
 
     getUserElements() {
         const allElements = Array.from(this.canvas.children);
@@ -259,7 +273,8 @@ Object.assign(SVGEditor.prototype, {
             
             return true;
         });
-    },
+    }
+,
 
     getUserElementsBBox() {
         let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
@@ -323,7 +338,8 @@ Object.assign(SVGEditor.prototype, {
             width: maxX - minX,
             height: maxY - minY
         };
-    },
+    }
+,
 
     getElementBoundingBoxInCanvasSpace(element, bbox) {
         const transform = element.getAttribute('transform');
@@ -373,7 +389,8 @@ Object.assign(SVGEditor.prototype, {
             height: maxY - minY
         };
     }
-    // 1. UPDATED: Normalizes coordinates so the export is tight to the elements,
+    // 1. UPDATED: Normalizes coordinates so the export is tight to the elements
+,
 
     getTransformedBBox(element) {
         const bbox = element.getBBox();
@@ -403,7 +420,8 @@ Object.assign(SVGEditor.prototype, {
             height: bbox.height,
             rotation: rotation
         };
-    },
+    }
+,
 
     getBoundingBox(element) {
         // First, get the transformed bounding box for rotation handling
@@ -432,7 +450,8 @@ Object.assign(SVGEditor.prototype, {
             height: bbox.height,
             rotation: 0
         };
-    },
+    }
+,
 
     getGroupBoundingBox() {
         if (this.selectedElements.length === 0) return null;
@@ -463,13 +482,15 @@ Object.assign(SVGEditor.prototype, {
             width: maxX - minX,
             height: maxY - minY
         };
-    },
+    }
+,
 
     hasGetBBox(element) {
         return element && element.getBBox && typeof element.getBBox === 'function';
     }
 
-    // Update getGroupBoundingBox to use safe method:,
+    // Update getGroupBoundingBox to use safe method:
+,
 
     getElementCorners(element) {
         let bbox;
@@ -569,7 +590,8 @@ Object.assign(SVGEditor.prototype, {
         }
 
         return corners;
-    },
+    }
+,
 
     calculateSelectionBounds() {
         if (this.selectedElements.length === 0) return null;
@@ -596,7 +618,8 @@ Object.assign(SVGEditor.prototype, {
             width: maxX - minX,
             height: maxY - minY
         };
-    },
+    }
+,
 
     createSelectionHandles(element) {
         const ns = "http://www.w3.org/2000/svg";
@@ -674,7 +697,8 @@ Object.assign(SVGEditor.prototype, {
         // 7. Update the Blue Center Dot
         this.updateRotationCenterDot({x: vx, y: vy, width: vw, height: vh}, element);
     }
-    // Update the updateSelectionHandles method:,
+    // Update the updateSelectionHandles method:
+,
 
     updateSelectionHandles() {
         // Clear previous handles
@@ -808,8 +832,17 @@ Object.assign(SVGEditor.prototype, {
                 }
             }
             // --- FIX END ---
+        if (this.updateCanvasDimensionBadge) {
+            this.updateCanvasDimensionBadge();
         }
-    },
+        const statusSize = document.getElementById('statusSelectionSize');
+        if (statusSize && bbox) {
+            const factor = this.unitFactors[this.currentUnits] || 3.7795;
+            statusSize.textContent = `Selection: ${(bbox.width / factor).toFixed(1)} × ${(bbox.height / factor).toFixed(1)} ${this.currentUnits}`;
+        }
+        }
+    }
+,
 
     removeSelectionHandles() {
         // Clear all selection handles
@@ -821,7 +854,8 @@ Object.assign(SVGEditor.prototype, {
         this.rotateHandle = null;
         // Remove any transform from selection group
         this.selectionGroup.removeAttribute('transform');
-    },
+    }
+,
 
     findSnapTarget(x, y, excludeElement) {
         if (!this.snapEnabled) return { x, y, snapped: false };

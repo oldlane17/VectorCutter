@@ -210,6 +210,222 @@
                 });
                 selectElement.appendChild(group);
             });
+        },
+
+        showFontPickerModal(onSelectCallback = null) {
+            let modal = document.getElementById('fontPickerModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'fontPickerModal';
+                modal.className = 'modal';
+                modal.innerHTML = `
+                    <div class="modal-content" style="width: 720px; max-width: 95%; max-height: 85vh; display: flex; flex-direction: column;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #3e3e42; padding-bottom:10px; margin-bottom:12px;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="font-size:20px;">🔤</span>
+                                <h2 style="margin:0; font-size:18px;">Font Library & Picker</h2>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <input type="file" id="fontUploadInput" accept=".ttf,.otf,.woff2" style="display:none;">
+                                <button id="btnUploadFont" style="background:#2d2d30; border:1px solid #3e3e42; color:#fff; padding:5px 10px; border-radius:4px; font-size:11px; cursor:pointer;" title="Upload custom TTF/OTF/WOFF2 font">+ Upload Font...</button>
+                                <button id="closeFontPickerBtn" style="background:transparent; border:none; color:#aaa; font-size:22px; cursor:pointer;">&times;</button>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:8px; margin-bottom:10px;">
+                            <input type="text" id="fontSearchInput" placeholder="Search 40+ fonts (e.g. Montserrat, Pacifico, Fira, Stencil)..." style="flex:1; padding:8px 12px; background:#1e1e1e; border:1px solid #3e3e42; color:#fff; border-radius:4px; font-size:13px;">
+                        </div>
+
+                        <!-- Category Filter Chips -->
+                        <div id="fontCategoryChips" style="display:flex; gap:6px; overflow-x:auto; padding-bottom:8px; margin-bottom:10px; border-bottom:1px solid #2d2d30;">
+                            <button class="chip active" data-cat="All" style="background:#007acc; border:none; color:#fff; padding:4px 10px; border-radius:12px; font-size:11px; cursor:pointer;">All</button>
+                            <button class="chip" data-cat="Favorites" style="background:#2d2d30; border:none; color:#bbb; padding:4px 10px; border-radius:12px; font-size:11px; cursor:pointer;">★ Favorites</button>
+                            <button class="chip" data-cat="Sans" style="background:#2d2d30; border:none; color:#bbb; padding:4px 10px; border-radius:12px; font-size:11px; cursor:pointer;">Sans</button>
+                            <button class="chip" data-cat="Serif" style="background:#2d2d30; border:none; color:#bbb; padding:4px 10px; border-radius:12px; font-size:11px; cursor:pointer;">Serif</button>
+                            <button class="chip" data-cat="Slab" style="background:#2d2d30; border:none; color:#bbb; padding:4px 10px; border-radius:12px; font-size:11px; cursor:pointer;">Slab</button>
+                            <button class="chip" data-cat="Script" style="background:#2d2d30; border:none; color:#bbb; padding:4px 10px; border-radius:12px; font-size:11px; cursor:pointer;">Script / Cursive</button>
+                            <button class="chip" data-cat="Display" style="background:#2d2d30; border:none; color:#bbb; padding:4px 10px; border-radius:12px; font-size:11px; cursor:pointer;">Display</button>
+                            <button class="chip" data-cat="Monospace" style="background:#2d2d30; border:none; color:#bbb; padding:4px 10px; border-radius:12px; font-size:11px; cursor:pointer;">Monospace</button>
+                            <button class="chip" data-cat="Stencil" style="background:#2d2d30; border:none; color:#bbb; padding:4px 10px; border-radius:12px; font-size:11px; cursor:pointer;">Stencil</button>
+                            <button class="chip" data-cat="Single-line" style="background:#2d2d30; border:none; color:#bbb; padding:4px 10px; border-radius:12px; font-size:11px; cursor:pointer;">Single-line (Engrave)</button>
+                        </div>
+
+                        <div id="fontPickerList" style="flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:6px; padding:4px;">
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+
+                modal.querySelector('#closeFontPickerBtn').addEventListener('click', () => modal.style.display = 'none');
+                modal.addEventListener('click', (e) => { if (e.target === modal) modal.style.display = 'none'; });
+
+                const uploadBtn = modal.querySelector('#btnUploadFont');
+                const uploadInput = modal.querySelector('#fontUploadInput');
+                uploadBtn.addEventListener('click', () => uploadInput.click());
+                uploadInput.addEventListener('change', async (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const loadedName = await this.registerUserFont(file);
+                        if (loadedName) {
+                            this.renderFontPickerCards('', this._activeFontCategory || 'All', onSelectCallback);
+                        }
+                    }
+                });
+
+                const search = modal.querySelector('#fontSearchInput');
+                search.addEventListener('input', (e) => this.renderFontPickerCards(e.target.value, this._activeFontCategory || 'All', onSelectCallback));
+
+                // Keyboard navigation
+                search.addEventListener('keydown', (e) => {
+                    const items = modal.querySelectorAll('.font-card-item');
+                    if (e.key === 'ArrowDown' && items.length > 0) {
+                        e.preventDefault();
+                        items[0].focus();
+                    } else if (e.key === 'Enter' && items.length > 0) {
+                        e.preventDefault();
+                        items[0].click();
+                    }
+                });
+
+                const chips = modal.querySelectorAll('#fontCategoryChips .chip');
+                chips.forEach(chip => {
+                    chip.addEventListener('click', () => {
+                        chips.forEach(c => {
+                            c.classList.remove('active');
+                            c.style.background = '#2d2d30';
+                            c.style.color = '#bbb';
+                        });
+                        chip.classList.add('active');
+                        chip.style.background = '#007acc';
+                        chip.style.color = '#fff';
+                        this._activeFontCategory = chip.dataset.cat;
+                        this.renderFontPickerCards(search.value, chip.dataset.cat, onSelectCallback);
+                    });
+                });
+            }
+
+            this._activeFontCategory = 'All';
+            this.renderFontPickerCards('', 'All', onSelectCallback);
+            modal.style.display = 'flex';
+            setTimeout(() => {
+                const s = modal.querySelector('#fontSearchInput');
+                if (s) s.focus();
+            }, 50);
+        },
+
+        renderFontPickerCards(query = '', category = 'All', onSelectCallback = null) {
+            const list = document.getElementById('fontPickerList');
+            if (!list) return;
+            list.innerHTML = '';
+
+            const q = query.toLowerCase().trim();
+            const filtered = this.fontRegistry.filter(f => {
+                const matchesCat = category === 'All' 
+                    || (category === 'Favorites' && this.favoriteFonts.includes(f.label))
+                    || f.category === category;
+                const matchesSearch = !q || f.label.toLowerCase().includes(q) || f.category.toLowerCase().includes(q);
+                return matchesCat && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                list.innerHTML = '<div style="text-align:center; color:#888; padding:30px;">No matching fonts found.</div>';
+                return;
+            }
+
+            filtered.forEach((font) => {
+                const item = document.createElement('div');
+                item.className = 'font-card-item';
+                item.tabIndex = 0;
+                item.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:#1e1e1e; border:1px solid #3e3e42; border-radius:5px; padding:10px 14px; cursor:pointer; transition:all 0.15s; outline:none;';
+
+                const isFav = this.favoriteFonts.includes(font.label);
+
+                item.innerHTML = `
+                    <div style="flex:1;">
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                            <span style="font-size:13px; font-weight:bold; color:#fff;">${font.label}</span>
+                            <span style="font-size:10px; color:#888; background:#2d2d30; padding:2px 6px; border-radius:3px;">${font.category}</span>
+                            ${font.singleLine ? '<span style="font-size:10px; color:#9cdcfe; background:#103854; padding:2px 6px; border-radius:3px;">Single-Line / Engrave</span>' : ''}
+                        </div>
+                        <div style="font-size:18px; color:#ccc; font-family:${font.family}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:540px;">
+                            The quick brown fox jumps 123
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <span class="font-fav-star" title="Toggle Favorite" style="cursor:pointer; font-size:16px; color:${isFav ? '#ffc107' : '#555'};">${isFav ? '★' : '☆'}</span>
+                    </div>
+                `;
+
+                // Hover & focus styles
+                item.addEventListener('mouseenter', () => {
+                    item.style.borderColor = '#007acc';
+                    item.style.background = '#252528';
+                });
+                item.addEventListener('mouseleave', () => {
+                    item.style.borderColor = '#3e3e42';
+                    item.style.background = '#1e1e1e';
+                });
+                item.addEventListener('focus', () => {
+                    item.style.borderColor = '#007acc';
+                    item.style.background = '#252528';
+                });
+                item.addEventListener('blur', () => {
+                    item.style.borderColor = '#3e3e42';
+                    item.style.background = '#1e1e1e';
+                });
+
+                // Toggle favorite
+                const star = item.querySelector('.font-fav-star');
+                star.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    this.toggleFavoriteFont(font.label);
+                    const nowFav = this.favoriteFonts.includes(font.label);
+                    star.textContent = nowFav ? '★' : '☆';
+                    star.style.color = nowFav ? '#ffc107' : '#555';
+                });
+
+                // Select font
+                const doSelect = async () => {
+                    await this.loadFont(font.label);
+                    this.recordRecentFont(font.label);
+
+                    if (onSelectCallback) {
+                        onSelectCallback(font);
+                    } else if (this.selectedElement && this.selectedElement.tagName.toLowerCase() === 'text') {
+                        this.selectedElement.setAttribute('font-family', font.family);
+                        const selectEl = document.getElementById('contextTextFontFamily');
+                        if (selectEl) {
+                            this.populateFontSelector(selectEl, font.family);
+                        }
+                        this.updateSelectionHandles();
+                        this.updateContextMenuValues();
+                        this.saveState();
+                    }
+
+                    document.getElementById('fontPickerModal').style.display = 'none';
+                };
+
+                item.addEventListener('click', doSelect);
+                item.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        doSelect();
+                    } else if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (item.nextElementSibling) item.nextElementSibling.focus();
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        if (item.previousElementSibling) item.previousElementSibling.focus();
+                        else {
+                            const s = document.getElementById('fontSearchInput');
+                            if (s) s.focus();
+                        }
+                    }
+                });
+
+                list.appendChild(item);
+            });
         }
+
     });
 })();

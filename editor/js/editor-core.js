@@ -127,6 +127,11 @@ class SVGEditor {
         this.setupSidebarResizing();
         if (this.initFonts) this.initFonts();
         if (this.initShapeLibrary) this.initShapeLibrary();
+        if (this.initProductionTools) this.initProductionTools();
+        if (this.initComponents) this.initComponents();
+        if (this.initTextTools) this.initTextTools();
+        if (this.initTraceTool) this.initTraceTool();
+        if (this.initQoL) this.initQoL();
         this.setupShiftKeyListener();
         this.setupKeyboardModifiers();
         this.updateContextMenu();
@@ -371,6 +376,64 @@ class SVGEditor {
         if (menuKerfOffset) menuKerfOffset.addEventListener('click', () => this.applyKerfOffset());
         const menuOutlineStroke = document.getElementById('menuOutlineStroke');
         if (menuOutlineStroke) menuOutlineStroke.addEventListener('click', () => this.outlineStroke());
+
+        // Edit additions
+        const menuExtractComponent = document.getElementById('menuExtractComponent');
+        if (menuExtractComponent) menuExtractComponent.addEventListener('click', () => this.extractSelectionAsComponent());
+        const menuTraceImage = document.getElementById('menuTraceImage');
+        if (menuTraceImage) menuTraceImage.addEventListener('click', () => this.showTraceModal());
+
+        // Modify additions
+        const menuBooleanExclude = document.getElementById('menuBooleanExclude');
+        if (menuBooleanExclude) menuBooleanExclude.addEventListener('click', () => this.booleanExclude());
+        const menuMergePaths = document.getElementById('menuMergePaths');
+        if (menuMergePaths) menuMergePaths.addEventListener('click', () => this.mergeSelectedPaths());
+        const menuRemoveHoles = document.getElementById('menuRemoveHoles');
+        if (menuRemoveHoles) menuRemoveHoles.addEventListener('click', () => this.removeHolesFromSelected());
+        const menuRoundCorners = document.getElementById('menuRoundCorners');
+        if (menuRoundCorners) menuRoundCorners.addEventListener('click', () => this.roundCorners());
+        const menuChamfer = document.getElementById('menuChamfer');
+        if (menuChamfer) menuChamfer.addEventListener('click', () => this.chamferCorners());
+        const menuWeldScore = document.getElementById('menuWeldScore');
+        if (menuWeldScore) menuWeldScore.addEventListener('click', () => this.weldAndScore());
+        const menuFitWithin = document.getElementById('menuFitWithin');
+        if (menuFitWithin) menuFitWithin.addEventListener('click', () => this.fitWithinShape());
+
+        // Patterns additions
+        const menuLinearRepeat = document.getElementById('menuLinearRepeat');
+        if (menuLinearRepeat) menuLinearRepeat.addEventListener('click', () => this.linearRepeat());
+        const menuRotRepeat = document.getElementById('menuRotRepeat');
+        if (menuRotRepeat) menuRotRepeat.addEventListener('click', () => this.rotationalRepeat());
+        const menuGridRepeat = document.getElementById('menuGridRepeat');
+        if (menuGridRepeat) menuGridRepeat.addEventListener('click', () => this.gridRepeat());
+        const menuMirrorRepeat = document.getElementById('menuMirrorRepeat');
+        if (menuMirrorRepeat) menuMirrorRepeat.addEventListener('click', () => this.mirrorRepeat('horizontal'));
+
+        // Production additions
+        const menuDashedLine = document.getElementById('menuDashedLine');
+        if (menuDashedLine) menuDashedLine.addEventListener('click', () => this.applyDashedLine());
+        const menuNestSheet = document.getElementById('menuNestSheet');
+        if (menuNestSheet) menuNestSheet.addEventListener('click', () => this.nestElementsOnSheet());
+        const menuLayeredStack = document.getElementById('menuLayeredStack');
+        if (menuLayeredStack) menuLayeredStack.addEventListener('click', () => this.createLayeredStack());
+        const menuFlattenPaths = document.getElementById('menuFlattenPaths');
+        if (menuFlattenPaths) menuFlattenPaths.addEventListener('click', () => this.flattenSelectedToPlainPaths());
+
+        // Text & Anchors additions
+        const menuTextAlongPath = document.getElementById('menuTextAlongPath');
+        if (menuTextAlongPath) menuTextAlongPath.addEventListener('click', () => this.applyTextAlongPath());
+        const menuTextWithinBox = document.getElementById('menuTextWithinBox');
+        if (menuTextWithinBox) menuTextWithinBox.addEventListener('click', () => this.fitTextWithinBox());
+        const menuAttachAnchor = document.getElementById('menuAttachAnchor');
+        if (menuAttachAnchor) menuAttachAnchor.addEventListener('click', () => this.attachToAnchor('right'));
+
+        // Help & Settings additions
+        const menuCommandPalette = document.getElementById('menuCommandPalette');
+        if (menuCommandPalette) menuCommandPalette.addEventListener('click', () => this.showCommandPalette());
+        const menuReadmeNotes = document.getElementById('menuReadmeNotes');
+        if (menuReadmeNotes) menuReadmeNotes.addEventListener('click', () => this.showReadmeModal());
+        const menuProjectSettings = document.getElementById('menuProjectSettings');
+        if (menuProjectSettings) menuProjectSettings.addEventListener('click', () => this.showUnitsSettingsModal());
 
         // Help menu
         const menuShapeLibrary = document.getElementById('menuShapeLibrary');
