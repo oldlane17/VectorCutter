@@ -7,10 +7,10 @@
   Cache-Control: no-store
 
 /editor/css/*
-  Cache-Control: public, max-age=86400
+  Cache-Control: no-cache, must-revalidate
 
 /editor/js/*
-  Cache-Control: public, max-age=86400
+  Cache-Control: no-cache, must-revalidate
 
 /components/*
   Cache-Control: public, max-age=86400
