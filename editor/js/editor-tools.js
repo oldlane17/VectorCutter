@@ -6,8 +6,8 @@
 
 Object.assign(SVGEditor.prototype, {
     setupTools() {
-        // Add path tool to the available tools
-        this.tools = ['select', 'rectangle', 'circle', 'ellipse', 'line', 'path', 'text'];
+        // Add path tool and curve to the available tools
+        this.tools = ['select', 'rectangle', 'circle', 'ellipse', 'line', 'curve', 'path', 'text'];
         this.properties = {
             fill: '#4CAF50',
             stroke: '#000000',
@@ -284,6 +284,46 @@ Object.assign(SVGEditor.prototype, {
             this.isDrawing = false;
             
             if (this.currentElement) {
+                // If single-clicked without dragging (zero or near-zero size), give sensible default dimensions
+                const tag = this.currentElement.tagName.toLowerCase();
+                if (tag === 'rect') {
+                    const w = parseFloat(this.currentElement.getAttribute('width')) || 0;
+                    const h = parseFloat(this.currentElement.getAttribute('height')) || 0;
+                    if (w < 4 && h < 4) {
+                        const defW = 60, defH = 40;
+                        this.currentElement.setAttribute('x', this.startX - defW / 2);
+                        this.currentElement.setAttribute('y', this.startY - defH / 2);
+                        this.currentElement.setAttribute('width', defW);
+                        this.currentElement.setAttribute('height', defH);
+                    }
+                } else if (tag === 'circle') {
+                    const r = parseFloat(this.currentElement.getAttribute('r')) || 0;
+                    if (r < 3) {
+                        this.currentElement.setAttribute('r', 25);
+                    }
+                } else if (tag === 'ellipse') {
+                    const rx = parseFloat(this.currentElement.getAttribute('rx')) || 0;
+                    const ry = parseFloat(this.currentElement.getAttribute('ry')) || 0;
+                    if (rx < 3 && ry < 3) {
+                        this.currentElement.setAttribute('rx', 35);
+                        this.currentElement.setAttribute('ry', 20);
+                    }
+                } else if (tag === 'line') {
+                    const x1 = parseFloat(this.currentElement.getAttribute('x1')) || 0;
+                    const y1 = parseFloat(this.currentElement.getAttribute('y1')) || 0;
+                    const x2 = parseFloat(this.currentElement.getAttribute('x2')) || 0;
+                    const y2 = parseFloat(this.currentElement.getAttribute('y2')) || 0;
+                    if (Math.hypot(x2 - x1, y2 - y1) < 4) {
+                        this.currentElement.setAttribute('x2', x1 + 50);
+                        this.currentElement.setAttribute('y2', y1);
+                    }
+                } else if (tag === 'path' && this.currentTool === 'curve') {
+                    const d = this.currentElement.getAttribute('d') || '';
+                    if (d.includes(`M ${this.startX} ${this.startY} Q ${this.startX} ${this.startY} ${this.startX} ${this.startY}`)) {
+                        this.currentElement.setAttribute('d', `M ${this.startX} ${this.startY} Q ${this.startX + 30} ${this.startY - 30} ${this.startX + 60} ${this.startY}`);
+                    }
+                }
+
                 this.selectElement(this.currentElement);
             }
         }
@@ -427,10 +467,13 @@ Object.assign(SVGEditor.prototype, {
         });
 
         // Edit Code Button
-        document.getElementById('editCodeBtn').addEventListener('click', () => this.toggleCodeEditor());
-        document.getElementById('applyCodeBtn').addEventListener('click', () => this.applyCodeToCanvas());
+        const editCodeBtn = document.getElementById('editCodeBtn');
+        if (editCodeBtn) editCodeBtn.addEventListener('click', () => this.toggleCodeEditor());
+        const applyCodeBtn = document.getElementById('applyCodeBtn');
+        if (applyCodeBtn) applyCodeBtn.addEventListener('click', () => this.applyCodeToCanvas());
 
-        document.querySelector('[data-action="code"]').addEventListener('click', () => this.showCode());
+        const codeAction = document.querySelector('[data-action="code"]');
+        if (codeAction) codeAction.addEventListener('click', () => this.showCode());
     }
 ,
 

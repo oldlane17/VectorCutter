@@ -126,7 +126,10 @@
             background: #2d2d30;
             border: 1px solid #3e3e42;
             border-top: none;
-            min-width: 180px;
+            min-width: 220px;
+            max-height: calc(100vh - 50px);
+            overflow-y: auto;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
             z-index: 100;
         }
 
@@ -268,104 +271,6 @@
             overflow: hidden;
         }
 
-        /* Sidebar Styles */
-        .sidebar {
-            width: 80px; /* Narrow width for icons only */
-            background: #252526;
-            border-right: 1px solid #3e3e42;
-            padding: 10px 5px;
-            display: flex;
-            flex-direction: column;
-            align-items: center; /* Center icons horizontally */
-            overflow-y: auto;
-            flex-shrink: 0;
-            z-index: 10;
-        }
-
-        .sidebar::-webkit-scrollbar {
-            display: none;
-        }
-
-
-        .tool-group {
-            width: 100%;
-            margin-bottom: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #3e3e42; /* Separator line */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .tool-group:last-child {
-            border-bottom: none;
-        }
-
-        .tool-group h3 {
-            color: #cccccc;
-            margin-bottom: 15px;
-            font-size: 14px;
-            font-weight: 500;
-        }
-        .tools {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            width: 100%;
-            align-items: center;
-        }
-
-                /* --- ICON BUTTON STYLES --- */
-        .tool {
-            width: 40px;
-            height: 40px;
-            padding: 8px; /* Padding around the icon */
-            background: #2d2d30;
-            border: 1px solid transparent;
-            border-radius: 4px;
-            cursor: pointer;
-            position: relative; /* Essential for tooltip positioning */
-            transition: all 0.2s;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .tool img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            pointer-events: none;
-            
-            /* 1. FORCE WHITE (Default State) */
-            /* This specific filter combination turns any color icon into pure white */
-            filter: brightness(0) saturate(100%) invert(100%);
-            transition: filter 0.2s;
-        }
-
-        .tool:hover img,
-        .tool.active img {
-            /* This specific filter sequence turns black/white into #007acc Blue */
-            filter: invert(30%) sepia(98%) saturate(1628%) hue-rotate(190deg) brightness(98%) contrast(101%);
-        }
-
-        .tool:hover {
-            background: #3e3e42;
-            border-color: #555;
-            z-index:999999;
-        }
-
-        .tool.active {
-            background: #094771;
-            border-color: #007acc;
-        }
-
-        /* --- HOVER TOOLTIP LOGIC --- */
-        
-
-
-
-
-        
         /* Adjust Context Menu / Layout for narrower sidebar */
         @media (max-width: 1200px) {
             .context-menu { width: 240px; }
@@ -1563,8 +1468,13 @@
     transition: width 0.15s ease;
 }
 
+.sidebar:not(.icon-only) {
+    min-width: 200px !important;
+}
+
 .sidebar.icon-only {
     width: 56px !important;
+    min-width: 56px !important;
     padding: 8px 4px;
     align-items: center;
 }
@@ -1666,12 +1576,14 @@
 /* Expanded Tool Row */
 .sidebar:not(.icon-only) .tool {
     width: 100%;
-    height: 32px;
-    padding: 6px 8px;
+    min-width: 0;
+    height: 34px;
+    padding: 6px 10px;
     background: transparent;
     border: 1px solid transparent;
     border-radius: 4px;
     display: flex;
+    flex-direction: row;
     align-items: center;
     gap: 10px;
     cursor: pointer;
@@ -1689,19 +1601,32 @@
     border-color: #007acc;
 }
 
-.sidebar:not(.icon-only) .tool img {
-    width: 16px;
-    height: 16px;
+.sidebar .tool img,
+.sidebar .tool svg {
+    width: 18px;
+    height: 18px;
     flex-shrink: 0;
+    pointer-events: none;
+    filter: brightness(0) saturate(100%) invert(100%);
+    transition: filter 0.2s;
+}
+
+.sidebar .tool:hover img,
+.sidebar .tool.active img,
+.sidebar .tool:hover svg,
+.sidebar .tool.active svg {
+    filter: invert(30%) sepia(98%) saturate(1628%) hue-rotate(190deg) brightness(98%) contrast(101%);
 }
 
 .tool-label {
-    font-size: 12px;
+    font-size: 13px;
     color: #ccc;
     flex: 1;
+    min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-align: left;
 }
 
 .tool-shortcut {
@@ -1711,6 +1636,8 @@
     padding: 2px 5px;
     border-radius: 3px;
     border: 1px solid #333;
+    margin-left: auto;
+    flex-shrink: 0;
 }
 
 .sidebar-browse-btn {
@@ -1894,4 +1821,145 @@
     font-size: 10px;
     color: #888;
     margin-top: 2px;
+}
+
+/* ==========================================================================
+   Light / Dark Mode Theming (Section 5)
+   ========================================================================== */
+body[data-theme="light"] {
+    background: #f0f0f0;
+    color: #222;
+}
+
+body[data-theme="light"] .container {
+    background: #f0f0f0;
+}
+
+body[data-theme="light"] .menu-bar {
+    background: #e8e8e8;
+    border-bottom-color: #d0d0d0;
+    color: #333;
+}
+
+body[data-theme="light"] .menu-item:hover {
+    background: #d8d8d8;
+}
+
+body[data-theme="light"] .dropdown {
+    background: #ffffff;
+    border-color: #ccc;
+    color: #222;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+body[data-theme="light"] .dropdown-item:hover {
+    background: #e5f1fb;
+    color: #007acc;
+}
+
+body[data-theme="light"] .sidebar {
+    background: #f5f5f5;
+    border-right-color: #ddd;
+    color: #333;
+}
+
+body[data-theme="light"] .sidebar-search-box input {
+    background: #ffffff;
+    border-color: #ccc;
+    color: #222;
+}
+
+body[data-theme="light"] .sidebar-section {
+    border-bottom-color: #e0e0e0;
+}
+
+body[data-theme="light"] .sidebar-section-header {
+    color: #666;
+}
+
+body[data-theme="light"] .sidebar:not(.icon-only) .tool {
+    color: #333;
+}
+
+body[data-theme="light"] .sidebar:not(.icon-only) .tool:hover {
+    background: #e8e8e8;
+}
+
+body[data-theme="light"] .tool-label {
+    color: #333;
+}
+
+body[data-theme="light"] .tool-shortcut {
+    background: #e0e0e0;
+    border-color: #ccc;
+    color: #555;
+}
+
+body[data-theme="light"] .sidebar .tool img,
+body[data-theme="light"] .sidebar .tool svg {
+    filter: brightness(0);
+}
+
+body[data-theme="light"] .sidebar .tool:hover img,
+body[data-theme="light"] .sidebar .tool.active img {
+    filter: invert(30%) sepia(98%) saturate(1628%) hue-rotate(190deg) brightness(98%) contrast(101%);
+}
+
+body[data-theme="light"] .context-menu {
+    background: #f5f5f5;
+    border-left-color: #ddd;
+    color: #333;
+}
+
+body[data-theme="light"] .properties-group {
+    background: #ffffff;
+    border-color: #ddd;
+}
+
+body[data-theme="light"] .properties-group input,
+body[data-theme="light"] .properties-group select {
+    background: #ffffff;
+    border-color: #ccc;
+    color: #222;
+}
+
+body[data-theme="light"] .canvas-container {
+    background: #fafafa;
+}
+
+body[data-theme="light"] .status-bar {
+    background: #e8e8e8;
+    border-top-color: #d0d0d0;
+    color: #444;
+}
+
+body[data-theme="light"] .quick-toolbar {
+    background: #ffffff;
+    border-color: #ccc;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+
+body[data-theme="light"] .quick-btn {
+    color: #333;
+}
+
+body[data-theme="light"] .quick-btn img {
+    filter: brightness(0);
+}
+
+body[data-theme="light"] .quick-btn:hover {
+    background: #f0f0f0;
+}
+
+body[data-theme="light"] .theme-toggle-btn,
+body[data-theme="light"] .laser-mode-toggle {
+    background: #e8e8e8 !important;
+    border-color: #ccc !important;
+    color: #333 !important;
+}
+
+body[data-theme="light"] .modal-content {
+    background: #ffffff;
+    border-color: #ccc;
+    color: #222;
 }

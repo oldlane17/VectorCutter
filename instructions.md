@@ -1,236 +1,181 @@
-# VectorCutter – Editor Improvement Instructions
+# VectorCutter – Instructions for Gemini
 
-Target: `vectorcutter.oldlane17.com` · Repo: https://github.com/oldlane17/VectorCutter
-Main competitor / reference: **cuttle.xyz** (see the screenshots of Cuttle's Edit, View and Modify menus, the floating tool bar, the Text properties panel and the Components list).
+Repo: https://github.com/Oldlane17/VectorCutter
+Live: https://vectorcutter.oldlane17.com/editor
 
-> **Read this first (for the implementing agent)**
-> 1. Read every file in `editor/js/` and `editor/css/editor.css` plus `editor.html` **before** changing anything. Reuse existing patterns (SVGEditor class, tool modes, undo/redo history, properties panel).
-> 2. Keep the project philosophy: **vanilla JavaScript (ES6+), no build step, no npm, 100 % client-side, MIT-compatible**. If a third-party library is truly needed (e.g. for boolean path operations), vendor a single minified file into `editor/lib/` (with license header) – no CDN dependency at runtime.
-> 3. Every new action must (a) be undoable via the existing history, (b) work in **Laser Cutting Mode**, (c) not break the live two-way SVG code editor, and (d) be included in the clean SVG export.
-> 4. Work in the order of the numbered sections. Commit after each section with a clear message (`feat: …`). Test in the browser console with no JS errors after each step.
+## 0. READ THIS FIRST – Your freedom
 
----
+**You are totally free to change everything.** The goal is a **usable, stable, good-looking editor**, not preserving the current code.
 
-## Existing architecture (for orientation)
+- If something below is not fixable with reasonable effort, **throw it away and rebuild it from scratch** (the selection system, the element store, the sidebar, the zoom/pan logic, the whole canvas – anything).
+- You may restructure files and folders, rename things, change the architecture, introduce a build step or a framework, or rewrite the whole app, as long as the result is a working website deployable to the current domain (static hosting is preferred; keep it deployable on GitHub Pages / simple static hosting if possible).
+- Do not patch around broken code with hacks. If the foundation is bad, replace the foundation.
+- Before starting, read the whole repo, decide what is worth keeping, and write a short plan (`PLAN.md`) with your decisions. Then execute.
+- Work in this order: **(1) core architecture → (2) bugs → (3) laser mode → (4) missing features → (5) themes → (6) polish.** Do not add features on top of a broken core.
 
-| File | Responsibility |
-|---|---|
-| `editor/js/editor-core.js` | SVGEditor class, lifecycle, undo/redo, clipboard, shortcuts |
-| `editor/js/editor-canvas.js` | viewBox, coordinate systems, grid, **pan & zoom** |
-| `editor/js/editor-tools.js` | tool modes, mouse dispatch, element creation |
-| `editor/js/editor-selection.js` | marquee, bounding boxes, handles, snapping |
-| `editor/js/editor-transform.js` | resize, rotate, scale, flip, translate |
-| `editor/js/editor-properties.js` | properties panel, **LaTeX/MathJax text**, styles |
-| `editor/js/editor-elements-tree.js` | elements tree, grouping, splitting |
-| `editor/js/editor-laser-mode.js` | laser mode overrides |
-| `editor/js/editor-export.js` | SVG serialization, text flattening, PNG export |
-| `editor/js/editor-templates.js` | star / n-gon generators |
-| `editor/js/editor-code.js` | live code viewer |
-| `editor/js/editor-init.js` | modal helpers, URL autoload |
-| `sidebar/` | tool icons |
+## 1. What VectorCutter is
 
-New code should go into **new modules** where sensible (e.g. `editor-quickbar.js`, `editor-boolean.js`, `editor-fonts.js`, `editor-sidebar-resize.js`) and be registered in `editor.html`.
+A free, browser-based vector editor to create and edit SVG files (and other formats) for **laser cutting**, later also **3D printing** and **CNC**. It is meant to be a **free competitor to [cuttle.xyz](https://cuttle.xyz)**. Cuttle is the reference for features and UX (Edit / View / Modify menus, components, text tools, boolean operations, repeat tools, etc.). Everything should work client-side, no account needed, no paywall.
 
----
+Units are millimetres by default (inches switchable). Real-world size accuracy matters: 1 unit on screen must correspond to a real physical size when exported.
 
-## 1. More fonts
+## 2. Known bugs – must be fixed
 
-**Goal:** A much larger, laser-friendly font selection, comparable to Cuttle's font picker (Cuttle shows a font dropdown with preview plus "Show More Options").
+### 2.1 Selection markers (handles) scale with the object
+Selection handles, the bounding box, rotation handle and node markers currently shrink/grow together with the selected element when zooming, as if they were part of the element. **They must not.**
+- Render all UI overlays (handles, bounding box outline, rotation handle, node points, snapping guides, measurement labels) in a **separate overlay layer in screen space** (a separate SVG group/canvas that is not affected by the document transform).
+- Handle size, stroke width, and hit areas stay constant in screen pixels at any zoom level (e.g. 8–10 px handles, 1 px outline).
+- Element stroke widths must scale with zoom only if they represent real geometry; the selection outline must always be 1 px.
 
-**Requirements**
-- Create `editor/js/editor-fonts.js` holding a single font registry (array of objects: `id`, `label`, `family`, `category`, `source`, `license`, `singleLine` flag).
-- Add at least **40 fonts** in categories: *Sans, Serif, Slab, Script/Handwriting (e.g. Hurricane-like thin scripts), Display, Monospace, Stencil, Single-line / engraving fonts (Hershey-style)*. Use only **OFL / Apache / public-domain** fonts (Google Fonts families are fine).
-- **Privacy rule:** VectorCutter is "100 % client-side, no telemetry". Therefore self-host the font files (`/fonts/*.woff2`) instead of loading from the Google Fonts CDN, and load them lazily (only when selected or when a project uses them).
-- Font picker UI in the text properties panel:
-  - searchable dropdown with **live preview in the font itself**,
-  - category filter chips,
-  - "recently used" and "favorites" (stored in `localStorage`),
-  - keyboard navigation (↑/↓/Enter).
-- Support user-uploaded fonts (`.ttf`, `.otf`, `.woff2`) via file input + `FontFace` API, stored for the session (optionally IndexedDB).
-- **Export correctness:** Text → path flattening in `editor-export.js` must work for every registered font (use opentype.js-style glyph outlines, vendored, or the existing flattening approach – whichever the code already uses). Add a fallback + warning toast if a font fails to load.
-- Add the extra text settings that Cuttle exposes under "Show More Options": letter spacing, line height, align (left/center/right), vertical align (top/middle/bottom), and optional "welding" (merge overlapping glyphs into one outline – important for script fonts when laser-cutting).
+### 2.2 Resize cursors have the wrong orientation
+The double-sided arrow cursors shown when hovering/dragging handles use the object's *original* orientation, not its current rotation.
+- Compute the cursor from the **current rotation angle + handle position** (round to the nearest 22.5° or 45° step, or generate a rotated custom cursor) so that the arrow always points along the real resize direction of the handle.
+- Also apply the same for the rotation cursor and for mirrored/flipped elements.
+- Test with: rotated rectangle (e.g. 30°, 90°, 135°), flipped elements, rotated groups, rotated text.
 
-**Acceptance**
-- Selecting any font updates the canvas instantly and the exported SVG contains correct outlines.
-- Reloading a saved project restores the font.
+### 2.3 Left sidebar is broken (especially with text elements)
+See screenshot: tool labels overlap ("SelectV", "CircleC", "LineL", "TextT"), headings wrap onto the icons ("SHAPES & TOOLS", "Curve / Node Pen"), "COMPONENTS" gets cut off, and the "rectanle" input (typo!) floats above the list.
+- Rebuild the sidebar layout with a proper flex/grid layout: icon column + label, no text overlapping, no wrapping of tool names (use ellipsis or tooltips).
+- Fix the keyboard-shortcut hints (the stray "V", "C", "L", "T", "N", "P" glued to labels) – show them right-aligned in a muted style, or only in tooltips.
+- Fix the typo "rectanle" and make that field a working **search box** ("Search shapes & tools") like in Cuttle.
+- Sidebar width must be **resizable by dragging** its right edge (with min/max width, persisted), and collapsible.
+- Sections: Search, Browse All Shapes, Tools/Shapes (Text, Circle, Rectangle, Polygon, Star, Line, Emoji…), Project (Read Me, Units & Settings), Components (list with previews, add button).
+- Text elements must show correctly in the sidebar/element list (name, preview, no layout breakage with long or multi-line text).
 
----
+### 2.4 Element tracking / state bugs
+The code that tracks the current elements is buggy (e.g. the element list shows "Structure #1" and two "Text: 'Text'" entries; selection, list and canvas get out of sync; the properties panel shows wrong values).
+- Introduce **one single source of truth**: a document store (e.g. an immutable state tree or a small store with events) containing elements, groups, components, layers, selection, and settings.
+- Canvas, element list, and properties panel must **only render from that store**, never keep their own copy.
+- Every change goes through commands/actions → this also gives you reliable **Undo/Redo** (Ctrl+Z / Ctrl+Shift+Z) for free.
+- Stable unique IDs for every element. Selection stored by ID. Deleting, duplicating, grouping, reordering, locking, and hiding must keep list and canvas in sync.
+- Properties panel (Width, Height, Center X/Y, Rotation…) must show the real values of the selection (also for multi-selection and for rotated elements), and editing a value must update the element exactly.
+- Add tests (even simple ones) for the store: add, delete, group, undo, redo, import.
 
-## 2. Text tools aware of LaTeX vs. normal text
+### 2.5 Zooming is inaccurate
+Zooming does not keep focus on the mouse position; especially from the start screen the zoom seems to jump randomly.
+- Implement zoom as a proper **zoom-around-cursor** transform: convert the cursor position to world coordinates before the zoom, apply the new scale, then adjust the pan offset so the same world point stays under the cursor.
+- Fix the initial state: the start view should have a defined, sensible default (e.g. a work area of a known size centered with a clear scale), and the first zoom must behave exactly like every later zoom.
+- Zoom buttons (zoom in/out) zoom around the viewport center; "Reset" returns to the default view; add "Zoom to Fit All", "Zoom to Fit Selected", "Zoom to Real Size (100 % = real mm)", and screen calibration like Cuttle.
+- Min/max zoom limits, smooth zoom steps (factor ~1.1–1.2 per wheel tick), pinch-zoom on touchpads/touchscreens.
+- **Scroll behaviour:** make it configurable (View menu, like Cuttle): *Trackpad mode* (scroll = pan, Ctrl+scroll = zoom, horizontal scroll moves horizontally, vertical scroll vertically) vs. *Mouse mode* (scroll = zoom). Never let horizontal scrolling zoom.
+- Grid, rulers, and axis labels must stay correct and readable at all zoom levels (adaptive grid spacing).
 
-**Goal:** When a text element is a LaTeX/MathJax element, hide or disable all settings that don't apply; show LaTeX-specific ones instead.
+### 2.6 Imported SVGs are not compatible with Laser Mode
+- The SVG importer must convert imported content into **native editable elements** (paths, shapes, text, groups) instead of keeping an opaque raster/blob/`<image>`/foreign structure (the black block in the screenshot suggests an import is rendered as filled box).
+- Handle: `<path>`, `<rect>`, `<circle>`, `<ellipse>`, `<line>`, `<polyline>`, `<polygon>`, `<g>`, `<use>`, `<text>` (convert to paths optionally), `transform` attributes (including nested), `viewBox` and unit scaling (px, mm, cm, in, pt – correct DPI handling, 96 dpi default, mention Inkscape's 90 dpi/ Illustrator's 72 dpi differences), `style` attributes and CSS classes, `<defs>`, clip paths, simple masks, fill-rule evenodd/nonzero.
+- Strokes and fills are translated into laser semantics (see section 3): thin strokes → cut/score lines, filled areas → engrave. Offer an import dialog: "Interpret colours as: Cut / Score / Engrave" with a colour-to-operation mapping table.
+- Embedded raster images: keep as image elements (for engraving), clearly marked, with an option to **trace** them to vectors.
+- Report problems in a friendly import log (unsupported features, skipped elements) instead of failing silently.
+- Provide a set of test SVGs in `/tests/svg/` (Inkscape output, Illustrator output, Figma output, Cuttle export, Fusion 360 export) and make them all import correctly.
 
-**Requirements** (mainly `editor-properties.js`)
-- Introduce an explicit property on every text element, e.g. `data-text-mode="plain" | "latex"`, and a **mode switch** (segmented control: `Text | LaTeX`) at the top of the text panel. Convert existing LaTeX elements on load (detect via existing MathJax marker).
-- **Plain text mode** shows: text content, font picker, font size (pt / mm display like Cuttle: `72 pt = 25.4 mm`), bold/italic where the font supports it, letter spacing, line height, align, vertical align, welding.
-- **LaTeX mode** hides/disables: font family picker, bold/italic, letter spacing, line height, welding, "text along path". Shows instead:
-  - LaTeX source textarea (monospace, with live render preview and an error message if the formula is invalid),
-  - display style toggle (inline `\textstyle` vs. block `\displaystyle`),
-  - scale / size (mm),
-  - optional math font choice only if MathJax supports it,
-  - "Convert to paths" button (LaTeX is always exported as paths).
-- Disabled controls must be hidden (preferred) or greyed out with a tooltip: "Not available for LaTeX".
-- Properties shown for **multi-selection** must only list the intersection of applicable settings (don't show font controls if a LaTeX item is selected together with text).
-- Also make context menu / toolbar actions aware: e.g. "Text along path" and "Text within box" are disabled for LaTeX.
+## 3. Laser Cutting Mode (top-right switch)
 
-**Acceptance**
-- Switching modes never loses the content; switching Text → LaTeX → Text restores previous plain-text settings.
-- No irrelevant control is visible in LaTeX mode.
+The "Laser Cutting Mode" toggle currently looks off and is not implemented. Make it a real feature.
 
----
+**UI:** a clean toggle with clear on/off states, tooltip, and a visible mode indicator (status bar + subtle canvas change). When on, show a **Laser panel**.
 
-## 3. Better scroll / pan / zoom behaviour in the canvas
+**Behaviour when Laser Mode is ON:**
+- Operations per element/colour: **Cut**, **Score**, **Engrave** (fill/raster), **Ignore/Guide**. Standard colour convention (e.g. red/blue = cut, black = engrave, etc.) editable by the user, plus manual per-element assignment.
+- Display preview: hairline stroke (true kerf-like thin lines) for cut/score, hatch or shaded fill for engrave, guides greyed out.
+- **Material/sheet setup:** sheet size (presets + custom), thickness, kerf compensation (offset for inside/outside cuts), origin, bed boundary shown on canvas with warning for elements outside the bed.
+- **Cut order optimisation:** inner paths before outer paths, nearest-neighbour ordering, option to reverse paths, start point selection, minimise travel.
+- **Checks/warnings:** open paths that should be closed, overlapping/duplicate lines, tiny segments, elements outside the bed, self-intersections, text not converted to paths.
+- Tools useful for laser: Remove Overlaps, Remove Holes, Weld, Weld And Score, Dashed Lines, Offset (Expand/Contract), Tabs/bridges, Kerf compensation, Nesting (later).
+- **Export for lasers:** SVG (clean, with correct units and stroke colours), DXF, PDF, and optionally G-code / LightBurn-friendly SVG. Exported file must open at the correct physical size.
+- Laser mode state is saved in the project file.
 
-**Problem:** Scrolling currently zooms. Users expect horizontal scrolling to move horizontally and vertical scrolling to move vertically; zoom should be deliberate.
+## 4. Missing features (implement, orientation = Cuttle.xyz)
 
-**Requirements** (`editor-canvas.js`)
-- Handle the `wheel` event with `{ passive: false }` and call `preventDefault()` only on the canvas.
-- Default behaviour (**"Trackpad: Scroll to Pan"**, as in Cuttle's View menu):
-  - `deltaY` → pan vertically,
-  - `deltaX` → pan horizontally,
-  - `Shift + wheel` → convert `deltaY` to horizontal pan (classic mouse wheel users),
-  - **`Ctrl/Cmd + wheel` → zoom** towards the cursor position,
-  - trackpad **pinch** (browsers emit `wheel` with `ctrlKey === true`) → zoom towards the cursor.
-- Alternative mode **"Mouse: Scroll to Zoom"**: plain wheel zooms towards the cursor; `Shift + wheel` pans horizontally, `Alt + wheel` pans vertically.
-- Add these two modes to a new **View** menu (checkmark on the active one) and persist the choice in `localStorage`. Auto-detect on first use: if wheel events show fractional / two-axis deltas (`deltaX !== 0` or `deltaMode === 0` with small values), suggest trackpad mode, otherwise mouse mode.
-- Pan speed must be proportional to the current zoom level so that it feels consistent; normalise `deltaMode` (pixel/line/page).
-- Zoom limits (e.g. 1 % – 10 000 %), smooth zoom (optional requestAnimationFrame easing), zoom anchor = cursor.
-- Keep existing pan alternatives: middle mouse drag, `Space + drag`, and touch two-finger pan / pinch zoom.
-- Rulers and grid must update during pan/zoom without flicker.
-- Add shortcuts: `=` / `-` zoom in/out, `Ctrl+0` real size (1:1 in mm – include a "Calibrate this screen" dialog like Cuttle), `Ctrl+Shift+F` fit all, `Ctrl+F` fit selected.
+Several menu items and features are listed but not implemented. **Every menu entry must either work or be removed/hidden.** No dead buttons. Use the screenshots from cuttle.xyz in the chat as reference. Prioritise as follows.
 
-**Acceptance**
-- Two-finger horizontal swipe moves the canvas horizontally only; vertical swipe moves vertically only.
-- Ctrl+wheel and pinch zoom to the cursor.
-- The page itself never scrolls while the pointer is over the canvas.
+### 4.1 Core editing
+- Select, Pan, multi-select (shift-click, rubber band), select all, deselect, Escape.
+- Move, resize, rotate, flip horizontal/vertical, nudge with arrow keys (Shift = bigger step).
+- Copy, Cut, Paste, **Duplicate (Ctrl+D)**, Delete, Group/Ungroup (Ctrl+G / Ctrl+Shift+G), Ungroup All.
+- Z-order: Bring to Front / Forward / Send Backward / Send to Back.
+- Align Selection (left, centre, right, top, middle, bottom) and Distribute.
+- Lock, hide, rename elements in the Elements list; drag to reorder.
+- Undo/Redo with a proper history.
+- Snap: Snap to Grid, Snap to Geometry (endpoints, midpoints, centres, intersections), guides, rulers with draggable guides, smart alignment lines.
+- Right-click context menu with the same actions.
+- Keyboard shortcuts everywhere (shown in menus).
 
----
+### 4.2 Drawing tools
+Rectangle (with corner radius), Circle, Ellipse, Polygon, Star, Line, **Pen/Bezier (Curve & Node tools)**, Freehand path, Arc, Text, Emoji/symbols, plus a **shape library ("Browse All Shapes")** with gears, boxes, brackets, hinges, living hinges, finger joints (box generator), etc.
+- Node editing: move/add/delete nodes, convert corner↔smooth, handle editing, join/break paths, close/open paths.
 
-## 4. Quick-tools bar (floating toolbar)
+### 4.3 Text (important – laser/engraving use)
+- Many fonts (bundle a set of free, open-licensed Google Fonts incl. script, sans, serif, mono, stencil, single-line "engraving" fonts), font picker with live preview, search.
+- Size (pt/mm), align, vertical align, letter spacing, line height, multi-line text, bold/italic where available.
+- Text is **live-editable** until "Convert to Paths". Convert to paths works reliably (needed for laser export). Welding of overlapping letters (important for script fonts, see Cuttle "welding" option).
+- Support user font upload (TTF/OTF/WOFF).
+- **LaTeX-aware text:** when a text element is LaTeX, hide settings that do not apply and render math correctly (MathJax/KaTeX → paths).
+- Text Along Path, Text Within Box.
 
-**Goal:** A floating pill-shaped toolbar on the canvas (like the one at the top of Cuttle's canvas: select, node/pen tool, three transform buttons, snap tools) containing one-click actions for the current selection.
+### 4.4 Modify menu (Cuttle parity)
+- **Repeat:** Mirror Repeat, Linear Repeat, Rotational Repeat, Tile Repeat, Transform Repeat (all live/parametric).
+- Round Corners, Dashed Lines, Text Along Path, Text Within Box.
+- Merge Paths.
+- Outline Stroke, Expand (Offset), Contract (Inset).
+- **Booleans:** Union (Weld), Difference, Intersect, Exclusion.
+- Mask, Fit Within, Attach.
+- Flatten, Layered Stack.
+- Remove Holes, Remove Overlaps, Weld And Score.
+- Simplify Paths, Trace Image (bitmap → vector), Convert to Paths.
+- Use a robust geometry library for booleans/offsets (e.g. Clipper2 / paper.js / polygon-clipping via WASM or JS) instead of home-made code.
 
-**Requirements** (new `editor-quickbar.js`)
-- Floating, draggable bar, horizontally centered at the top of the canvas; collapsible; position remembered; on mobile it docks to the bottom.
-- Two zones:
-  1. **Tool switch**: Select (V), Node edit (N), Pen (P), plus the existing tools.
-  2. **Selection actions** (enabled only when something is selected, tooltips with shortcuts):
-     - **Rotate 90° clockwise / counter-clockwise** (around the selection's center or the custom rotation center if set),
-     - **Rotate 180°**,
-     - **Flip horizontal / vertical**,
-     - **Duplicate** (Ctrl+D),
-     - **Delete**,
-     - **Group / Ungroup** (Ctrl+G / Ctrl+Shift+G),
-     - **Bring to front / Send to back**,
-     - **Align** dropdown (left, center, right, top, middle, bottom, relative to selection or canvas),
-     - **Distribute** horizontally / vertically (≥ 3 elements),
-     - **Center on origin** (0,0),
-     - **Match size** (width / height of the first selected),
-     - **Convert to paths**,
-     - **Toggle snap** (grid / geometry).
-- Optional "numeric nudge" row: ±1 mm / ±10 mm move, 90° / 45° / 15° rotate step values editable in settings.
-- Implement actions by calling the existing transform functions in `editor-transform.js` (don't duplicate matrix math). Rotation by 90° must be **exact** (no floating-point drift – snap matrix values to 0/±1).
-- Each button = one undo step.
+### 4.5 Components & parametric design (Cuttle's killer feature)
+- **Components:** reusable objects with their own artboard, listed in the sidebar with preview, instances in other components, edit once → all instances update. "Extract as Component" from the Edit menu.
+- Per-element **parameters/constraints** (width, height, count, radius…) editable in the properties panel, simple **expressions/variables** (e.g. `width / 2 + thickness`), project-level variables (material thickness, kerf).
+- Properties panel with sections (Text, Transform, Appearance, etc.), collapsible, like Cuttle.
 
-**Acceptance**
-- Rotating a shape four times by 90° returns the identical geometry.
-- Bar works with multi-selection and with groups.
+### 4.6 Files & formats
+- Native project format (JSON, `.vcut`), autosave to the browser (IndexedDB/localStorage), open/save to disk, recent projects.
+- Import: SVG, DXF, PNG/JPG (as image or trace), PDF (vector pages, later), project files.
+- Export: SVG, DXF, PDF, PNG, and later G-code (CNC/laser), STL/3MF from extruded 2D shapes (3D printing – extrude with thickness, simple; further 3D features later).
+- Export dialog with selection-only, units, scale, stroke/colour options, preview.
+- Share: export/import link or file.
 
----
+### 4.7 CNC / 3D printing (later phase, design for it now)
+- Keep the data model extensible: layers/operations with tool parameters (tool diameter, depth, passes, feed rate) so CNC toolpaths (profile, pocket, drill) and G-code can be added.
+- Extrude-to-STL/3MF for 3D printing as a first simple step.
 
-## 5. Adaptive, resizable left menu
+### 4.8 Misc
+- Settings: units (mm/in), grid size, snapping, theme, language (at least English; structure for i18n), scroll mode, canvas size.
+- Help menu: keyboard shortcut list, short tutorial/first-run walkthrough, Read Me project page, link to GitHub/issues.
+- A friendly **start screen** (new project, open, templates, recent).
+- Performance: smooth with thousands of path nodes (use `requestAnimationFrame`, avoid full re-render on every mouse move, use Canvas/WebGL or SVG with caching if needed).
 
-**Requirements** (`editor.css`, new `editor-sidebar-resize.js`)
-- Draggable divider between left sidebar and canvas (cursor `col-resize`), min width ≈ 56 px (icon-only mode), default ≈ 280 px, max ≈ 45 % of viewport. Double-click on the divider resets the width.
-- **Icon-only collapsed mode** below a threshold (labels hidden, tooltips on hover) and a collapse/expand button.
-- Persist width and collapsed state in `localStorage`.
-- Use CSS variables (`--sidebar-w`) and `clamp()` so the layout adapts on window resize; the canvas must refit (`ResizeObserver`) without losing the current view center.
-- Right properties panel: same resizable behaviour (shared helper), and collapsible.
-- Mobile / narrow screens (< 768 px): sidebar becomes an overlay drawer (reuse the header drawer pattern from `components/layout.css`), tool buttons have ≥ 44 px touch targets.
-- Group the sidebar into collapsible sections as in Cuttle: **Shapes**, **Project** (Read Me, Units & Settings), **Components**.
-- Add a **search field** ("Search shapes / tools") at the top, and a **"Browse all shapes"** entry that opens a shape library modal (see §6).
+## 5. Light and Dark mode
 
----
+- Provide **both a light and a dark theme** plus an "auto" option following the system (`prefers-color-scheme`), switchable in Settings (and a quick toggle in the top bar). Persist the choice.
+- Implement with CSS variables/design tokens (background, surface, border, text, accent, canvas background, grid colour, selection colour, handle colour).
+- The canvas, grid, rulers, handles, menus, dialogs, sidebar, and properties panel must all be themed. Check contrast (WCAG AA) in both themes.
+- Element colours that represent real data (laser operation colours) must not change with the theme; only the editor chrome does.
 
-## 6. More tools (feature parity with Cuttle and beyond)
+## 6. UI/UX requirements
 
-Implement in priority order. Each tool needs: icon in `sidebar/`, menu entry, shortcut (where sensible), tooltip, and a properties panel with live parameters.
+- Top bar: File, Edit, Modify, View, Settings, Help (+ Share), project name, Laser Mode toggle, theme toggle. All menus keyboard-accessible, closing on outside click/Escape.
+- Toolbar (Canvas Mode: Select / Pan, Grid, Snap, Zoom) – clean and consistent icons, no wrapping.
+- A **Quick-Tools bar** near the canvas for the selection (e.g. rotate 90°, flip, duplicate, group, align, delete), like Cuttle's floating toolbar.
+- Status bar with cursor coordinates, units, mode, tips – fix the clipped bits.
+- Responsive layout: works on desktop first, usable on tablets; minimum width handling instead of broken layout.
+- Smooth, no flicker, no random jumps. No console errors.
 
-### 6.1 Top menu bar (new)
-Add a menu bar similar to Cuttle: **File · Edit · View · Modify · Help**.
+## 7. Quality requirements
 
-**Edit:** Undo/Redo, Select All, Cut/Copy/Paste, Duplicate, Delete, Group/Ungroup/Ungroup All, Bring to Front/Forward, Send Backward/to Back, Flip Horizontal/Vertical, Align Selection (submenu), **Extract as Component**, **Convert to Paths**, **Simplify Paths**, **Trace Image (beta)**.
+- Clean, modular code with clear folders (e.g. `core/` store & commands, `render/`, `tools/`, `io/` import-export, `ui/`, `geometry/`, `laser/`), comments where logic is non-obvious.
+- A `README.md` (what it is, how to run, how to deploy, shortcuts) and a short `ARCHITECTURE.md`.
+- Test the following manually and (where possible) automatically before finishing:
+  1. Zoom in from the start screen with the mouse at several positions → the point under the cursor stays fixed.
+  2. Select + zoom → handles keep constant screen size.
+  3. Rotate an element 45° and 90° → resize cursors point in the correct directions.
+  4. Create text, edit, convert to paths, check sidebar and elements list.
+  5. Create/delete/duplicate/group/undo/redo 50 times → list and canvas never disagree.
+  6. Import the test SVGs → they appear as editable elements and work in Laser Mode; export to SVG and open in Inkscape/LightBurn at the right size.
+  7. Toggle Laser Mode and the theme → no layout breaks.
+- Keep it free and open: no tracking, no paywalls. Respect font and library licences (list them in `LICENSES.md`).
 
-**View:** Zoom In/Out, Zoom to Real Size, Calibrate This Screen, Zoom to Fit All / Fit Selected, Trackpad/Mouse scroll mode (§3), Show Transform Box, Show Grid, Show Guides, Snap to Grid, Snap to Geometry.
+## 8. Definition of done
 
-### 6.2 Basic shapes (Tier 1)
-- Circle / Ellipse, Rectangle (with **per-corner radius**), Polygon (n sides – already exists), Star (already exists), Line / Polyline, **Arc / Pie / Ring**, **Rounded rectangle**, **Emoji / icon** insert (vector icons only, license-safe set), **Heart, gear, cross, arrow, speech bubble** presets, **Shape library modal** ("Browse All Shapes") with search and categories.
-
-### 6.3 Modify tools (Tier 1 – highest value for laser users)
-- **Boolean Union (Weld), Difference, Intersect** (+ Exclude/XOR). Use a vendored robust library (e.g. Clipper / paper.js boolean ops); preserve curves where possible, flatten with a configurable tolerance otherwise.
-- **Expand (Offset) / Contract (Inset)** with mm value and join type (round/miter/bevel) – essential for **kerf compensation** (add a dedicated "Kerf" preset field in settings).
-- **Outline Stroke** (convert stroke to filled outline).
-- **Merge Paths** (join open paths with a tolerance), **Remove Holes**, **Remove Overlaps**, **Simplify Paths**.
-- **Round Corners** (fillet) with radius, **Chamfer**.
-- **Weld And Score** (weld outlines but keep inner lines as score paths).
-- **Mask** and **Fit Within** (fit selection inside another shape).
-
-### 6.4 Repeat / pattern tools (Tier 2)
-- **Linear Repeat**, **Rotational Repeat**, **Mirror Repeat**, **Tile (grid) Repeat**, **Transform Repeat**. Implement them as **parametric/live** modifiers (parameters stay editable) or, as a first step, as one-shot generators with a preview.
-
-### 6.5 Text tools (Tier 2)
-- **Text Along Path** (disabled for LaTeX, see §2) – with offset, start position, flip side.
-- **Text Within Box** (auto-fit font size/wrapping to a rectangle).
-- **Line Guide** / guides: draggable horizontal/vertical guides from the rulers, shown in the elements tree like Cuttle's "Line Guide 1".
-
-### 6.6 Production tools (Tier 2)
-- **Dashed Lines** (dash/gap in mm, for perforation / scoring).
-- **Layered Stack** (split design into layers for multi-layer builds), **Flatten** (collapse groups/transforms into plain paths).
-- **Attach** (beta): attach element to another's anchor.
-- **Material presets**: thickness (mm) and kerf per material; show as defaults for offsets and finger-joint-like tools.
-- **Laser color presets**: Cut = red `#FF0000`, Engrave = black `#000000`, Score = blue `#0000FF` (one-click swatches; keep existing Laser Mode).
-- **Nesting / auto-arrange** into a sheet size (simple shelf packing first).
-
-### 6.7 Components & project (Tier 3)
-- **Components** list in the sidebar (Component A, B, C …) = separate artboards/pages inside one project with thumbnails, rename, duplicate, add (+) – like Cuttle.
-- **Extract as Component** from selection; **instances** of a component that update when the original is edited.
-- **Read Me** (project notes) and **Units & Settings** (mm / cm / in, grid size, precision, default stroke).
-- Elements tree shows project → component → elements; rename on double-click, visibility and lock toggles.
-
-### 6.8 Import / export (Tier 3)
-- Import: SVG (existing), **PNG/JPG trace to vector** (Trace Image, client-side Potrace-style algorithm), **DXF** import.
-- Export: SVG (existing), PNG (existing), **DXF**, **PDF (vector)**, with a "separate files per color" option for laser software.
-
-### 6.9 Quality-of-life
-- Keyboard-shortcut cheatsheet modal (`?`), command palette (`Ctrl+K`) listing all tools, context menu (right-click) mirroring the Edit menu, status bar with cursor coordinates (mm), selection size (W × H, shown also on canvas like Cuttle's "40.0 mm / 12.9 mm" labels), and precise numeric inputs for position/size/rotation with lock-aspect toggle.
-
----
-
-## 7. Non-functional requirements
-
-- **Performance:** keep 60 fps while panning with ≥ 2 000 path nodes; throttle expensive redraws (grid, rulers) with `requestAnimationFrame`.
-- **Accessibility:** all buttons reachable by keyboard, `aria-label`s, visible focus ring, sufficient contrast in light and dark theme.
-- **Responsive:** desktop, tablet, phone (see §5).
-- **No regressions:** existing generators (`chessboard.html`, `ruler.html`, `puzzle.html`, `advent_calendar.html`, `popup.html`) and the dashboard must keep working. Shared `<site-header>` / `<site-footer>` stay unchanged.
-- **SEO / docs:** update `README.md` (feature table + architecture tree) and `about.html` where features are listed; add new modules to the README structure.
-- **Licenses:** every vendored library/font must be listed in a `THIRD_PARTY_LICENSES.md`.
-
-## 8. Test checklist (manual)
-
-1. Scroll horizontally/vertically with trackpad and mouse + Shift; Ctrl+wheel and pinch zoom to cursor.
-2. Rotate a rectangle 4 × 90° → exact original coordinates in the SVG code view.
-3. Switch a text element Text ↔ LaTeX; verify visible controls change and content is preserved.
-4. Pick 5 different fonts, export SVG → outlines identical to the canvas.
-5. Resize/collapse the left panel, reload the page → state restored.
-6. Union / Difference / Intersect on two overlapping circles; undo/redo each.
-7. Laser Cutting Mode on → new tools' results follow the cut-line style.
-8. Mobile viewport (375 px): sidebar drawer, quick bar docked at bottom, pinch zoom works.
-
-## 9. Suggested delivery order
-
-1. §3 scroll behaviour (small, high impact)
-2. §4 quick-tools bar (rotate 90°, flip, align)
-3. §5 resizable sidebar
-4. §2 LaTeX-aware text panel
-5. §1 fonts
-6. §6.1 menu bar → §6.3 modify tools → §6.2 shapes → §6.4–6.9
+The editor loads without errors, the core interactions (select, move, resize, rotate, zoom, pan, undo/redo, text, import/export) are **reliable**, laser mode is functional, light and dark themes exist, no menu entry is a dead end, and the most important Cuttle-style features (booleans, repeats, offsets, components, fonts) work. When in doubt: **make it usable first, then complete.** If the existing code stands in the way – rewrite it.

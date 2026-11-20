@@ -13,6 +13,33 @@
             this.setupCustomContextMenu();
             this.setupCanvasDimensionBadge();
             this.setupStatusBar();
+            this.setupThemeToggle();
+        },
+
+        // --- THEME TOGGLE (Light / Dark) ---
+        setupThemeToggle() {
+            const savedTheme = localStorage.getItem('vc_theme') || 
+                (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+            this.setTheme(savedTheme, false);
+
+            const btn = document.getElementById('themeToggleBtn');
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    const current = document.body.getAttribute('data-theme') || 'dark';
+                    const next = current === 'light' ? 'dark' : 'light';
+                    this.setTheme(next, true);
+                });
+            }
+        },
+
+        setTheme(theme, persist = true) {
+            document.body.setAttribute('data-theme', theme);
+            const icon = document.getElementById('themeToggleIcon');
+            if (icon) icon.textContent = theme === 'light' ? '☀️' : '🌙';
+            const btn = document.getElementById('themeToggleBtn');
+            if (btn) btn.title = theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode';
+            if (persist) localStorage.setItem('vc_theme', theme);
+            if (this.updateGrid) this.updateGrid();
         },
 
         // --- 1. COMMAND PALETTE (Ctrl+K) ---

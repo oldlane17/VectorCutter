@@ -742,6 +742,31 @@ Object.assign(SVGEditor.prototype, {
         
         const ns = "http://www.w3.org/2000/svg";
         
+        // Dynamic handle scale: stay constant screen size (~8-10px) regardless of zoom
+        const svgUnitsPerPx = this.viewBox && this.canvasContainer && this.canvasContainer.clientWidth > 0 
+            ? (this.viewBox.width / this.canvasContainer.clientWidth) 
+            : 1;
+        const handleRadius = Math.max(2, 5 * svgUnitsPerPx);
+        const rotDist = 30 * svgUnitsPerPx;
+
+        // Rotation-aware resize cursor helper
+        const rotDeg = (validElements.length === 1 && this.getElementState) 
+            ? (this.getElementState(validElements[0]).rotation || 0) 
+            : 0;
+
+        const getHandleCursor = (type, rotation) => {
+            const baseAngles = {
+                'e': 0, 'se': 45, 's': 90, 'sw': 135,
+                'w': 180, 'nw': 225, 'n': 270, 'ne': 315
+            };
+            let eff = ((baseAngles[type] || 0) + rotation) % 360;
+            if (eff < 0) eff += 360;
+            if ((eff >= 337.5 || eff < 22.5) || (eff >= 157.5 && eff < 202.5)) return 'ew-resize';
+            if ((eff >= 22.5 && eff < 67.5) || (eff >= 202.5 && eff < 247.5)) return 'nwse-resize';
+            if ((eff >= 67.5 && eff < 112.5) || (eff >= 247.5 && eff < 292.5)) return 'ns-resize';
+            return 'nesw-resize';
+        };
+
         // 1. Create selection rectangle
         this.selectionRect = document.createElementNS(ns, 'rect');
         this.selectionRect.setAttribute('class', 'selection-rect');
@@ -749,6 +774,7 @@ Object.assign(SVGEditor.prototype, {
         this.selectionRect.setAttribute('y', bbox.y);
         this.selectionRect.setAttribute('width', bbox.width);
         this.selectionRect.setAttribute('height', bbox.height);
+        this.selectionRect.setAttribute('vector-effect', 'non-scaling-stroke');
         this.selectionGroup.appendChild(this.selectionRect);
         
         // 2. Create resize handles
@@ -769,21 +795,24 @@ Object.assign(SVGEditor.prototype, {
             handle.setAttribute('class', `selection-handle ${pos.class}`);
             handle.setAttribute('cx', pos.x);
             handle.setAttribute('cy', pos.y);
-            handle.setAttribute('r', 4);
+            handle.setAttribute('r', handleRadius);
+            handle.setAttribute('vector-effect', 'non-scaling-stroke');
             handle.setAttribute('data-handle', pos.type);
+            handle.style.cursor = getHandleCursor(pos.type, rotDeg);
             this.selectionGroup.appendChild(handle);
             this.resizeHandles.push(handle);
         });
         
         // 3. Create rotation handle
         const centerX = bbox.x + bbox.width / 2;
-        const topY = bbox.y - 30;
+        const topY = bbox.y - rotDist;
         
         this.rotateHandle = document.createElementNS(ns, 'circle');
         this.rotateHandle.setAttribute('class', 'selection-handle rotate');
         this.rotateHandle.setAttribute('cx', centerX);
         this.rotateHandle.setAttribute('cy', topY);
-        this.rotateHandle.setAttribute('r', 4);
+        this.rotateHandle.setAttribute('r', handleRadius);
+        this.rotateHandle.setAttribute('vector-effect', 'non-scaling-stroke');
         this.selectionGroup.appendChild(this.rotateHandle);
         
         // 4. Add blue rotation center dot

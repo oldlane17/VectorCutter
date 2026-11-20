@@ -16,15 +16,24 @@ Object.assign(SVGEditor.prototype, {
         if (!sidebar) return;
 
         // --- 1. RESTORE PERSISTED STATE ---
-        const savedLeftW = parseInt(localStorage.getItem('vc_sidebar_w'), 10) || 260;
+        let savedLeftW = parseInt(localStorage.getItem('vc_sidebar_w'), 10);
+        if (!savedLeftW || isNaN(savedLeftW) || savedLeftW < 180) {
+            savedLeftW = 260;
+            localStorage.setItem('vc_sidebar_w', '260');
+        }
         const isLeftCollapsed = localStorage.getItem('vc_sidebar_collapsed') === 'true';
 
-        const savedRightW = parseInt(localStorage.getItem('vc_context_w'), 10) || 320;
+        let savedRightW = parseInt(localStorage.getItem('vc_context_w'), 10);
+        if (!savedRightW || isNaN(savedRightW) || savedRightW < 200) {
+            savedRightW = 320;
+            localStorage.setItem('vc_context_w', '320');
+        }
         const isRightCollapsed = localStorage.getItem('vc_context_collapsed') === 'true';
 
         if (isLeftCollapsed) {
             this.setSidebarCollapsed(true, false);
         } else {
+            this.setSidebarCollapsed(false, false);
             this.setSidebarWidth(savedLeftW, false);
         }
 

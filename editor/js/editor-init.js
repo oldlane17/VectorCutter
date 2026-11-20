@@ -33,22 +33,14 @@ document.getElementById('aboutModal').addEventListener('click', (e) => {
 });
 
 // Initialize the editor when page loads
-document.addEventListener('DOMContentLoaded', () => {
-    new SVGEditor();
-});
-
-
-const urlParams = new URLSearchParams(window.location.search);
-const projectId = urlParams.get('pid');
-
-if (projectId) {
-const projects = JSON.parse(localStorage.getItem('vc_projects') || '[]');
-const project = projects.find(p => p.id == projectId);
-
-if (project && project.content) {
-    // Assuming your editor has a method to load SVG string
-    // Based on your previous code, it looks like loadSVGContent()
-    this.loadSVGContent(project.content); 
-    console.log("Loaded project:", project.name);
+function initEditorInstance() {
+    if (!window.svgEditor) {
+        window.svgEditor = new SVGEditor();
+    }
 }
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initEditorInstance);
+} else {
+    initEditorInstance();
 }

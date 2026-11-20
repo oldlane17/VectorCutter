@@ -26,10 +26,15 @@
     height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <!-- End Google Tag Manager (noscript) -->
     <div class="container">
-        <!-- Laser Cutting Mode Toggle -->
-        <div class="laser-mode-toggle" id="laserModeToggle">
-            <span>Laser Cutting Mode</span>
-            <div class="toggle-switch"></div>
+        <!-- Top Right Controls: Theme Toggle & Laser Cutting Mode Toggle -->
+        <div style="position: absolute; top: 5px; right: 20px; z-index: 1000; display: flex; align-items: center; gap: 8px;">
+            <button id="themeToggleBtn" class="theme-toggle-btn" title="Toggle Light / Dark Mode" style="background: #2d2d30; border: 1px solid #3e3e42; color: #ccc; border-radius: 4px; padding: 5px 8px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center;">
+                <span id="themeToggleIcon">🌙</span>
+            </button>
+            <div class="laser-mode-toggle" id="laserModeToggle" style="position: static; top: auto; right: auto;">
+                <span>Laser Cutting Mode</span>
+                <div class="toggle-switch"></div>
+            </div>
         </div>
 
         <!-- Menu Bar -->

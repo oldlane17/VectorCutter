@@ -77,15 +77,17 @@
 
                 // Double click to rename
                 const nameSpan = item.querySelector('.comp-name');
-                nameSpan.addEventListener('dblclick', (e) => {
-                    e.stopPropagation();
-                    const newName = prompt('Rename component:', comp.name);
-                    if (newName && newName.trim()) {
-                        comp.name = newName.trim();
-                        this.saveComponents();
-                        this.renderComponentsList();
-                    }
-                });
+                if (nameSpan) {
+                    nameSpan.addEventListener('dblclick', (e) => {
+                        e.stopPropagation();
+                        const newName = prompt('Rename component:', comp.name);
+                        if (newName && newName.trim()) {
+                            comp.name = newName.trim();
+                            this.saveComponents();
+                            this.renderComponentsList();
+                        }
+                    });
+                }
 
                 list.appendChild(item);
             });

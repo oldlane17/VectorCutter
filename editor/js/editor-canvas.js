@@ -356,6 +356,11 @@ Object.assign(SVGEditor.prototype, {
         // Update grid and axes with new zoom level
         this.updateGrid();
         this.updateAxes();
+
+        // Refresh selection handles so they stay constant screen size
+        if (this.selectedElements && this.selectedElements.length > 0 && !this.isDragging && !this.isResizing && !this.isRotating) {
+            this.updateSelectionHandles();
+        }
     },
 
     screenToSVG(clientX, clientY) {

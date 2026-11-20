@@ -872,6 +872,10 @@ class SVGEditor {
     }
 
     showShortcuts() {
+        if (this.showShortcutsCheatsheet) {
+            this.showShortcutsCheatsheet();
+            return;
+        }
         alert('Keyboard Shortcuts:\n\n' +
               'Ctrl+N: New Document\n' +
               'Ctrl+S: Save SVG\n' +
@@ -1023,20 +1027,10 @@ class SVGEditor {
                 this.viewBox = { x, y, width: w, height: h };
             }
 
-            // 2. Import Elements
+            // 2. Import Elements directly or as an editable group
             const importedNodes = Array.from(newSVG.childNodes);
-            
-            // This ensures the imported file acts as ONE object you can move
             const ns = "http://www.w3.org/2000/svg";
-            const wrapperGroup = document.createElementNS(ns, 'g');
-            wrapperGroup.setAttribute('class', 'imported-content');
-            // NEW: Explicitly tag this as a Structure
-            wrapperGroup.setAttribute('data-type', 'structure');
-            
-            // If appending, offset slightly so it doesn't overlap perfectly
-            if (mode === 'append') {
-                wrapperGroup.setAttribute('transform', 'translate(20, 20)');
-            }
+            const validImported = [];
 
             importedNodes.forEach(node => {
                 if (node.nodeType !== 1) return; // Skip non-elements
@@ -1046,7 +1040,7 @@ class SVGEditor {
                     node.classList.contains('grid-group') ||
                     node.classList.contains('axes-group') ||
                     node.classList.contains('selection-group') ||
-                    node.classList.contains('resizer') // Skip UI elements
+                    node.classList.contains('resizer')
                 )) return;
 
                 // Handle Defs globally
@@ -1064,22 +1058,39 @@ class SVGEditor {
                     return;
                 }
 
-                // Import graphical elements
-                // REMOVED THE FLATTENING LOGIC HERE
                 const clone = document.importNode(node, true);
-                
-                // Clean up IDs to avoid duplicates
-                if (clone.id) clone.removeAttribute('id');
-                
-                // Add to wrapper
-                wrapperGroup.appendChild(clone);
+                if (clone.id && clone.id.startsWith('editor-')) clone.removeAttribute('id');
+
+                // Auto-classify laser mode if not set
+                if (!clone.hasAttribute('data-laser-mode')) {
+                    const fill = clone.getAttribute('fill');
+                    const stroke = clone.getAttribute('stroke');
+                    if ((!fill || fill === 'none') && stroke && stroke !== 'none') {
+                        clone.setAttribute('data-laser-mode', stroke.toLowerCase() === '#0000ff' || stroke.toLowerCase() === 'blue' ? 'score' : 'cut');
+                    } else if (fill && fill !== 'none') {
+                        clone.setAttribute('data-laser-mode', 'engrave');
+                    }
+                }
+
+                validImported.push(clone);
             });
 
-            // Only add the wrapper if it has children
-            if (wrapperGroup.children.length > 0) {
+            if (validImported.length === 1) {
+                const single = validImported[0];
+                if (mode === 'append') {
+                    const t = single.getAttribute('transform') || '';
+                    single.setAttribute('transform', `${t} translate(20, 20)`.trim());
+                }
+                this.canvas.insertBefore(single, this.selectionGroup);
+                this.selectElement(single);
+            } else if (validImported.length > 1) {
+                const wrapperGroup = document.createElementNS(ns, 'g');
+                wrapperGroup.setAttribute('class', 'imported-group');
+                if (mode === 'append') {
+                    wrapperGroup.setAttribute('transform', 'translate(20, 20)');
+                }
+                validImported.forEach(el => wrapperGroup.appendChild(el));
                 this.canvas.insertBefore(wrapperGroup, this.selectionGroup);
-                
-                // Select the new import immediately
                 this.selectElement(wrapperGroup);
             }
 
