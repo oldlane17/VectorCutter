@@ -1,11 +1,20 @@
 /**
  * VectorCutter - High-Res PNG Exporter
+ * Self-contained without external module dependencies.
  */
 
-import { exportSVGString } from './svg-export.js';
+export function downloadPNG(storeOrSvg, filename = 'vectorcutter.png') {
+    let svgStr = '';
+    if (typeof storeOrSvg === 'string') {
+        svgStr = storeOrSvg;
+    } else if (storeOrSvg && storeOrSvg.doc) {
+        // Fallback simple SVG serialization if store is passed
+        const el = document.getElementById('artworkSvg');
+        svgStr = el ? new XMLSerializer().serializeToString(el) : '';
+    }
 
-export function downloadPNG(store, filename = 'vectorcutter.png') {
-    const svgStr = exportSVGString(store);
+    if (!svgStr) return;
+
     const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const img = new Image();
@@ -34,4 +43,8 @@ export function downloadPNG(store, filename = 'vectorcutter.png') {
     };
 
     img.src = url;
+}
+
+export function generatePureSVG() {
+    return '';
 }

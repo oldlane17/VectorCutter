@@ -3,10 +3,10 @@
  * Wires top File, Edit, Modify, View, and Help dropdown actions.
  */
 
-import { downloadSVG } from '../io/svg-export.js';
+import { downloadSVG, exportSVGString } from '../io/svg-export.js';
 import { importSVGString } from '../io/svg-import.js';
 import { downloadDXF } from '../io/dxf.js';
-import { downloadPNG } from '../io/png.js';
+import { downloadPNG } from '../io/png-export.js';
 import { ImageTracer } from '../io/trace.js';
 import { performBooleanUnion, performBooleanDifference, performBooleanIntersect, performBooleanExclude, elementToPathD } from '../ops/boolean.js';
 import { applyKerfOffset, outlineStroke } from '../ops/offset.js';
@@ -71,7 +71,10 @@ export class MenubarController {
         this.on('menuExportDXF', () => downloadDXF(this.store, 'vectorcutter.dxf'));
 
         // File -> Export PNG
-        this.on('menuExportPNG', () => downloadPNG(this.store, 'vectorcutter.png'));
+        this.on('menuExportPNG', () => {
+            const svgStr = exportSVGString(this.store);
+            downloadPNG(svgStr, 'vectorcutter.png');
+        });
 
         // File -> Save to Dashboard (Storage Contract)
         this.on('menuDashboardSave', () => {
