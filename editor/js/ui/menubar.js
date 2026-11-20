@@ -7,7 +7,8 @@ import { downloadSVG } from '../io/svg-export.js';
 import { importSVGString } from '../io/svg-import.js';
 import { downloadDXF } from '../io/dxf.js';
 import { downloadPNG } from '../io/png.js';
-import { performBooleanUnion, performBooleanDifference, performBooleanIntersect, performBooleanExclude } from '../ops/boolean.js';
+import { ImageTracer } from '../io/trace.js';
+import { performBooleanUnion, performBooleanDifference, performBooleanIntersect, performBooleanExclude, elementToPathD } from '../ops/boolean.js';
 import { applyKerfOffset, outlineStroke } from '../ops/offset.js';
 import { linearRepeat, rotationalRepeat, gridRepeat, mirrorRepeat } from '../ops/repeat.js';
 import { storage } from '../core/storage.js';
@@ -116,6 +117,32 @@ export class MenubarController {
             if (this.store.doc.selection.length === 0) return;
             this.store.dispatch(new DeleteElementsCommand(this.store.doc.selection, this.store.doc));
         });
+
+        // Edit -> Convert to Path
+        this.on('menuConvertToPath', () => {
+            const selected = this.store.getSelectedElements();
+            if (selected.length === 0) return;
+            this.store.beginBatch();
+            const newIds = [];
+            selected.forEach(el => {
+                const d = elementToPathD(el);
+                const pathEl = {
+                    ...JSON.parse(JSON.stringify(el)),
+                    type: 'path',
+                    name: `${el.name} (Path)`,
+                    geometry: { d }
+                };
+                this.store.dispatch(new DeleteElementsCommand([el.id], this.store.doc));
+                this.store.dispatch(new AddElementCommand(pathEl));
+                newIds.push(pathEl.id);
+            });
+            this.store.endBatch('Convert to Paths');
+            this.store.setSelection(newIds);
+        });
+
+        // Edit -> Trace Image
+        const tracer = new ImageTracer(this.store, this.camera);
+        this.on('menuTraceImage', () => tracer.openDialog());
 
         // Modify -> Booleans
         this.on('menuBooleanUnion', () => performBooleanUnion(this.store));

@@ -2,10 +2,10 @@
  * VectorCutter - High-Res PNG Exporter
  */
 
-import { generatePureSVG } from './svg-export.js';
+import { exportSVGString } from './svg-export.js';
 
 export function downloadPNG(store, filename = 'vectorcutter.png') {
-    const svgStr = generatePureSVG(store);
+    const svgStr = exportSVGString(store);
     const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const img = new Image();

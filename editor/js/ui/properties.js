@@ -1,17 +1,21 @@
 /**
- * VectorCutter - Properties Panel Controller
- * Two-way live data binding between selected element models and context UI.
+ * VectorCutter - Properties & Laser Context Panel Controller
+ * Two-way live data binding with tabs for element Properties and Laser Pre-flight.
  */
 
 import { events } from '../core/events.js';
 import { UpdateElementPropsCommand, TransformElementsCommand } from '../core/commands.js';
 import { getElementLocalBounds } from '../model/bounds.js';
 import { translationMatrix, rotationMatrix, scaleMatrix, multiplyMatrix } from '../model/matrix.js';
+import { LaserPanel } from '../laser/panel.js';
+import { fontManager } from '../io/fonts.js';
 
 export class PropertiesController {
     constructor(panelEl, store) {
         this.panel = panelEl;
         this.store = store;
+        this.currentTab = 'properties';
+        this.laserPanel = new LaserPanel(null, store);
 
         this.bindEvents();
         this.render();
@@ -20,8 +24,38 @@ export class PropertiesController {
     render() {
         const selected = this.store.getSelectedElements();
 
+        // Header Tabs
+        let html = `
+            <div style="display:flex;border-bottom:1px solid var(--vc-border-subtle);background:var(--vc-bg-surface-1);">
+                <button id="tabBtnProps" style="flex:1;padding:8px;font-size:11px;font-weight:600;background:none;border:none;border-bottom:2px solid ${this.currentTab === 'properties' ? 'var(--vc-accent-blue)' : 'transparent'};color:${this.currentTab === 'properties' ? 'var(--vc-text-primary)' : 'var(--vc-text-muted)'};cursor:pointer;">PROPERTIES</button>
+                <button id="tabBtnLaser" style="flex:1;padding:8px;font-size:11px;font-weight:600;background:none;border:none;border-bottom:2px solid ${this.currentTab === 'laser' ? 'var(--vc-accent-blue)' : 'transparent'};color:${this.currentTab === 'laser' ? 'var(--vc-text-primary)' : 'var(--vc-text-muted)'};cursor:pointer;">⚡ LASER PREP</button>
+            </div>
+            <div id="contextContent" style="flex:1;overflow-y:auto;"></div>
+        `;
+
+        this.panel.innerHTML = html;
+
+        // Wire tabs
+        document.getElementById('tabBtnProps')?.addEventListener('click', () => {
+            this.currentTab = 'properties';
+            this.render();
+        });
+        document.getElementById('tabBtnLaser')?.addEventListener('click', () => {
+            this.currentTab = 'laser';
+            this.render();
+        });
+
+        const content = document.getElementById('contextContent');
+
+        if (this.currentTab === 'laser') {
+            this.laserPanel.container = content;
+            this.laserPanel.render();
+            return;
+        }
+
+        // --- PROPERTIES TAB ---
         if (selected.length === 0) {
-            this.panel.innerHTML = `
+            content.innerHTML = `
                 <div class="vc-panel-section">
                     <div class="vc-panel-title">DOCUMENT PROPERTIES</div>
                     <div class="vc-form-row">
@@ -33,7 +67,7 @@ export class PropertiesController {
                     </div>
                     <div class="vc-form-row">
                         <span>Bed Size</span>
-                        <input type="text" id="propBedSize" value="600 × 400 mm" readonly style="width: 100px;">
+                        <input type="text" value="${this.store.doc.settings?.bed?.w || 600} × ${this.store.doc.settings?.bed?.h || 400} mm" readonly style="width: 110px;">
                     </div>
                 </div>
                 <div style="padding: 24px 12px; text-align: center; color: var(--vc-text-muted); font-size: 12px;">
@@ -50,7 +84,7 @@ export class PropertiesController {
         const rotRad = Math.atan2(el.transform[1], el.transform[0]);
         const rotDeg = Math.round((rotRad * 180) / Math.PI);
 
-        this.panel.innerHTML = `
+        content.innerHTML = `
             <div class="vc-panel-section">
                 <div class="vc-panel-title">TRANSFORM</div>
                 <div class="vc-form-row">
@@ -124,11 +158,9 @@ export class PropertiesController {
                 <div class="vc-form-row">
                     <span>Font Family</span>
                     <select id="propFontFamily" style="width: 140px;">
-                        <option value="Arial" ${el.geometry?.fontFamily === 'Arial' ? 'selected' : ''}>Arial</option>
-                        <option value="Roboto" ${el.geometry?.fontFamily === 'Roboto' ? 'selected' : ''}>Roboto</option>
-                        <option value="Times New Roman" ${el.geometry?.fontFamily === 'Times New Roman' ? 'selected' : ''}>Times New Roman</option>
-                        <option value="Courier New" ${el.geometry?.fontFamily === 'Courier New' ? 'selected' : ''}>Courier New</option>
-                        <option value="Georgia" ${el.geometry?.fontFamily === 'Georgia' ? 'selected' : ''}>Georgia</option>
+                        ${(fontManager.manifest.length > 0 ? fontManager.manifest : [
+                            { family: 'Arial' }, { family: 'Roboto' }, { family: 'Dancing Script' }, { family: 'Allerta Stencil' }
+                        ]).map(f => `<option value="${f.family}" ${el.geometry?.fontFamily === f.family ? 'selected' : ''}>${f.family}</option>`).join('')}
                     </select>
                 </div>
             </div>
@@ -337,9 +369,17 @@ export class PropertiesController {
     }
 
     bindEvents() {
-        events.on('selection:changed', () => this.render());
+        events.on('selection:changed', () => {
+            if (this.currentTab === 'properties') this.render();
+        });
         events.on('document:changed', (e) => {
-            // Avoid re-rendering inputs while user is actively typing in them
+            if (e?.action === 'laser-mode') {
+                if (this.store.doc.settings.laserMode) {
+                    this.currentTab = 'laser';
+                }
+                this.render();
+                return;
+            }
             if (e?.action !== 'typing') {
                 this.render();
             }

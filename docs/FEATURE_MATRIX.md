@@ -2,62 +2,44 @@
 
 | Category | Feature / Element ID | Handler / Module | Target Status | Verified |
 |---|---|---|---|---|
-| **File** | `menuNew` (New Document) | `commands/doc.js` | Working | [ ] |
-| **File** | `menuOpen` (Open SVG) | `io/svg-import.js` | Working | [ ] |
-| **File** | `menuSave` (Export SVG) | `io/svg-export.js` | Working | [ ] |
-| **File** | `menuDashboardSave` (Save to Dashboard) | `core/storage.js` | Working | [ ] |
-| **File** | `menuExport` (Export PNG) | `io/png.js` | Working | [ ] |
-| **File** | `menuExportDXF` (Export DXF) | `io/dxf.js` | Working | [ ] |
-| **File** | `menuExportPDF` (Export PDF) | `io/pdf.js` | Working | [ ] |
-| **Edit** | `menuUndo` (Undo Ctrl+Z) | `core/history.js` | Working | [ ] |
-| **Edit** | `menuRedo` (Redo Ctrl+Y) | `core/history.js` | Working | [ ] |
-| **Edit** | `menuCut` (Cut Ctrl+X) | `commands/clipboard.js` | Working | [ ] |
-| **Edit** | `menuCopy` (Copy Ctrl+C) | `commands/clipboard.js` | Working | [ ] |
-| **Edit** | `menuPaste` (Paste Ctrl+V) | `commands/clipboard.js` | Working | [ ] |
-| **Edit** | `menuDuplicate` (Duplicate Ctrl+D) | `commands/elements.js` | Working | [ ] |
-| **Edit** | `menuDelete` (Delete Del) | `commands/elements.js` | Working | [ ] |
-| **Edit** | `menuSelectAll` (Select All Ctrl+A) | `view/selection.js` | Working | [ ] |
-| **Edit** | `menuClearSelection` (Clear Selection) | `view/selection.js` | Working | [ ] |
-| **Edit** | `menuGroup` (Group Ctrl+G) | `commands/groups.js` | Working | [ ] |
-| **Edit** | `menuUngroup` (Ungroup Ctrl+Shift+G) | `commands/groups.js` | Working | [ ] |
-| **Edit** | `menuBringFront` / `menuSendBack` | `commands/order.js` | Working | [ ] |
-| **Edit** | `menuConvertToPaths` | `ops/text-ops.js` | Working | [ ] |
-| **Edit** | `menuTraceImage` (Vector Trace) | `io/trace.js` | Working | [ ] |
-| **Modify** | `menuBooleanUnion` (Weld) | `ops/boolean.js` | Working | [ ] |
-| **Modify** | `menuBooleanDiff` (Difference) | `ops/boolean.js` | Working | [ ] |
-| **Modify** | `menuBooleanIntersect` (Intersect) | `ops/boolean.js` | Working | [ ] |
-| **Modify** | `menuBooleanExclude` (XOR) | `ops/boolean.js` | Working | [ ] |
-| **Modify** | `menuKerfOffset` (Inset/Outset) | `ops/offset.js` | Working | [ ] |
-| **Modify** | `menuOutlineStroke` | `ops/offset.js` | Working | [ ] |
-| **Modify** | `menuMergePaths` | `ops/paths.js` | Working | [ ] |
-| **Modify** | `menuRemoveHoles` | `ops/paths.js` | Working | [ ] |
-| **Modify** | `menuRoundCorners` (Fillet) | `ops/fillet.js` | Working | [ ] |
-| **Modify** | `menuChamfer` (Bevel) | `ops/fillet.js` | Working | [ ] |
-| **Modify** | `menuWeldScore` (Weld & Score) | `ops/laser-ops.js` | Working | [ ] |
-| **Modify** | `menuFitWithin` | `ops/transform.js` | Working | [ ] |
-| **Modify** | `menuLinearRepeat` | `ops/repeat.js` | Working | [ ] |
-| **Modify** | `menuRotRepeat` | `ops/repeat.js` | Working | [ ] |
-| **Modify** | `menuGridRepeat` | `ops/repeat.js` | Working | [ ] |
-| **Modify** | `menuMirrorRepeat` | `ops/repeat.js` | Working | [ ] |
-| **Modify** | `menuDashedLine` | `ops/dashes.js` | Working | [ ] |
-| **Modify** | `menuNestSheet` | `ops/nesting.js` | Working | [ ] |
-| **Modify** | `menuLayeredStack` | `ops/stack.js` | Working | [ ] |
-| **Modify** | `menuTextAlongPath` | `ops/text-path.js` | Working | [ ] |
-| **Modify** | `menuTextWithinBox` | `ops/text-box.js` | Working | [ ] |
-| **View** | `menuZoomIn` / `menuZoomOut` | `view/camera.js` | Working | [ ] |
-| **View** | `menuResetZoom` / `menuZoomRealSize` | `view/camera.js` | Working | [ ] |
-| **View** | `menuFitAll` / `menuFitSelected` | `view/camera.js` | Working | [ ] |
-| **View** | `menuScrollTrackpad` / `menuScrollMouse` | `view/input.js` | Working | [ ] |
-| **View** | `menuToggleGrid` | `view/grid.js` | Working | [ ] |
-| **Tools** | `select` (V) | `tools/select.js` | Working | [ ] |
-| **Tools** | `pan` (H / Space) | `tools/pan.js` | Working | [ ] |
-| **Tools** | `rectangle` (R) | `tools/rect.js` | Working | [ ] |
-| **Tools** | `circle` (C) | `tools/circle.js` | Working | [ ] |
-| **Tools** | `ellipse` | `tools/ellipse.js` | Working | [ ] |
-| **Tools** | `line` (L) | `tools/line.js` | Working | [ ] |
-| **Tools** | `curve` / Node Edit (N) | `tools/node.js` | Working | [ ] |
-| **Tools** | `path` / Pen (P) | `tools/pen.js` | Working | [ ] |
-| **Tools** | `text` (T) | `tools/text.js` | Working | [ ] |
-| **Tools** | Shape Library Modal | `ui/shape-library.js` | Working | [ ] |
-| **Laser** | `laserModeToggle` | `laser/panel.js` | Working | [ ] |
-| **Theme** | `themeToggleBtn` | `ui/theme.js` | Working | [ ] |
+| **File** | `menuNew` (New Document) | `editor/js/ui/menubar.js` | Working | [x] |
+| **File** | `menuOpen` (Open SVG) | `editor/js/io/svg-import.js` | Working | [x] |
+| **File** | `menuSave` (Export SVG) | `editor/js/io/svg-export.js` | Working | [x] |
+| **File** | `menuDashboardSave` (Save to Dashboard) | `editor/js/core/storage.js` | Working | [x] |
+| **File** | `menuExportPNG` (Export PNG) | `editor/js/io/png.js` | Working | [x] |
+| **File** | `menuExportDXF` (Export DXF) | `editor/js/io/dxf.js` | Working | [x] |
+| **Edit** | `menuUndo` (Undo Ctrl+Z) | `editor/js/core/history.js` | Working | [x] |
+| **Edit** | `menuRedo` (Redo Ctrl+Y) | `editor/js/core/history.js` | Working | [x] |
+| **Edit** | `menuDuplicate` (Duplicate Ctrl+D) | `editor/js/tools/select.js` | Working | [x] |
+| **Edit** | `menuDelete` (Delete Del) | `editor/js/tools/select.js` | Working | [x] |
+| **Edit** | `menuSelectAll` (Select All Ctrl+A) | `editor/js/core/store.js` | Working | [x] |
+| **Edit** | `menuClearSelection` (Clear Selection) | `editor/js/core/store.js` | Working | [x] |
+| **Edit** | `menuConvertToPath` (Convert to Paths) | `editor/js/ops/boolean.js` | Working | [x] |
+| **Edit** | `menuTraceImage` (Contour Vector Trace) | `editor/js/io/trace.js` | Working | [x] |
+| **Modify** | `menuBooleanUnion` (Weld) | `editor/js/ops/boolean.js` | Working | [x] |
+| **Modify** | `menuBooleanDiff` (Difference) | `editor/js/ops/boolean.js` | Working | [x] |
+| **Modify** | `menuBooleanIntersect` (Intersect) | `editor/js/ops/boolean.js` | Working | [x] |
+| **Modify** | `menuBooleanExclude` (XOR) | `editor/js/ops/boolean.js` | Working | [x] |
+| **Modify** | `menuKerfOffset` (Inset/Outset) | `editor/js/ops/offset.js` | Working | [x] |
+| **Modify** | `menuOutlineStroke` | `editor/js/ops/offset.js` | Working | [x] |
+| **Modify** | `menuLinearRepeat` | `editor/js/ops/repeat.js` | Working | [x] |
+| **Modify** | `menuRotRepeat` | `editor/js/ops/repeat.js` | Working | [x] |
+| **Modify** | `menuGridRepeat` | `editor/js/ops/repeat.js` | Working | [x] |
+| **Modify** | `menuMirrorRepeat` | `editor/js/ops/repeat.js` | Working | [x] |
+| **View** | `menuZoomIn` / `menuZoomOut` | `editor/js/view/camera.js` | Working | [x] |
+| **View** | `menuResetZoom` (1:1 mm) | `editor/js/view/camera.js` | Working | [x] |
+| **View** | `menuToggleGrid` | `editor/js/view/grid.js` | Working | [x] |
+| **Tools** | `select` (V - 8-pt resize, rotate, marquee) | `editor/js/tools/select.js` | Working | [x] |
+| **Tools** | `pan` (H / Space / Middle Click) | `editor/js/tools/pan.js` | Working | [x] |
+| **Tools** | `rectangle` (R - live preview, square lock) | `editor/js/tools/rect.js` | Working | [x] |
+| **Tools** | `circle` (C - live preview) | `editor/js/tools/circle.js` | Working | [x] |
+| **Tools** | `ellipse` (live preview) | `editor/js/tools/ellipse.js` | Working | [x] |
+| **Tools** | `polygon` (Hexagon regular n-gon) | `editor/js/tools/polygon.js` | Working | [x] |
+| **Tools** | `star` (5-pointed star) | `editor/js/tools/star.js` | Working | [x] |
+| **Tools** | `line` (L - 45° angle snap) | `editor/js/tools/line.js` | Working | [x] |
+| **Tools** | `curve` / Node Edit (N - live arch) | `editor/js/tools/node.js` | Working | [x] |
+| **Tools** | `path` / Pen (P - smooth freehand) | `editor/js/tools/pen.js` | Working | [x] |
+| **Tools** | `text` (T - fonts & laser engrave) | `editor/js/tools/text.js` | Working | [x] |
+| **Tools** | Shape & Template Library Modal | `editor/js/ui/modals.js` | Working | [x] |
+| **Laser** | `laserModeSwitch` | `editor/js/laser/panel.js` | Working | [x] |
+| **Theme** | `themeToggleBtn` (Light / Dark) | `editor/js/ui/theme.js` | Working | [x] |
