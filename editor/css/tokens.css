@@ -1,0 +1,95 @@
+/**
+ * VectorCutter - Design System Tokens
+ * Strict CSS variables for 100% theme consistency across dark and light modes.
+ */
+
+:root {
+    /* Color Palette - Dark (Default) */
+    --vc-bg-app: #18181a;
+    --vc-bg-surface-1: #1e1e20;
+    --vc-bg-surface-2: #252528;
+    --vc-bg-surface-3: #2d2d30;
+    --vc-bg-surface-hover: #37373b;
+    --vc-bg-surface-active: #094771;
+
+    --vc-border-subtle: #2d2d30;
+    --vc-border-default: #3e3e42;
+    --vc-border-focus: #007acc;
+
+    --vc-text-primary: #f0f0f0;
+    --vc-text-secondary: #cccccc;
+    --vc-text-muted: #888888;
+    --vc-text-disabled: #555555;
+
+    --vc-accent-blue: #007acc;
+    --vc-accent-hover: #0098ff;
+    --vc-accent-contrast: #ffffff;
+
+    --vc-danger: #e51400;
+    --vc-warning: #cca700;
+    --vc-success: #4caf50;
+
+    --vc-canvas-bg: #1e1e20;
+    --vc-grid-minor: rgba(255, 255, 255, 0.05);
+    --vc-grid-major: rgba(255, 255, 255, 0.12);
+    --vc-grid-axis: #007acc;
+
+    --vc-selection-line: #007acc;
+    --vc-handle-fill: #ffffff;
+    --vc-handle-stroke: #007acc;
+
+    /* Sizing & Layout */
+    --vc-sidebar-w: 260px;
+    --vc-context-w: 300px;
+    --vc-header-h: 36px;
+    --vc-toolbar-h: 36px;
+    --vc-statusbar-h: 24px;
+    --vc-radius-sm: 4px;
+    --vc-radius-md: 6px;
+    --vc-radius-lg: 8px;
+
+    /* Shadows & Elevation */
+    --vc-shadow-dropdown: 0 4px 16px rgba(0, 0, 0, 0.5);
+    --vc-shadow-modal: 0 12px 36px rgba(0, 0, 0, 0.7);
+    --vc-shadow-floating: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="light"] {
+    /* Color Palette - Light Theme */
+    --vc-bg-app: #f3f3f3;
+    --vc-bg-surface-1: #ffffff;
+    --vc-bg-surface-2: #f8f9fa;
+    --vc-bg-surface-3: #e9ecef;
+    --vc-bg-surface-hover: #dee2e6;
+    --vc-bg-surface-active: #e5f1fb;
+
+    --vc-border-subtle: #e0e0e0;
+    --vc-border-default: #ced4da;
+    --vc-border-focus: #007acc;
+
+    --vc-text-primary: #212529;
+    --vc-text-secondary: #495057;
+    --vc-text-muted: #6c757d;
+    --vc-text-disabled: #adb5bd;
+
+    --vc-accent-blue: #007acc;
+    --vc-accent-hover: #005999;
+    --vc-accent-contrast: #ffffff;
+
+    --vc-danger: #dc3545;
+    --vc-warning: #ffc107;
+    --vc-success: #28a745;
+
+    --vc-canvas-bg: #fdfdfd;
+    --vc-grid-minor: rgba(0, 0, 0, 0.05);
+    --vc-grid-major: rgba(0, 0, 0, 0.13);
+    --vc-grid-axis: #007acc;
+
+    --vc-selection-line: #007acc;
+    --vc-handle-fill: #ffffff;
+    --vc-handle-stroke: #007acc;
+
+    --vc-shadow-dropdown: 0 4px 16px rgba(0, 0, 0, 0.15);
+    --vc-shadow-modal: 0 12px 36px rgba(0, 0, 0, 0.25);
+    --vc-shadow-floating: 0 4px 14px rgba(0, 0, 0, 0.12);
+}

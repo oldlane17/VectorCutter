@@ -1,0 +1,561 @@
+/**
+ * VectorCutter - App Layout & Structure
+ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--vc-bg-app);
+    color: var(--vc-text-primary);
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    height: 100vh;
+    width: 100vw;
+}
+
+input, textarea, select, [contenteditable] {
+    user-select: text;
+    -webkit-user-select: text;
+    font-family: inherit;
+}
+
+.vc-app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+/* --- Top Header Menubar --- */
+.vc-header {
+    height: var(--vc-header-h);
+    background: var(--vc-bg-surface-1);
+    border-bottom: 1px solid var(--vc-border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    z-index: 100;
+}
+
+.vc-menubar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.vc-menu-item {
+    position: relative;
+    padding: 4px 10px;
+    font-size: 12px;
+    color: var(--vc-text-secondary);
+    border-radius: var(--vc-radius-sm);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.vc-menu-item:hover {
+    background: var(--vc-bg-surface-3);
+    color: var(--vc-text-primary);
+}
+
+.vc-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 200px;
+    max-height: calc(100vh - 50px);
+    overflow-y: auto;
+    background: var(--vc-bg-surface-2);
+    border: 1px solid var(--vc-border-default);
+    border-radius: var(--vc-radius-md);
+    box-shadow: var(--vc-shadow-dropdown);
+    padding: 4px 0;
+    z-index: 200;
+}
+
+.vc-menu-item:hover .vc-dropdown {
+    display: block;
+}
+
+.vc-dropdown-item {
+    padding: 6px 14px;
+    font-size: 12px;
+    color: var(--vc-text-primary);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+.vc-dropdown-item:hover {
+    background: var(--vc-accent-blue);
+    color: var(--vc-accent-contrast);
+}
+
+.vc-dropdown-item.disabled {
+    color: var(--vc-text-disabled);
+    pointer-events: none;
+}
+
+.vc-shortcut {
+    font-size: 11px;
+    color: var(--vc-text-muted);
+    margin-left: 16px;
+}
+
+.vc-dropdown-item:hover .vc-shortcut {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.vc-separator {
+    height: 1px;
+    background: var(--vc-border-subtle);
+    margin: 4px 0;
+}
+
+/* Header Right: Project Title & Controls */
+.vc-header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.vc-project-title {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--vc-radius-sm);
+    color: var(--vc-text-primary);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 8px;
+    text-align: center;
+    max-width: 200px;
+}
+
+.vc-project-title:hover {
+    border-color: var(--vc-border-default);
+}
+
+.vc-project-title:focus {
+    background: var(--vc-bg-surface-2);
+    border-color: var(--vc-border-focus);
+    outline: none;
+}
+
+/* Top Toolbar Bar */
+.vc-toolbar {
+    height: var(--vc-toolbar-h);
+    background: var(--vc-bg-surface-2);
+    border-bottom: 1px solid var(--vc-border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    gap: 8px;
+    z-index: 90;
+}
+
+.vc-toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.vc-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--vc-text-secondary);
+    padding: 4px 8px;
+    border-radius: var(--vc-radius-sm);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.vc-btn:hover {
+    background: var(--vc-bg-surface-3);
+    color: var(--vc-text-primary);
+}
+
+.vc-btn.active {
+    background: var(--vc-bg-surface-active);
+    border-color: var(--vc-accent-blue);
+    color: var(--vc-accent-contrast);
+}
+
+.vc-btn img, .vc-btn svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+}
+
+/* Laser Mode Switch */
+.vc-laser-switch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    background: var(--vc-bg-surface-3);
+    border: 1px solid var(--vc-border-default);
+    border-radius: var(--vc-radius-md);
+    cursor: pointer;
+    font-size: 12px;
+    color: var(--vc-text-primary);
+}
+
+.vc-laser-switch.active {
+    background: rgba(229, 20, 0, 0.2);
+    border-color: var(--vc-danger);
+    color: #ff6b6b;
+}
+
+.vc-switch-knob {
+    width: 28px;
+    height: 16px;
+    background: #555;
+    border-radius: 10px;
+    position: relative;
+    transition: background 0.2s;
+}
+
+.vc-switch-knob::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.2s;
+}
+
+.vc-laser-switch.active .vc-switch-knob {
+    background: var(--vc-danger);
+}
+
+.vc-laser-switch.active .vc-switch-knob::after {
+    transform: translateX(12px);
+}
+
+/* --- Main Workspace (Sidebar | Canvas | Right Panel) --- */
+.vc-workspace {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Resizer Bars */
+.vc-resizer {
+    width: 5px;
+    background: transparent;
+    cursor: col-resize;
+    z-index: 80;
+    transition: background 0.15s;
+}
+
+.vc-resizer:hover, .vc-resizer.active {
+    background: var(--vc-accent-blue);
+}
+
+/* --- Left Sidebar --- */
+.vc-sidebar {
+    width: var(--vc-sidebar-w);
+    min-width: 56px;
+    max-width: 45vw;
+    background: var(--vc-bg-surface-1);
+    border-right: 1px solid var(--vc-border-subtle);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    overflow-x: hidden;
+    z-index: 50;
+    padding: 8px 6px;
+    transition: width 0.15s ease;
+}
+
+.vc-sidebar.icon-only {
+    width: 56px !important;
+    min-width: 56px !important;
+    padding: 8px 4px;
+    align-items: center;
+}
+
+.vc-sidebar.icon-only .vc-tool-label,
+.vc-sidebar.icon-only .vc-tool-shortcut,
+.vc-sidebar.icon-only .vc-search-box,
+.vc-sidebar.icon-only .vc-sidebar-header-title,
+.vc-sidebar.icon-only .vc-browse-btn span,
+.vc-sidebar.icon-only .vc-component-list {
+    display: none !important;
+}
+
+.vc-sidebar-search {
+    margin-bottom: 8px;
+    display: flex;
+    gap: 4px;
+}
+
+.vc-search-box {
+    flex: 1;
+}
+
+.vc-search-box input {
+    width: 100%;
+    background: var(--vc-bg-surface-2);
+    border: 1px solid var(--vc-border-default);
+    border-radius: var(--vc-radius-sm);
+    color: var(--vc-text-primary);
+    padding: 5px 8px;
+    font-size: 11px;
+}
+
+.vc-search-box input:focus {
+    outline: none;
+    border-color: var(--vc-border-focus);
+}
+
+/* Sidebar Tool Rows */
+.vc-tools-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 100%;
+}
+
+.vc-tool-btn {
+    width: 100%;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 10px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--vc-radius-sm);
+    color: var(--vc-text-primary);
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: background 0.15s;
+}
+
+.vc-tool-btn:hover {
+    background: var(--vc-bg-surface-3);
+}
+
+.vc-tool-btn.active {
+    background: var(--vc-bg-surface-active);
+    border-color: var(--vc-accent-blue);
+}
+
+.vc-tool-btn img, .vc-tool-btn svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.vc-sidebar:not(.icon-only) .vc-tool-label {
+    flex: 1;
+    font-size: 13px;
+    color: var(--vc-text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+}
+
+.vc-sidebar:not(.icon-only) .vc-tool-shortcut {
+    font-size: 10px;
+    color: var(--vc-text-muted);
+    background: var(--vc-bg-surface-2);
+    border: 1px solid var(--vc-border-default);
+    padding: 1px 5px;
+    border-radius: 3px;
+    margin-left: auto;
+}
+
+/* Icon-only mode overrides */
+.vc-sidebar.icon-only .vc-tool-btn {
+    width: 40px !important;
+    height: 40px !important;
+    justify-content: center !important;
+    padding: 0 !important;
+}
+
+/* --- Canvas Container & Viewport --- */
+.vc-canvas-container {
+    flex: 1;
+    position: relative;
+    background: var(--vc-canvas-bg);
+    overflow: hidden;
+    cursor: default;
+}
+
+.vc-canvas-container.is-panning,
+.vc-canvas-container.space-pan {
+    cursor: grab !important;
+}
+
+.vc-canvas-container.is-panning:active,
+.vc-canvas-container.space-pan:active {
+    cursor: grabbing !important;
+}
+
+#gridCanvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+#artworkSvg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+}
+
+#overlaySvg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* Floating Quickbar */
+.vc-quickbar {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--vc-bg-surface-2);
+    border: 1px solid var(--vc-border-default);
+    border-radius: 20px;
+    box-shadow: var(--vc-shadow-floating);
+    display: flex;
+    align-items: center;
+    padding: 4px 8px;
+    gap: 4px;
+    z-index: 30;
+}
+
+.vc-quickbar-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 14px;
+    background: transparent;
+    border: none;
+    color: var(--vc-text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.vc-quickbar-btn:hover {
+    background: var(--vc-bg-surface-3);
+    color: var(--vc-text-primary);
+}
+
+.vc-quickbar-btn.active {
+    background: var(--vc-accent-blue);
+    color: #fff;
+}
+
+.vc-quickbar-divider {
+    width: 1px;
+    height: 16px;
+    background: var(--vc-border-subtle);
+    margin: 0 4px;
+}
+
+/* --- Right Context Panel --- */
+.vc-context-panel {
+    width: var(--vc-context-w);
+    min-width: 200px;
+    max-width: 45vw;
+    background: var(--vc-bg-surface-1);
+    border-left: 1px solid var(--vc-border-subtle);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    z-index: 50;
+    padding: 10px;
+}
+
+.vc-panel-section {
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--vc-border-subtle);
+    padding-bottom: 10px;
+}
+
+.vc-panel-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--vc-text-muted);
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.vc-form-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.vc-form-row input, .vc-form-row select {
+    background: var(--vc-bg-surface-2);
+    border: 1px solid var(--vc-border-default);
+    border-radius: var(--vc-radius-sm);
+    color: var(--vc-text-primary);
+    padding: 4px 6px;
+    font-size: 11px;
+}
+
+.vc-form-row input[type="number"] {
+    width: 70px;
+    text-align: right;
+}
+
+/* --- Bottom Status Bar --- */
+.vc-statusbar {
+    height: var(--vc-statusbar-h);
+    background: var(--vc-bg-surface-1);
+    border-top: 1px solid var(--vc-border-subtle);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    font-size: 11px;
+    color: var(--vc-text-muted);
+    z-index: 100;
+}
+
+.vc-status-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}

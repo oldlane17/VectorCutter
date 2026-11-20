@@ -3,531 +3,289 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VectorCutter - SVG Editor</title>
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" >
-    <!-- ANDROID -->
-	<link href="/favicon.ico" type="image/x-icon" rel='icon' />
-    <!-- iOS -->
-    <link href="/favicon.ico" type="image/x-icon" rel='apple-touch-icon' />
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-M8HF2H2T');</script>
-    <!-- End Google Tag Manager -->
-    <!-- Editor Modular Stylesheet -->
-    <link rel="stylesheet" href="editor/css/editor.css">
+    <title>VectorCutter - SVG Laser & CNC Editor</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" href="/favicon.ico">
+
+    <!-- Design Tokens & Component Stylesheets (No external CDN requests) -->
+    <link rel="stylesheet" href="editor/css/tokens.css">
+    <link rel="stylesheet" href="editor/css/layout.css">
 </head>
 <body>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-M8HF2H2T"
-    height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-    <!-- End Google Tag Manager (noscript) -->
-    <div class="container">
-        <!-- Top Right Controls: Theme Toggle & Laser Cutting Mode Toggle -->
-        <div style="position: absolute; top: 5px; right: 20px; z-index: 1000; display: flex; align-items: center; gap: 8px;">
-            <button id="themeToggleBtn" class="theme-toggle-btn" title="Toggle Light / Dark Mode" style="background: #2d2d30; border: 1px solid #3e3e42; color: #ccc; border-radius: 4px; padding: 5px 8px; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center;">
-                <span id="themeToggleIcon">🌙</span>
-            </button>
-            <div class="laser-mode-toggle" id="laserModeToggle" style="position: static; top: auto; right: auto;">
-                <span>Laser Cutting Mode</span>
-                <div class="toggle-switch"></div>
-            </div>
-        </div>
-
-        <!-- Menu Bar -->
-        <div class="menu-bar">
-            <div class="menu-item">
-                File
-                <div class="dropdown">
-                    <div class="dropdown-item" id="menuNew">New <span class="shortcut">Ctrl+N</span></div>
-                    <div class="dropdown-item" id="menuOpen">Open SVG</div>
-                    <div class="dropdown-item" id="menuSave">Export SVG <span class="shortcut">Ctrl+S</span></div>
-                    <div class="dropdown-item" id="menuDashboardSave">Save to Dashboard</div>
-                    <div class="dropdown-item" id="menuExport">Export PNG</div>
-                    <div class="dropdown-item" id="menuExportDXF">Export DXF (Laser/CNC)</div>
-                    <div class="separator"></div>
-                    <!-- <div class="dropdown-item" id="menuPrint">Print...</div>
-                    <div class="separator"></div> -->
-                    <div class="dropdown-item" id="menuExit">Exit</div>
-                </div>
-            </div>
-            <div class="menu-item">
-                Edit
-                <div class="dropdown">
-                    <div class="dropdown-item" id="menuUndo">Undo <span class="shortcut">Ctrl+Z</span></div>
-                    <div class="dropdown-item" id="menuRedo">Redo <span class="shortcut">Ctrl+Y</span></div>
-                    <div class="separator"></div>
-                    <div class="dropdown-item" id="menuCut">Cut <span class="shortcut">Ctrl+X</span></div>
-                    <div class="dropdown-item" id="menuCopy">Copy <span class="shortcut">Ctrl+C</span></div>
-                    <div class="dropdown-item" id="menuPaste">Paste <span class="shortcut">Ctrl+V</span></div>
-                    <div class="separator"></div>
-                    <div class="dropdown-item" id="menuSelectAll">Select All <span class="shortcut">Ctrl+A</span></div>
-                    <div class="dropdown-item" id="menuClearSelection">Clear Selection</div>
-                    <div class="separator"></div>
-                    <div class="dropdown-item" id="menuDuplicate">Duplicate <span class="shortcut">Ctrl+D</span></div>
-                    <div class="dropdown-item" id="menuDelete">Delete <span class="shortcut">Del</span></div>
-                    <div class="separator"></div>
-                    <div class="dropdown-item" id="menuGroup">Group <span class="shortcut">Ctrl+G</span></div>
-                    <div class="dropdown-item" id="menuUngroup">Ungroup <span class="shortcut">Ctrl+Shift+G</span></div>
-                    <div class="separator"></div>
-                    <div class="dropdown-item" id="menuBringFront">Bring to Front</div>
-                    <div class="dropdown-item" id="menuSendBack">Send to Back</div>
-                    <div class="separator"></div>
-                    <div class="dropdown-item" id="menuConvertToPaths">Convert to Paths</div>
-                    <div class="dropdown-item" id="menuSimplifyPaths">Simplify Paths</div>
-                    <div class="separator"></div>
-                    <div class="dropdown-item" id="menuExtractComponent">Extract as Component</div>
-                    <div class="dropdown-item" id="menuTraceImage">Trace Image to Vector (Beta)...</div>
-                </div>
-            </div>
-            <div class="menu-item">
-                Modify
-                <div class="dropdown">
-                    <!-- <div class="dropdown-item" id="menuGroup">Group Elements <span class="shortcut">Ctrl+G</span></div>
-                    <div class="dropdown-item disabled" id="menuUngroup">Ungroup Elements <span class="shortcut">Ctrl+Shift+G</span></div>
-                    <div class="separator"></div> -->
-                    <div class="dropdown-item" id="menuRotate">Rotate Element</div>
-                    <div class="dropdown-item" id="menuScale">Scale Element</div>
-                    <div class="dropdown-item" id="menuFlipH">Flip Horizontal</div>
-                    <div class="dropdown-item" id="menuFlipV">Flip Vertical</div>
-                    <div class="separator"></div>
-                    <div class="dropdown-item" id="menuBooleanUnion">Boolean Union (Weld)</div>
-                    <div class="dropdown-item" id="menuBooleanDiff">Boolean Difference</div>
-                    <div class="dropdown-item" id="menuBooleanIntersect">Boolean Intersect</div>
-                    <div class="separator"></div>
-                    <div class="dropdown-item" id="menuKerfOffset">Kerf Offset (Inset/Outset)...</div>
-                    <div class="dropdown-item" id="menuOutlineStroke">Outline Stroke</div>
-                    <div class="dropdown-item" id="menuBooleanExclude">Boolean Exclude (XOR)</div>
-                    <div class="dropdown-item" id="menuMergePaths">Merge Selected Paths</div>
-                    <div class="dropdown-item" id="menuRemoveHoles">Remove Holes</div>
-                    <div class="dropdown-item" id="menuRoundCorners">Round Corners (Fillet)...</div>
-                    <div class="dropdown-item" id="menuChamfer">Chamfer Corners...</div>
-                    <div class="dropdown-item" id="menuWeldScore">Weld & Score</div>
-                    <div class="dropdown-item" id="menuFitWithin">Fit Within Shape</div>
-                    <div class="separator"></div>
-                    <div class="dropdown-item" id="menuLinearRepeat">Linear Repeat Pattern...</div>
-                    <div class="dropdown-item" id="menuRotRepeat">Rotational Repeat Pattern...</div>
-                    <div class="dropdown-item" id="menuGridRepeat">Grid / Tile Repeat Pattern...</div>
-                    <div class="dropdown-item" id="menuMirrorRepeat">Mirror Repeat</div>
-                    <div class="separator"></div>
-                    <div class="dropdown-item" id="menuDashedLine">Dashed Lines (Perforation)...</div>
-                    <div class="dropdown-item" id="menuNestSheet">Sheet Nesting (Shelf Packing)...</div>
-                    <div class="dropdown-item" id="menuLayeredStack">Layered Stack (3D)...</div>
-                    <div class="dropdown-item" id="menuFlattenPaths">Flatten to Plain Paths</div>
-                    <div class="separator"></div>
-                    <div class="dropdown-item" id="menuTextAlongPath">Text Along Path</div>
-                    <div class="dropdown-item" id="menuTextWithinBox">Text Within Box...</div>
-                    <div class="dropdown-item" id="menuAttachAnchor">Attach to Anchor (Right)</div>
-                </div>
-            </div>
-            <div class="menu-item">
-                View
-                <div class="dropdown">
-                    <div class="dropdown-item" id="menuZoomIn">Zoom In <span class="shortcut">+</span></div>
-                    <div class="dropdown-item" id="menuZoomOut">Zoom Out <span class="shortcut">-</span></div>
-                    <div class="dropdown-item" id="menuResetZoom">Reset Zoom</div>
-                    <div class="dropdown-item" id="menuZoomRealSize">Real Size (1:1 in mm) <span class="shortcut">Ctrl+0</span></div>
-                    <div class="dropdown-item" id="menuCalibrateScreen">Calibrate This Screen...</div>
-                    <div class="separator"></div>
-                    <div class="dropdown-item" id="menuFitAll">Zoom to Fit All <span class="shortcut">Ctrl+Shift+F</span></div>
-                    <div class="dropdown-item" id="menuFitSelected">Zoom to Fit Selected <span class="shortcut">Ctrl+F</span></div>
-                    <div class="separator"></div>
-                    <div class="dropdown-item" id="menuScrollTrackpad"><span id="checkScrollTrackpad">✓ </span>Trackpad: Scroll to Pan</div>
-                    <div class="dropdown-item" id="menuScrollMouse"><span id="checkScrollMouse"></span>Mouse: Scroll to Zoom</div>
-                    <div class="separator"></div>
-                    <div class="dropdown-item" id="menuToggleGrid">Toggle Grid <span class="shortcut">Ctrl+G</span></div>
-                    <div class="separator"></div>
-                    <div class="dropdown-item" id="menuFullscreen">Fullscreen <span class="shortcut">F11</span></div>
-                </div>
-            </div>
-            <div class="menu-item" id="menuSettings">
-                Settings
-            </div>
-            <div class="menu-item">
-                Help
-                <div class="dropdown">
-                    
-                    <div class="dropdown-item" id="menuCommandPalette">Command Palette <span class="shortcut">Ctrl+K</span></div>
-                    <div class="dropdown-item" id="menuShortcuts">Keyboard Shortcuts <span class="shortcut">?</span></div>
-                    <div class="dropdown-item" id="menuReadmeNotes">Project Read Me / Notes</div>
-                    <div class="dropdown-item" id="menuProjectSettings">Units & Settings...</div>
-                    <div class="dropdown-item" id="menuShapeLibrary">Browse Shape Library...</div>
-                    <div class="dropdown-item" id="menuAbout">About SVG Editor</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Toolbar -->
-        <div class="toolbar">
-            <!-- Locate this section inside <div class="toolbar"> -->
-
-            <div class="toolbar-group">
-                <span class="toolbar-label">Canvas Mode:</span>
-                
-                <!-- Updated Select Button -->
-                <button class="toolbar-button active" id="selectModeBtn" data-mode="select">
-                    <img src="sidebar/select.svg" alt="Select Icon"> Select
-                </button>
-                
-                <!-- Updated Pan Button -->
-                <button class="toolbar-button" id="panModeBtn" data-mode="pan">
-                    <img src="sidebar/pan.svg" alt="Pan Icon"> Pan
-                </button>
-            </div>
-            
-            <div class="toolbar-group">
-                <span class="toolbar-label">Grid:</span>
-                <button class="toolbar-button active" id="gridToggleBtn">
-                    <img src="sidebar/grid.svg" alt="Grid"> Grid On
-                </button>
-            </div>
-            
-            <div class="toolbar-group">
-                <span class="toolbar-label">Snap:</span>
-                <button class="toolbar-button" id="snapToggleBtn">
-                    <img src="sidebar/snap.svg" alt="Snap"> Snap Off
-                </button>
-            </div>
-            
-            <div class="toolbar-group">
-                <span class="toolbar-label">Zoom:</span>
-                <button class="toolbar-button" id="zoomInBtn" title="Zoom In">
-                    <img src="sidebar/zoom_in.svg" alt="Zoom In">
-                </button>
-                <button class="toolbar-button" id="zoomOutBtn" title="Zoom Out">
-                    <img src="sidebar/zoom_out.svg" alt="Zoom Out">
-                </button>
-                <button class="toolbar-button" id="zoomResetBtn" title="Reset Zoom">
-                    <img src="sidebar/refresh.svg" alt="Reset"> Reset
-                </button>
-            </div>
-        </div>
-
-        <!-- Main Content Area -->
-        <div class="content-area">
-            <!-- Sidebar -->
-            <div class="sidebar" id="mainSidebar">
-                <!-- Sidebar Top Controls: Search & Collapse -->
-                <div class="sidebar-header">
-                    <div class="sidebar-search-box">
-                        <input type="text" id="sidebarSearch" placeholder="Search shapes / tools (/)" title="Press / to search">
+    <div class="vc-app">
+        <!-- 1. Top Menubar Header -->
+        <header class="vc-header">
+            <div class="vc-menubar">
+                <!-- File Menu -->
+                <div class="vc-menu-item">
+                    File
+                    <div class="vc-dropdown">
+                        <div class="vc-dropdown-item" id="menuNew">New <span class="vc-shortcut">Ctrl+N</span></div>
+                        <div class="vc-dropdown-item" id="menuOpen">Open SVG... <span class="vc-shortcut">Ctrl+O</span></div>
+                        <div class="vc-dropdown-item" id="menuSave">Export SVG... <span class="vc-shortcut">Ctrl+S</span></div>
+                        <div class="vc-dropdown-item" id="menuDashboardSave">Save to Dashboard</div>
+                        <div class="vc-separator"></div>
+                        <div class="vc-dropdown-item" id="menuExportDXF">Export DXF (Laser/CNC)</div>
+                        <div class="vc-dropdown-item" id="menuExportPNG">Export PNG</div>
                     </div>
-                    <button class="sidebar-collapse-toggle" id="sidebarCollapseBtn" title="Collapse sidebar">
+                </div>
+
+                <!-- Edit Menu -->
+                <div class="vc-menu-item">
+                    Edit
+                    <div class="vc-dropdown">
+                        <div class="vc-dropdown-item" id="menuUndo">Undo <span class="vc-shortcut">Ctrl+Z</span></div>
+                        <div class="vc-dropdown-item" id="menuRedo">Redo <span class="vc-shortcut">Ctrl+Y</span></div>
+                        <div class="vc-separator"></div>
+                        <div class="vc-dropdown-item" id="menuSelectAll">Select All <span class="vc-shortcut">Ctrl+A</span></div>
+                        <div class="vc-dropdown-item" id="menuClearSelection">Clear Selection <span class="vc-shortcut">Esc</span></div>
+                        <div class="vc-separator"></div>
+                        <div class="vc-dropdown-item" id="menuDuplicate">Duplicate <span class="vc-shortcut">Ctrl+D</span></div>
+                        <div class="vc-dropdown-item" id="menuDelete">Delete <span class="vc-shortcut">Del</span></div>
+                    </div>
+                </div>
+
+                <!-- Modify Menu -->
+                <div class="vc-menu-item">
+                    Modify
+                    <div class="vc-dropdown">
+                        <div class="vc-dropdown-item" id="menuBooleanUnion">Boolean Union (Weld)</div>
+                        <div class="vc-dropdown-item" id="menuBooleanDiff">Boolean Difference</div>
+                        <div class="vc-dropdown-item" id="menuBooleanIntersect">Boolean Intersect</div>
+                        <div class="vc-dropdown-item" id="menuBooleanExclude">Boolean Exclude (XOR)</div>
+                        <div class="vc-separator"></div>
+                        <div class="vc-dropdown-item" id="menuKerfOffset">Kerf Offset (Inset/Outset)...</div>
+                        <div class="vc-dropdown-item" id="menuOutlineStroke">Outline Stroke</div>
+                        <div class="vc-separator"></div>
+                        <div class="vc-dropdown-item" id="menuLinearRepeat">Linear Repeat Pattern...</div>
+                        <div class="vc-dropdown-item" id="menuRotRepeat">Rotational Repeat...</div>
+                        <div class="vc-dropdown-item" id="menuGridRepeat">Grid / Tile Repeat...</div>
+                        <div class="vc-dropdown-item" id="menuMirrorRepeat">Mirror Repeat</div>
+                    </div>
+                </div>
+
+                <!-- View Menu -->
+                <div class="vc-menu-item">
+                    View
+                    <div class="vc-dropdown">
+                        <div class="vc-dropdown-item" id="menuZoomIn">Zoom In <span class="vc-shortcut">+</span></div>
+                        <div class="vc-dropdown-item" id="menuZoomOut">Zoom Out <span class="vc-shortcut">-</span></div>
+                        <div class="vc-dropdown-item" id="menuResetZoom">Reset Zoom (1:1) <span class="vc-shortcut">Ctrl+0</span></div>
+                        <div class="vc-separator"></div>
+                        <div class="vc-dropdown-item" id="menuToggleGrid">Toggle Grid <span class="vc-shortcut">Ctrl+G</span></div>
+                    </div>
+                </div>
+
+                <!-- Help Menu -->
+                <div class="vc-menu-item">
+                    Help
+                    <div class="vc-dropdown">
+                        <div class="vc-dropdown-item" id="menuCommandPalette">Command Palette <span class="vc-shortcut">Ctrl+K</span></div>
+                        <div class="vc-dropdown-item" id="menuShortcuts">Keyboard Shortcuts <span class="vc-shortcut">?</span></div>
+                        <div class="vc-dropdown-item" id="menuShapeLibrary">Browse Shape Library...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Project Title (Editable) -->
+            <input type="text" class="vc-project-title" id="projectTitleInput" value="Untitled Project" title="Click to rename project">
+
+            <!-- Right Controls: Theme Toggle & Laser Switch -->
+            <div class="vc-header-right">
+                <button class="vc-btn" id="themeToggleBtn" title="Toggle Light / Dark Mode">
+                    <span id="themeToggleIcon">🌙</span>
+                </button>
+
+                <div class="vc-laser-switch" id="laserModeSwitch" role="switch" title="Toggle Laser Cutting Preparation Mode">
+                    <span>Laser Mode</span>
+                    <div class="vc-switch-knob"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- 2. Main Workspace (Sidebar | Canvas | Right Context) -->
+        <main class="vc-workspace">
+            <!-- Left Sidebar -->
+            <aside class="vc-sidebar" id="sidebar">
+                <!-- Search & Collapse Header -->
+                <div class="vc-sidebar-search">
+                    <div class="vc-search-box">
+                        <input type="text" id="sidebarSearch" placeholder="Search tools (/)" title="Press / to search">
+                    </div>
+                    <button class="vc-btn" id="sidebarCollapseBtn" title="Collapse / Expand Sidebar">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="15 18 9 12 15 6"></polyline>
                         </svg>
                     </button>
                 </div>
 
-                <!-- Section 1: Shapes & Tools -->
-                <div class="sidebar-section" id="sectionShapes">
-                    <div class="sidebar-section-header">
-                        <span>SHAPES & TOOLS</span>
-                        <span class="section-arrow">▼</span>
-                    </div>
-                    <div class="sidebar-section-content">
-                        <div class="tools">
-                            <div class="tool active" data-tool="select" data-title="Select Tool">
-                                <img src="sidebar/select.svg" alt="Select">
-                                <span class="tool-label">Select</span>
-                                <span class="tool-shortcut">V</span>
-                            </div>
-                            <div class="tool" data-tool="rectangle" data-title="Rectangle">
-                                <img src="sidebar/rectangle.svg" alt="Rectangle">
-                                <span class="tool-label">Rectangle</span>
-                                <span class="tool-shortcut">R</span>
-                            </div>
-                            <div class="tool" data-tool="circle" data-title="Circle">
-                                <img src="sidebar/circle.svg" alt="Circle">
-                                <span class="tool-label">Circle</span>
-                                <span class="tool-shortcut">C</span>
-                            </div>
-                            <div class="tool" data-tool="ellipse" data-title="Ellipse">
-                                <img src="sidebar/ellipse.svg" alt="Ellipse">
-                                <span class="tool-label">Ellipse</span>
-                            </div>
-                            <div class="tool" data-tool="line" data-title="Line">
-                                <img src="sidebar/line.svg" alt="Line">
-                                <span class="tool-label">Line</span>
-                                <span class="tool-shortcut">L</span>
-                            </div>
-                            <div class="tool" data-tool="curve" data-title="Curve / Node Edit">
-                                <img src="sidebar/curve.svg" alt="Curve">
-                                <span class="tool-label">Curve / Node</span>
-                                <span class="tool-shortcut">N</span>
-                            </div>
-                            <div class="tool" data-tool="path" data-title="Path Tool / Pen">
-                                <img src="sidebar/path.svg" alt="Path">
-                                <span class="tool-label">Pen / Path</span>
-                                <span class="tool-shortcut">P</span>
-                            </div>
-                            <div class="tool" data-tool="text" data-title="Text Tool">
-                                <img src="sidebar/text.svg" alt="Text">
-                                <span class="tool-label">Text</span>
-                                <span class="tool-shortcut">T</span>
-                            </div>
-                        </div>
-                        <div class="sidebar-browse-btn" id="browseShapesBtn" title="Browse all shapes & presets">
-                            <img src="sidebar/templates.svg" alt="Library" style="width:14px; height:14px;">
-                            <span>Browse All Shapes...</span>
-                        </div>
-                    </div>
+                <!-- Shapes & Tools Section -->
+                <div class="vc-tools-group">
+                    <button class="vc-tool-btn active" data-tool="select" title="Select (V)">
+                        <img src="sidebar/select.svg" alt="Select">
+                        <span class="vc-tool-label">Select</span>
+                        <span class="vc-tool-shortcut">V</span>
+                    </button>
+                    <button class="vc-tool-btn" data-tool="rectangle" title="Rectangle (R)">
+                        <img src="sidebar/rectangle.svg" alt="Rectangle">
+                        <span class="vc-tool-label">Rectangle</span>
+                        <span class="vc-tool-shortcut">R</span>
+                    </button>
+                    <button class="vc-tool-btn" data-tool="circle" title="Circle (C)">
+                        <img src="sidebar/circle.svg" alt="Circle">
+                        <span class="vc-tool-label">Circle</span>
+                        <span class="vc-tool-shortcut">C</span>
+                    </button>
+                    <button class="vc-tool-btn" data-tool="ellipse" title="Ellipse">
+                        <img src="sidebar/ellipse.svg" alt="Ellipse">
+                        <span class="vc-tool-label">Ellipse</span>
+                    </button>
+                    <button class="vc-tool-btn" data-tool="polygon" title="Polygon (Hexagon)">
+                        <img src="sidebar/polygon.svg" alt="Polygon">
+                        <span class="vc-tool-label">Polygon</span>
+                    </button>
+                    <button class="vc-tool-btn" data-tool="star" title="Star (5-point)">
+                        <img src="sidebar/star.svg" alt="Star">
+                        <span class="vc-tool-label">Star</span>
+                    </button>
+                    <button class="vc-tool-btn" data-tool="line" title="Line (L)">
+                        <img src="sidebar/line.svg" alt="Line">
+                        <span class="vc-tool-label">Line</span>
+                        <span class="vc-tool-shortcut">L</span>
+                    </button>
+                    <button class="vc-tool-btn" data-tool="curve" title="Curve / Node Edit (N)">
+                        <img src="sidebar/curve.svg" alt="Curve">
+                        <span class="vc-tool-label">Curve / Node</span>
+                        <span class="vc-tool-shortcut">N</span>
+                    </button>
+                    <button class="vc-tool-btn" data-tool="path" title="Pen / Path (P)">
+                        <img src="sidebar/path.svg" alt="Pen">
+                        <span class="vc-tool-label">Pen / Path</span>
+                        <span class="vc-tool-shortcut">P</span>
+                    </button>
+                    <button class="vc-tool-btn" data-tool="text" title="Text (T)">
+                        <img src="sidebar/text.svg" alt="Text">
+                        <span class="vc-tool-label">Text</span>
+                        <span class="vc-tool-shortcut">T</span>
+                    </button>
                 </div>
 
-                <!-- Section 2: Components -->
-                <div class="sidebar-section" id="sectionComponents">
-                    <div class="sidebar-section-header">
-                        <span>COMPONENTS</span>
-                        <span class="section-arrow">▼</span>
-                    </div>
-                    <div class="sidebar-section-content">
-                        <div class="components-list" id="sidebarComponentsList">
-                            <div class="component-item active" data-component-id="main">
-                                <span class="comp-icon">📄</span>
-                                <span class="comp-name">Component 1</span>
-                            </div>
-                        </div>
-                        <button class="add-component-btn" id="addComponentBtn" title="Add Component / Page">
-                            + Add Component
-                        </button>
-                    </div>
+                <div style="margin: 12px 0 6px 0; border-top: 1px solid var(--vc-border-subtle); padding-top: 8px;">
+                    <button class="vc-btn" id="sidebarBrowseShapesBtn" style="width: 100%; justify-content: center; background: rgba(0, 122, 204, 0.15); border: 1px dashed var(--vc-accent-blue); color: var(--vc-accent-hover);" title="Browse preset shapes library">
+                        <span>📐 Browse Shape Library</span>
+                    </button>
                 </div>
+            </aside>
 
-                <!-- Section 3: Project -->
-                <div class="sidebar-section" id="sectionProject">
-                    <div class="sidebar-section-header">
-                        <span>PROJECT</span>
-                        <span class="section-arrow">▼</span>
-                    </div>
-                    <div class="sidebar-section-content">
-                        <div class="project-entry" id="projectReadmeBtn">
-                            <span>📝</span> <span>Read Me / Notes</span>
-                        </div>
-                        <div class="project-entry" id="projectSettingsBtn">
-                            <span>⚙️</span> <span>Units & Settings</span>
-                        </div>
-                    </div>
-                </div>
+            <!-- Sidebar Divider Resizer -->
+            <div class="vc-resizer" id="sidebarResizer"></div>
 
-                <!-- Developer Tools / SVG Source -->
-                <div class="sidebar-section">
-                    <div class="sidebar-section-header">
-                        <span>DEVELOPER</span>
-                        <span class="section-arrow">▼</span>
-                    </div>
-                    <div class="sidebar-section-content">
-                        <div class="tools">
-                            <div class="tool" id="editCodeBtn" data-title="Edit SVG Code">
-                                <img src="sidebar/code.svg" alt="Edit Code">
-                                <span class="tool-label">Edit SVG Code</span>
-                            </div>
-                            <div class="tool" data-action="code" data-title="View Source">
-                                <img src="sidebar/code_blocks.svg" alt="View Source">
-                                <span class="tool-label">View Source</span>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Center Canvas Viewport -->
+            <section class="vc-canvas-container" id="canvasContainer">
+                <!-- Background Grid Canvas (Adaptive 60fps) -->
+                <canvas id="gridCanvas"></canvas>
+
+                <!-- SVG Artwork World (No viewBox, pure matrix transform) -->
+                <svg id="artworkSvg" xmlns="http://www.w3.org/2000/svg">
+                    <g id="worldGroup"></g>
+                </svg>
+
+                <!-- Screen-Space Selection & Handles Overlay -->
+                <svg id="overlaySvg" xmlns="http://www.w3.org/2000/svg"></svg>
+
+                <!-- Floating Quickbar -->
+                <div class="vc-quickbar" id="quickbar">
+                    <button class="vc-quickbar-btn active" data-quick-tool="select" title="Select (V)">
+                        <img src="sidebar/select.svg" alt="Select">
+                    </button>
+                    <button class="vc-quickbar-btn" data-quick-tool="rectangle" title="Rectangle (R)">
+                        <img src="sidebar/rectangle.svg" alt="Rect">
+                    </button>
+                    <button class="vc-quickbar-btn" data-quick-tool="circle" title="Circle (C)">
+                        <img src="sidebar/circle.svg" alt="Circle">
+                    </button>
+                    <button class="vc-quickbar-btn" data-quick-tool="polygon" title="Polygon">
+                        <img src="sidebar/polygon.svg" alt="Polygon">
+                    </button>
+                    <button class="vc-quickbar-btn" data-quick-tool="star" title="Star">
+                        <img src="sidebar/star.svg" alt="Star">
+                    </button>
+                    <button class="vc-quickbar-btn" data-quick-tool="curve" title="Node Edit (N)">
+                        <img src="sidebar/curve.svg" alt="Node">
+                    </button>
+                    <button class="vc-quickbar-btn" data-quick-tool="path" title="Pen (P)">
+                        <img src="sidebar/path.svg" alt="Pen">
+                    </button>
+
+                    <div class="vc-quickbar-divider"></div>
+
+                    <!-- Selection Actions -->
+                    <button class="vc-quickbar-btn selection-action" id="quickRotateCCW" title="Rotate 90° CCW">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                            <path d="M3 3v5h5"/>
+                        </svg>
+                    </button>
+                    <button class="vc-quickbar-btn selection-action" id="quickRotateCW" title="Rotate 90° CW">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                            <path d="M21 3v5h-5"/>
+                        </svg>
+                    </button>
+                    <button class="vc-quickbar-btn selection-action" id="quick180" title="Rotate 180°">
+                        <span style="font-size:10px;font-weight:bold;">180</span>
+                    </button>
+                    <button class="vc-quickbar-btn selection-action" id="quickFlipH" title="Flip Horizontal">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3"/>
+                            <path d="M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"/>
+                            <line x1="12" y1="2" x2="12" y2="22"/>
+                        </svg>
+                    </button>
+                    <button class="vc-quickbar-btn selection-action" id="quickFlipV" title="Flip Vertical">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 8V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3"/>
+                            <path d="M3 16v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"/>
+                            <line x1="2" y1="12" x2="22" y2="12"/>
+                        </svg>
+                    </button>
+                    <button class="vc-quickbar-btn selection-action" id="quickDuplicate" title="Duplicate (Ctrl+D)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                        </svg>
+                    </button>
+                    <button class="vc-quickbar-btn selection-action" id="quickDelete" title="Delete (Del)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                    </button>
                 </div>
+            </section>
+
+            <!-- Right Panel Resizer -->
+            <div class="vc-resizer" id="contextResizer"></div>
+
+            <!-- Right Context Properties Panel -->
+            <aside class="vc-context-panel" id="contextPanel"></aside>
+        </main>
+
+        <!-- 3. Bottom Status Bar -->
+        <footer class="vc-statusbar">
+            <div class="vc-status-item">
+                <span id="statusCoords">X: 0.0 mm | Y: 0.0 mm</span>
             </div>
-
-            <!-- Left Resizer Divider -->
-            <div id="sidebarResizer" class="resizer sidebar-resizer" title="Drag to resize sidebar (double-click to reset)"></div>
-
-            <!-- Main Canvas Area -->
-            <div class="canvas-area">
-                <div class="canvas-container" id="canvasContainer">
-                    <svg id="svgCanvas" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;"></svg>
-                </div>
-
-                <div class="status-bar">
-                    <span id="cursorPos">X: 0, Y: 0</span>
-                    <!-- Inside <div class="status-bar"> -->
-                    <span id="unitInfo">Units: Millimeters (mm) - Scroll to pan | Ctrl+Scroll to zoom</span>
-                </div>
+            <div class="vc-status-item">
+                <span>Zoom: <strong id="statusZoom">100%</strong></span>
             </div>
-
-            <!-- Add this after the canvas-area div -->
-            <div class="context-menu">
-                <div id="contextResizer" class="resizer"></div>
-                <div id="propertiesPanel" style="display: flex; flex-direction: column; height: 100%;">
-                    <div class="context-menu-header">
-                        <h3>ELEMENT PROPERTIES</h3>
-                    </div>
-                    <div class="context-properties" id="contextProperties">
-                        <!-- Dynamic content will be inserted here -->
-                        <div class="no-selection">
-                            <p>No element selected</p>
-                            <p>Select an element to view its properties</p>
-                        </div>
-                    </div>
-                    <div class="elements-list">
-                        <div class="elements-list-header">
-                            <h3>ELEMENTS LIST</h3>
-                            <span class="element-count" id="elementCount">0 elements</span>
-                        </div>
-                        <div class="elements-container" id="elementsList">
-                            <!-- Dynamic list of elements will be inserted here -->
-                            <div class="empty-list">
-                                <p>No elements created yet</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Code Editor Panel (Hidden) -->
-                <div id="codeEditorPanel" style="display: none; flex-direction: column; height: 100%; padding: 10px;">
-                    <div class="context-menu-header" style="padding: 10px 0;">
-                        <h3>LIVE CODE EDITOR</h3>
-                    </div>
-                    <textarea id="liveSvgCode" style="flex: 1; width: 100%; background: #1e1e1e; color: #d4d4d4; border: 1px solid #3e3e42; padding: 10px; font-family: monospace; resize: none; margin-bottom: 10px;"></textarea>
-                    <button id="applyCodeBtn" class="toolbar-button" style="width: 100%; justify-content: center; background: #007acc; color: white; border: none;">Apply Changes</button>
-                </div>
+            <div class="vc-status-item">
+                <span>Unit: <strong>Millimetres (mm)</strong></span>
             </div>
-        </div>
-    </div>
-    <!-- </div> -->
-
-    <!-- Code Modal -->
-    <div class="modal" id="codeModal">
-        <div class="modal-content">
-            <h2>SVG Code</h2>
-            <textarea id="svgCode"></textarea>
-            <div class="modal-buttons">
-                <button onclick="closeModal()">Close</button>
-                <button onclick="copyCode()">Copy Code</button>
-            </div>
-        </div>
+        </footer>
     </div>
 
-    <!-- Settings Modal -->
-    <div class="modal" id="settingsModal">
-        <div class="modal-content" style="width: 300px;">
-            <h2 style="border-bottom: 1px solid #3e3e42; padding-bottom: 10px; margin-bottom: 20px;">Settings</h2>
-            
-            <div class="property-group" style="margin-bottom: 20px;">
-                <label style="display:block; margin-bottom:10px; color:#ccc;">Measurement Units</label>
-                <!-- ID MUST be 'unitSelector' so existing JS logic works automatically -->
-                <select id="unitSelector" style="width: 100%; padding: 8px; background: #2d2d30; border: 1px solid #3e3e42; color: white; border-radius: 4px;">
-                    <option value="px">Pixels (px)</option>
-                    <!-- ADD 'selected' attribute to the mm option -->
-                    <option value="mm" selected>Millimeters (mm)</option> 
-                    <option value="cm">Centimeters (cm)</option>
-                    <option value="in">Inches (in)</option>
-                </select>
-            </div>
-
-            <div class="modal-buttons">
-                <button onclick="document.getElementById('settingsModal').style.display='none'">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Templates Modal -->
-    <div class="modal" id="templatesModal">
-        <div class="modal-content" style="width: 800px; max-width: 90%; height: 80vh; display: flex; flex-direction: column;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #3e3e42; padding-bottom: 15px; margin-bottom: 20px;">
-                <h2 style="margin:0;">Template Library</h2>
-                <button onclick="document.getElementById('templatesModal').style.display='none'" style="background:transparent; border:none; color:white; font-size:20px; cursor:pointer;">&times;</button>
-            </div>
-            
-            <!-- Grid Container -->
-            <div id="templatesGrid" class="templates-grid">
-                <!-- Templates will be injected here by JS -->
-            </div>
-
-            <div class="modal-buttons" style="margin-top: auto; padding-top: 20px;">
-                <button onclick="document.getElementById('templatesModal').style.display='none'">Close</button>
-            </div>
-        </div>
-    </div>
-    <!-- About Modal -->
-    <div class="modal" id="aboutModal">
-        <div class="modal-content">
-            <h2>About SVG Editor</h2>
-            <p style="margin-bottom: 20px; line-height: 1.5;">
-                SVG Editor is a powerful web-based tool for creating and editing Scalable Vector Graphics.<br><br>
-                Features include:
-                <ul style="margin-left: 20px; margin-bottom: 20px;">
-                    <li>Multiple shape tools</li>
-                    <li>Cartesian coordinate system</li>
-                    <li>Real-time property editing</li>
-                    <li>Drag and drop element movement</li>
-                    <li>Movable map with panning</li>
-                    <li>Multiple unit systems (px, mm, cm, in)</li>
-                    <li>Export to SVG and PNG</li>
-                    <li>Resize handles for elements</li>
-                    <li>Rotate functionality</li>
-                    <li>And more...</li>
-                </ul>
-                Version 5.8<br>
-                Thank you for using VectorCutter!<br>
-                Old Lane 17<br><br>
-                Thank you Martina :&#41;
-
-            </p>
-            <div class="modal-buttons">
-                <button onclick="closeAboutModal()">Close</button>
-            </div>
-        </div>
-    </div>
-
-    
-
-    <!-- Calibrate Screen Modal -->
-    <div class="modal" id="calibrateModal">
-        <div class="modal-content" style="width: 480px; max-width: 95%;">
-            <h2>Calibrate Screen for 1:1 Real Size</h2>
-            <p style="font-size: 13px; color: #bbb; margin: 10px 0 15px; line-height: 1.4;">
-                Hold a standard credit card (or ID card, exactly 85.6 mm × 53.98 mm) up to your screen. Adjust the slider until the blue rectangle matches the card.
-            </p>
-            <div style="display: flex; justify-content: center; align-items: center; margin: 15px 0; background: #181818; padding: 20px; border-radius: 6px; overflow: hidden;">
-                <div id="calibrateCard" style="width: 323px; height: 204px; background: rgba(0, 122, 204, 0.25); border: 2px dashed #007acc; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #9cdcfe; font-size: 13px; font-weight: 500; text-align: center; box-sizing: border-box;">
-                    Standard Credit Card<br><span style="font-size: 11px; opacity: 0.8;">85.6 mm × 53.98 mm</span>
-                </div>
-            </div>
-            <div class="property-group" style="margin-bottom: 15px;">
-                <div style="display: flex; justify-content: space-between; margin-bottom: 6px; color: #ccc; font-size: 12px;">
-                    <span>Card Width: <strong id="calibrateWidthVal">323</strong> px</span>
-                    <span id="calibrateDpiVal" style="color: #9cdcfe; font-weight: bold;">96 DPI</span>
-                </div>
-                <input type="range" id="calibrateSlider" min="200" max="600" value="323" style="width: 100%;">
-            </div>
-            <div class="modal-buttons">
-                <button id="calibrateResetBtn" style="background: #3e3e42; color: #ccc;">Reset 96 DPI</button>
-                <button id="calibrateCancelBtn">Cancel</button>
-                <button id="calibrateSaveBtn" style="background: #007acc; color: white;">Save & Apply 1:1</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- SVG Editor Modular Scripts -->
-    <script src="editor/js/editor-core.js"></script>
-    <script src="editor/js/editor-canvas.js"></script>
-    <script src="editor/js/editor-tools.js"></script>
-    <script src="editor/js/editor-selection.js"></script>
-    <script src="editor/js/editor-transform.js"></script>
-    <script src="editor/js/editor-properties.js"></script>
-    <script src="editor/js/editor-elements-tree.js"></script>
-    <script src="editor/js/editor-laser-mode.js"></script>
-    <script src="editor/js/editor-export.js"></script>
-    <script src="editor/js/editor-templates.js"></script>
-    <script src="editor/js/editor-quickbar.js"></script>
-    <script src="editor/js/editor-sidebar-resize.js"></script>
-    <script src="editor/js/editor-fonts.js"></script>
-    <script src="editor/js/editor-boolean.js"></script>
-    <script src="editor/js/editor-shapes-library.js"></script>
-    <script src="editor/js/editor-patterns.js"></script>
-    <script src="editor/js/editor-production.js"></script>
-    <script src="editor/js/editor-components.js"></script>
-    <script src="editor/js/editor-text-tools.js"></script>
-    <script src="editor/js/editor-trace.js"></script>
-    <script src="editor/js/editor-qol.js"></script>
-    <script src="editor/js/editor-dxf.js"></script>
-    <script src="editor/js/editor-code.js"></script>
-    <script src="editor/js/editor-init.js"></script>
-    <div id="global-tooltip"></div>
+    <!-- Application ES Module Bootloader -->
+    <script type="module" src="editor/js/main.js"></script>
 </body>
 </html>
