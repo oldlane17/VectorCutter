@@ -1,12 +1,13 @@
 /**
  * VectorCutter - Native SVG Importer
  * Recursively parses SVG markup into native model elements.
+ * Restores smart generator params and 3D settings (§3, §4, §7.9).
  */
 
 import { createElement } from '../model/elements.js';
 import { translationMatrix } from '../model/matrix.js';
 import { AddElementCommand } from '../core/commands.js';
-import { toMm } from '../model/units.js';
+import { requestRender } from '../core/scheduler.js';
 
 export function importSVGString(svgText, store, mode = 'append') {
     try {
@@ -41,10 +42,10 @@ export function importSVGString(svgText, store, mode = 'append') {
             store.setSelection(newElements.map(el => el.id));
         }
 
+        requestRender();
         return { count: newElements.length };
     } catch (e) {
         console.error('[SVG Import] Failed to parse SVG:', e);
-        alert('Could not import SVG file: ' + e.message);
         return { count: 0, error: e.message };
     }
 }
@@ -113,7 +114,7 @@ function walkNode(node, list, currentTransform) {
             });
             break;
         case 'polyline':
-        case 'polygon':
+        case 'polygon': {
             const pts = (node.getAttribute('points') || '').trim().split(/[\s,]+/);
             if (pts.length >= 2) {
                 let d = `M ${pts[0]} ${pts[1]}`;
@@ -126,6 +127,7 @@ function walkNode(node, list, currentTransform) {
                 el = createElement('path', { d, style, laser, transform: currentTransform });
             }
             break;
+        }
         case 'path':
             el = createElement('path', {
                 d: node.getAttribute('d') || 'M 0 0',
@@ -148,5 +150,29 @@ function walkNode(node, list, currentTransform) {
             break;
     }
 
-    if (el) list.push(el);
+    if (el) {
+        if (node.id) el.id = node.id;
+        const nameAttr = node.getAttribute('data-vc-name');
+        if (nameAttr) {
+            try { el.name = decodeURIComponent(nameAttr); } catch (e) {}
+        }
+
+        const paramsAttr = node.getAttribute('data-vc-params');
+        if (paramsAttr) {
+            try {
+                el.params = JSON.parse(decodeURIComponent(paramsAttr));
+                if (el.params.points) el.type = 'star';
+                else if (el.params.sides) el.type = 'polygon';
+            } catch (e) {}
+        }
+
+        const threeDAttr = node.getAttribute('data-vc-3d');
+        if (threeDAttr) {
+            try {
+                el.threeD = JSON.parse(decodeURIComponent(threeDAttr));
+            } catch (e) {}
+        }
+
+        list.push(el);
+    }
 }

@@ -1,5 +1,6 @@
 /**
  * VectorCutter - App Layout & Structure
+ * Standardized 3-Column Grid Properties & Clean Component Layout
  */
 
 * {
@@ -23,6 +24,22 @@ input, textarea, select, [contenteditable] {
     user-select: text;
     -webkit-user-select: text;
     font-family: inherit;
+}
+
+/* Icon Uniformity - Pure White §5 */
+.icon, .icon *, .vc-tool-btn img, .vc-tool-btn svg, .vc-quickbar-btn svg, .vc-quickbar-btn img {
+    color: var(--icon-color);
+}
+.vc-icon {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    display: inline-block;
+    vertical-align: middle;
 }
 
 .vc-app {
@@ -71,7 +88,7 @@ input, textarea, select, [contenteditable] {
     position: absolute;
     top: 100%;
     left: 0;
-    min-width: 200px;
+    min-width: 220px;
     max-height: calc(100vh - 50px);
     overflow-y: auto;
     background: var(--vc-bg-surface-2);
@@ -98,22 +115,7 @@ input, textarea, select, [contenteditable] {
 
 .vc-dropdown-item:hover {
     background: var(--vc-accent-blue);
-    color: var(--vc-accent-contrast);
-}
-
-.vc-dropdown-item.disabled {
-    color: var(--vc-text-disabled);
-    pointer-events: none;
-}
-
-.vc-shortcut {
-    font-size: 11px;
-    color: var(--vc-text-muted);
-    margin-left: 16px;
-}
-
-.vc-dropdown-item:hover .vc-shortcut {
-    color: rgba(255, 255, 255, 0.8);
+    color: #fff;
 }
 
 .vc-separator {
@@ -122,60 +124,54 @@ input, textarea, select, [contenteditable] {
     margin: 4px 0;
 }
 
-/* Header Right: Project Title & Controls */
-.vc-header-right {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+.vc-shortcut {
+    color: var(--vc-text-muted);
+    font-size: 11px;
+    margin-left: 12px;
 }
 
+.vc-dropdown-item:hover .vc-shortcut {
+    color: #e0e0e0;
+}
+
+/* Project Title */
 .vc-project-title {
     background: transparent;
     border: 1px solid transparent;
     border-radius: var(--vc-radius-sm);
     color: var(--vc-text-primary);
-    font-size: 12px;
-    font-weight: 600;
-    padding: 3px 8px;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 4px 8px;
     text-align: center;
-    max-width: 200px;
+    width: 240px;
+    transition: all 0.15s;
 }
 
 .vc-project-title:hover {
     border-color: var(--vc-border-default);
+    background: var(--vc-bg-surface-2);
 }
 
 .vc-project-title:focus {
-    background: var(--vc-bg-surface-2);
-    border-color: var(--vc-border-focus);
     outline: none;
-}
-
-/* Top Toolbar Bar */
-.vc-toolbar {
-    height: var(--vc-toolbar-h);
+    border-color: var(--vc-border-focus);
     background: var(--vc-bg-surface-2);
-    border-bottom: 1px solid var(--vc-border-subtle);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 10px;
-    gap: 8px;
-    z-index: 90;
 }
 
-.vc-toolbar-group {
+/* Header Right Area */
+.vc-header-right {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 10px;
 }
 
 .vc-btn {
-    background: transparent;
-    border: 1px solid transparent;
-    color: var(--vc-text-secondary);
-    padding: 4px 8px;
+    background: var(--vc-bg-surface-2);
+    border: 1px solid var(--vc-border-default);
+    color: var(--vc-text-primary);
     border-radius: var(--vc-radius-sm);
+    padding: 4px 8px;
     font-size: 12px;
     display: flex;
     align-items: center;
@@ -185,20 +181,8 @@ input, textarea, select, [contenteditable] {
 }
 
 .vc-btn:hover {
-    background: var(--vc-bg-surface-3);
-    color: var(--vc-text-primary);
-}
-
-.vc-btn.active {
-    background: var(--vc-bg-surface-active);
-    border-color: var(--vc-accent-blue);
-    color: var(--vc-accent-contrast);
-}
-
-.vc-btn img, .vc-btn svg {
-    width: 15px;
-    height: 15px;
-    flex-shrink: 0;
+    background: var(--vc-bg-surface-hover);
+    border-color: var(--vc-border-focus);
 }
 
 /* Laser Mode Switch */
@@ -441,6 +425,10 @@ input, textarea, select, [contenteditable] {
     z-index: 10;
 }
 
+#overlaySvg * {
+    pointer-events: auto;
+}
+
 /* Floating Quickbar */
 .vc-quickbar {
     position: absolute;
@@ -489,55 +477,418 @@ input, textarea, select, [contenteditable] {
     margin: 0 4px;
 }
 
-/* --- Right Context Panel --- */
+/* Tool Options Bar (under quickbar) */
+.vc-tool-options-bar {
+    position: absolute;
+    top: 52px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--vc-bg-surface-2);
+    border: 1px solid var(--vc-border-default);
+    border-radius: 6px;
+    box-shadow: var(--vc-shadow-floating);
+    display: flex;
+    align-items: center;
+    padding: 4px 10px;
+    gap: 12px;
+    z-index: 29;
+    font-size: 11px;
+}
+.vc-tool-options-bar label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--vc-text-muted);
+}
+.vc-tool-options-bar input, .vc-tool-options-bar select {
+    background: var(--vc-bg-surface-1);
+    border: 1px solid var(--vc-border-default);
+    border-radius: 3px;
+    color: var(--vc-text-primary);
+    padding: 2px 4px;
+    font-size: 11px;
+    width: 55px;
+}
+
+/* --- Right Context Panel §6 --- */
 .vc-context-panel {
     width: var(--vc-context-w);
-    min-width: 200px;
+    min-width: 340px;
     max-width: 45vw;
     background: var(--vc-bg-surface-1);
     border-left: 1px solid var(--vc-border-subtle);
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
     z-index: 50;
-    padding: 10px;
+    padding: 0;
 }
 
-.vc-panel-section {
-    margin-bottom: 14px;
+/* Tab Header Strip */
+.vc-panel-tabs {
+    display: flex;
     border-bottom: 1px solid var(--vc-border-subtle);
-    padding-bottom: 10px;
+    background: var(--vc-bg-surface-1);
+    flex-shrink: 0;
+}
+.vc-tab-btn {
+    flex: 1;
+    padding: 8px 4px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    color: var(--vc-text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    text-align: center;
+    transition: all 0.15s;
+}
+.vc-tab-btn:hover {
+    color: var(--vc-text-primary);
+}
+.vc-tab-btn.active {
+    border-bottom-color: var(--vc-accent-blue);
+    color: var(--vc-text-primary);
+}
+
+/* Section Header */
+.vc-panel-section {
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--vc-border-subtle);
 }
 
 .vc-panel-title {
     font-size: 11px;
     font-weight: 700;
     color: var(--vc-text-muted);
-    letter-spacing: 0.5px;
-    margin-bottom: 8px;
-}
-
-.vc-form-row {
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin: 12px 12px 6px 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 6px;
-    gap: 8px;
-    font-size: 12px;
 }
 
-.vc-form-row input, .vc-form-row select {
+/* 3-Column Strict Properties Grid (§6) */
+.prop-row {
+    display: grid;
+    grid-template-columns: 84px minmax(0, 1fr) 32px;
+    align-items: center;
+    column-gap: 8px;
+    min-height: 32px;
+    padding: 2px 12px;
+}
+
+.prop-row > label {
+    color: var(--vc-text-muted);
+    text-align: left;
+    white-space: nowrap;
+    font-size: 11px;
+}
+
+.prop-row > .control {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+}
+
+.prop-row > .unit {
+    text-align: left;
+    color: var(--vc-text-muted);
+    font-size: 11px;
+}
+
+.prop-row input[type=number],
+.prop-row input[type=text],
+.prop-row select {
+    width: 100%;
+    box-sizing: border-box;
+    height: 28px;
+    text-align: right;
+    padding: 0 8px;
     background: var(--vc-bg-surface-2);
     border: 1px solid var(--vc-border-default);
     border-radius: var(--vc-radius-sm);
     color: var(--vc-text-primary);
-    padding: 4px 6px;
-    font-size: 11px;
+    font-size: 12px;
+    outline: none;
+}
+.prop-row input[type=number] {
+    -moz-appearance: textfield;
+}
+.prop-row input[type=number]::-webkit-inner-spin-button,
+.prop-row input[type=number]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.prop-row select {
+    text-align: left;
+    padding-right: 20px;
 }
 
-.vc-form-row input[type="number"] {
-    width: 70px;
-    text-align: right;
+.prop-row input:focus, .prop-row select:focus {
+    border-color: var(--vc-border-focus);
+}
+
+/* Color Swatch & Slider controls */
+.vc-color-swatch-wrap {
+    width: 100%;
+    height: 28px;
+    position: relative;
+    border-radius: var(--vc-radius-sm);
+    border: 1px solid var(--vc-border-default);
+    overflow: hidden;
+    cursor: pointer;
+}
+.vc-color-swatch-wrap input[type=color] {
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    width: 200%;
+    height: 200%;
+    cursor: pointer;
+    opacity: 0;
+}
+.vc-color-preview {
+    width: 100%;
+    height: 100%;
+}
+.vc-slider-ctrl {
+    width: 100%;
+    accent-color: var(--vc-accent-blue);
+    cursor: pointer;
+}
+
+/* --- Objects List Tree Section (§2) --- */
+.vc-objects-section {
+    max-height: 190px;
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid var(--vc-border-subtle);
+}
+.vc-objects-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    background: var(--vc-bg-surface-2);
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--vc-text-muted);
+}
+.vc-objects-list {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 155px;
+    background: var(--vc-bg-surface-1);
+}
+.vc-object-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+}
+.vc-object-row:hover {
+    background: var(--vc-bg-surface-hover);
+}
+.vc-object-row.selected {
+    background: var(--vc-bg-surface-active);
+    border-left-color: var(--vc-accent-blue);
+    color: #fff;
+}
+.vc-object-row .vc-obj-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: #ffffff;
+}
+.vc-object-row .vc-obj-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.vc-object-row .vc-obj-name input {
+    background: var(--vc-bg-surface-2);
+    border: 1px solid var(--vc-border-focus);
+    color: #fff;
+    font-size: 11px;
+    padding: 1px 4px;
+    width: 100%;
+}
+.vc-object-row .vc-obj-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.7;
+}
+.vc-object-row:hover .vc-obj-actions, .vc-object-row.selected .vc-obj-actions {
+    opacity: 1;
+}
+.vc-obj-action-btn {
+    background: none;
+    border: none;
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 2px;
+}
+
+/* Drag Ghost Indicator */
+.vc-object-row.drag-over {
+    border-top: 2px solid var(--vc-accent-blue);
+}
+
+/* --- SVG Code Editor Panel (§3) --- */
+.vc-code-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    padding: 8px 12px;
+    gap: 8px;
+}
+.vc-code-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.vc-code-textarea {
+    flex: 1;
+    min-height: 280px;
+    background: var(--vc-bg-surface-2);
+    border: 1px solid var(--vc-border-default);
+    border-radius: var(--vc-radius-sm);
+    color: #f8f8f2;
+    font-family: Consolas, Monaco, "Courier New", monospace;
+    font-size: 11px;
+    line-height: 1.4;
+    padding: 8px;
+    resize: vertical;
+    white-space: pre;
+    tab-size: 2;
+}
+.vc-code-textarea:focus {
+    outline: none;
+    border-color: var(--vc-border-focus);
+}
+.vc-code-status {
+    font-size: 11px;
+    padding: 4px 6px;
+    border-radius: 3px;
+}
+.vc-code-status.valid {
+    color: var(--vc-success);
+}
+.vc-code-status.invalid {
+    color: var(--vc-danger);
+    background: rgba(229, 20, 0, 0.1);
+}
+
+/* --- 3D Preparation Panel (§7) --- */
+.vc-3d-panel {
+    display: flex;
+    flex-direction: column;
+    padding: 0 0 20px 0;
+}
+.vc-3d-viewport-wrap {
+    width: 100%;
+    height: 260px;
+    position: relative;
+    background: #141416;
+    border-bottom: 1px solid var(--vc-border-subtle);
+}
+.vc-3d-viewport-wrap canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+}
+.vc-3d-view-controls {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    display: flex;
+    gap: 4px;
+    z-index: 5;
+}
+.vc-3d-view-controls button {
+    background: rgba(30, 30, 32, 0.85);
+    border: 1px solid var(--vc-border-default);
+    color: #fff;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+.vc-3d-view-controls button:hover {
+    background: var(--vc-accent-blue);
+}
+.vc-3d-mode-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding: 10px 12px;
+}
+.vc-3d-mode-card {
+    background: var(--vc-bg-surface-2);
+    border: 1px solid var(--vc-border-default);
+    border-radius: var(--vc-radius-sm);
+    padding: 8px 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    color: var(--vc-text-primary);
+    transition: all 0.15s;
+}
+.vc-3d-mode-card:hover {
+    background: var(--vc-bg-surface-hover);
+    border-color: var(--vc-accent-blue);
+}
+.vc-3d-mode-card.active {
+    background: var(--vc-bg-surface-active);
+    border-color: var(--vc-accent-blue);
+    color: #fff;
+}
+.vc-3d-mode-card .vc-3d-mode-icon {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    color: #ffffff;
+}
+.vc-3d-info-block {
+    background: var(--vc-bg-surface-2);
+    border: 1px solid var(--vc-border-subtle);
+    border-radius: var(--vc-radius-sm);
+    margin: 8px 12px;
+    padding: 8px 10px;
+    font-size: 11px;
+    color: var(--vc-text-secondary);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    row-gap: 4px;
+}
+.vc-3d-export-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px 12px;
 }
 
 /* --- Bottom Status Bar --- */

@@ -1,11 +1,12 @@
 /**
  * VectorCutter - Pure SVG Exporter
  * Exports clean, laser-ready SVG files in physical millimetres (mm).
- * Zero UI overlays, zero editor-only attributes.
+ * Preserves generator params and 3D settings via data-vc-* attributes (§3 & §7.9).
  */
 
 import { matrixToSVGTransform } from '../model/matrix.js';
 import { getElementLocalBounds } from '../model/bounds.js';
+import { generateStarVertices, generatePolygonVertices } from '../model/generators.js';
 
 export function exportSVGString(store, options = {}) {
     const doc = store.doc;
@@ -40,8 +41,11 @@ export function exportSVGString(store, options = {}) {
     elements.forEach(el => {
         const tStr = matrixToSVGTransform(el.transform);
         const transformAttr = tStr ? ` transform="${tStr}"` : '';
+        const idAttr = ` id="${el.id}"`;
+        const nameAttr = el.name ? ` data-vc-name="${encodeURIComponent(el.name)}"` : '';
+        const paramsAttr = el.params ? ` data-vc-params="${encodeURIComponent(JSON.stringify(el.params))}"` : '';
+        const threeDAttr = el.threeD ? ` data-vc-3d="${encodeURIComponent(JSON.stringify(el.threeD))}"` : '';
 
-        // Colors tailored to laser operations if laser mode is active
         let fill = el.style?.fill || 'none';
         let stroke = el.style?.stroke || '#000000';
         let strokeW = el.style?.strokeWidth || 0.5;
@@ -59,24 +63,38 @@ export function exportSVGString(store, options = {}) {
         }
 
         const g = el.geometry || {};
+        const meta = `${idAttr}${nameAttr}${paramsAttr}${threeDAttr}${transformAttr}`;
+
         switch (el.type) {
             case 'rect':
-                svg += `  <rect x="${g.x || 0}" y="${g.y || 0}" width="${g.width || 0}" height="${g.height || 0}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"${transformAttr}/>\n`;
+                svg += `  <rect x="${g.x || 0}" y="${g.y || 0}" width="${g.width || 0}" height="${g.height || 0}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"${meta}/>\n`;
                 break;
             case 'circle':
-                svg += `  <circle cx="${g.cx || 0}" cy="${g.cy || 0}" r="${g.r || 0}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"${transformAttr}/>\n`;
+                svg += `  <circle cx="${g.cx || 0}" cy="${g.cy || 0}" r="${g.r || 0}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"${meta}/>\n`;
                 break;
             case 'ellipse':
-                svg += `  <ellipse cx="${g.cx || 0}" cy="${g.cy || 0}" rx="${g.rx || 0}" ry="${g.ry || 0}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"${transformAttr}/>\n`;
+                svg += `  <ellipse cx="${g.cx || 0}" cy="${g.cy || 0}" rx="${g.rx || 0}" ry="${g.ry || 0}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"${meta}/>\n`;
                 break;
+            case 'polygon': {
+                const verts = el.params ? generatePolygonVertices(el.params) : [];
+                const ptsStr = verts.length > 0 ? verts.map(v => `${v.x.toFixed(2)},${v.y.toFixed(2)}`).join(' ') : (g.points || '');
+                svg += `  <polygon points="${ptsStr}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"${meta}/>\n`;
+                break;
+            }
+            case 'star': {
+                const verts = el.params ? generateStarVertices(el.params) : [];
+                const ptsStr = verts.length > 0 ? verts.map(v => `${v.x.toFixed(2)},${v.y.toFixed(2)}`).join(' ') : (g.points || '');
+                svg += `  <polygon points="${ptsStr}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"${meta}/>\n`;
+                break;
+            }
             case 'line':
-                svg += `  <line x1="${g.x1 || 0}" y1="${g.y1 || 0}" x2="${g.x2 || 0}" y2="${g.y2 || 0}" stroke="${stroke}" stroke-width="${strokeW}"${transformAttr}/>\n`;
+                svg += `  <line x1="${g.x1 || 0}" y1="${g.y1 || 0}" x2="${g.x2 || 0}" y2="${g.y2 || 0}" stroke="${stroke}" stroke-width="${strokeW}"${meta}/>\n`;
                 break;
             case 'path':
-                svg += `  <path d="${g.d || 'M 0 0'}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"${transformAttr}/>\n`;
+                svg += `  <path d="${g.d || 'M 0 0'}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"${meta}/>\n`;
                 break;
             case 'text':
-                svg += `  <text x="${g.x || 0}" y="${g.y || 0}" font-size="${g.fontSize || 14}" font-family="${g.fontFamily || 'Arial'}" fill="${fill}" stroke="${stroke}"${transformAttr}>${g.text || ''}</text>\n`;
+                svg += `  <text x="${g.x || 0}" y="${g.y || 0}" font-size="${g.fontSize || 14}" font-family="${g.fontFamily || 'Arial'}" fill="${fill}" stroke="${stroke}"${meta}>${g.text || ''}</text>\n`;
                 break;
         }
     });
@@ -98,6 +116,4 @@ export function downloadSVG(store, filename = 'vectorcutter.svg') {
     URL.revokeObjectURL(url);
 }
 
-export function generatePureSVG(store, options = {}) {
-    return exportSVGString(store, options);
-}
+export const generatePureSVG = exportSVGString;

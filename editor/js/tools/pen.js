@@ -1,11 +1,11 @@
 /**
- * VectorCutter - Pen & Freehand Path Tool
+ * VectorCutter - Pen / Path Tool
  */
 
 import { createElement } from '../model/elements.js';
 import { AddElementCommand } from '../core/commands.js';
 import { translationMatrix } from '../model/matrix.js';
-import { events } from '../core/events.js';
+import { requestRender } from '../core/scheduler.js';
 
 export class PenTool {
     constructor(camera, store) {
@@ -14,53 +14,66 @@ export class PenTool {
         this.isDrawing = false;
         this.points = [];
         this.previewEl = null;
-        this.origin = { x: 0, y: 0 };
     }
 
     onPointerDown(pt) {
-        this.isDrawing = true;
-        this.points = [{ x: 0, y: 0 }];
-        this.origin = { x: pt.x, y: pt.y };
+        if (!this.isDrawing) {
+            this.isDrawing = true;
+            this.points = [{ x: 0, y: 0 }];
+            this.previewEl = createElement('path', {
+                d: 'M 0 0',
+                style: { fill: 'none', stroke: '#007acc', strokeWidth: 0.5 },
+                transform: translationMatrix(pt.x, pt.y)
+            });
+            this.origin = { x: pt.x, y: pt.y };
+            this.store.doc.elements[this.previewEl.id] = this.previewEl;
+            this.store.doc.order.push(this.previewEl.id);
+            this.store.setSelection([this.previewEl.id]);
+            requestRender();
+        } else {
+            // Add new vertex point
+            const localX = pt.x - this.origin.x;
+            const localY = pt.y - this.origin.y;
 
-        this.previewEl = createElement('path', {
-            d: 'M 0 0',
-            style: { fill: 'none', stroke: '#007acc', strokeWidth: 0.5 },
-            transform: translationMatrix(pt.x, pt.y)
-        });
+            // Close path if clicking near start
+            if (this.points.length > 2 && Math.hypot(localX, localY) < 5) {
+                this.finishPath(true);
+                return;
+            }
 
-        this.store.doc.elements[this.previewEl.id] = this.previewEl;
-        this.store.doc.order.push(this.previewEl.id);
-        this.store.setSelection([this.previewEl.id]);
-        events.emit('document:changed', { action: 'draw-start' });
+            this.points.push({ x: localX, y: localY });
+            this.updatePreview();
+            requestRender();
+        }
     }
 
     onPointerMove(pt) {
         if (!this.isDrawing || !this.previewEl) return;
-        const relX = pt.x - this.origin.x;
-        const relY = pt.y - this.origin.y;
-        this.points.push({ x: relX, y: relY });
+        const localX = pt.x - this.origin.x;
+        const localY = pt.y - this.origin.y;
 
-        // Build path data
-        let d = `M ${this.points[0].x.toFixed(2)} ${this.points[0].y.toFixed(2)}`;
+        let d = 'M 0 0';
         for (let i = 1; i < this.points.length; i++) {
             d += ` L ${this.points[i].x.toFixed(2)} ${this.points[i].y.toFixed(2)}`;
         }
+        d += ` L ${localX.toFixed(2)} ${localY.toFixed(2)}`;
         this.previewEl.geometry.d = d;
-
-        events.emit('document:changed', { action: 'draw-move' });
-        events.emit('selection:changed', { selection: [this.previewEl.id] });
+        requestRender();
     }
 
-    onPointerUp() {
+    onPointerUp() {}
+
+    finishPath(close = false) {
         if (!this.isDrawing || !this.previewEl) return;
         this.isDrawing = false;
 
-        if (this.points.length <= 2) {
-            // Default 50mm smooth wavy curve
-            this.previewEl.geometry.d = 'M 0 0 Q 25 -20 50 0';
+        let d = 'M 0 0';
+        for (let i = 1; i < this.points.length; i++) {
+            d += ` L ${this.points[i].x.toFixed(2)} ${this.points[i].y.toFixed(2)}`;
         }
+        if (close) d += ' Z';
 
-        const finalEl = { ...this.previewEl };
+        const finalEl = { ...this.previewEl, geometry: { d } };
         delete this.store.doc.elements[this.previewEl.id];
         const idx = this.store.doc.order.indexOf(this.previewEl.id);
         if (idx !== -1) this.store.doc.order.splice(idx, 1);
@@ -69,5 +82,15 @@ export class PenTool {
         this.store.setSelection([finalEl.id]);
         this.previewEl = null;
         this.points = [];
+        requestRender();
+    }
+
+    updatePreview() {
+        if (!this.previewEl) return;
+        let d = 'M 0 0';
+        for (let i = 1; i < this.points.length; i++) {
+            d += ` L ${this.points[i].x.toFixed(2)} ${this.points[i].y.toFixed(2)}`;
+        }
+        this.previewEl.geometry.d = d;
     }
 }

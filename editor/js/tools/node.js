@@ -1,11 +1,13 @@
 /**
- * VectorCutter - Curve / Node Edit Tool
+ * VectorCutter - Curve / Node Edit Tool (§4.3)
+ * Creates bezier curves and converts parametric generators to editable paths.
  */
 
 import { createElement } from '../model/elements.js';
-import { AddElementCommand } from '../core/commands.js';
+import { AddElementCommand, DeleteElementsCommand } from '../core/commands.js';
 import { translationMatrix } from '../model/matrix.js';
-import { events } from '../core/events.js';
+import { elementToPathD } from '../ops/boolean.js';
+import { requestRender } from '../core/scheduler.js';
 
 export class NodeTool {
     constructor(camera, store) {
@@ -14,6 +16,21 @@ export class NodeTool {
         this.isDrawing = false;
         this.start = { x: 0, y: 0 };
         this.previewEl = null;
+    }
+
+    activate() {
+        // Breaking the link (§4.3)
+        const selected = this.store.getSelectedElements();
+        selected.forEach(el => {
+            if (el.params) {
+                const pathD = elementToPathD(el);
+                delete el.params;
+                el.type = 'path';
+                el.geometry = { d: pathD };
+                console.log(`[NodeTool] Converted "${el.name || el.id}" from generator to path.`);
+            }
+        });
+        requestRender();
     }
 
     onPointerDown(pt) {
@@ -29,7 +46,7 @@ export class NodeTool {
         this.store.doc.elements[this.previewEl.id] = this.previewEl;
         this.store.doc.order.push(this.previewEl.id);
         this.store.setSelection([this.previewEl.id]);
-        events.emit('document:changed', { action: 'draw-start' });
+        requestRender();
     }
 
     onPointerMove(pt) {
@@ -37,12 +54,10 @@ export class NodeTool {
         const dx = pt.x - this.start.x;
         const dy = pt.y - this.start.y;
         const cx = dx / 2;
-        const cy = dy - 20; // curve arch
+        const cy = dy - 20;
 
         this.previewEl.geometry.d = `M 0 0 Q ${cx.toFixed(2)} ${cy.toFixed(2)} ${dx.toFixed(2)} ${dy.toFixed(2)}`;
-
-        events.emit('document:changed', { action: 'draw-move' });
-        events.emit('selection:changed', { selection: [this.previewEl.id] });
+        requestRender();
     }
 
     onPointerUp() {
@@ -51,7 +66,6 @@ export class NodeTool {
 
         const d = this.previewEl.geometry.d || '';
         if (d.includes('M 0 0 Q 0 0 0 0')) {
-            // Default 60mm arched curve
             this.previewEl.geometry.d = 'M 0 0 Q 30 -25 60 0';
         }
 
@@ -63,5 +77,6 @@ export class NodeTool {
         this.store.dispatch(new AddElementCommand(finalEl));
         this.store.setSelection([finalEl.id]);
         this.previewEl = null;
+        requestRender();
     }
 }

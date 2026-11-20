@@ -1,11 +1,12 @@
 /**
  * VectorCutter - Central Document Store
- * Single source of truth for all components, views and tools.
+ * Single source of truth for all components, views, tools, and 3D pipelines.
  */
 
 import { createInitialDocument } from '../model/document.js';
 import { History } from './history.js';
 import { events } from './events.js';
+import { requestRender } from './scheduler.js';
 
 export class Store {
     constructor(initialDoc = null) {
@@ -15,16 +16,60 @@ export class Store {
         this.batchCommands = [];
     }
 
+    /**
+     * Unified Mutation Gateway (§1.2)
+     * Pushes an undo snapshot, applies mutation, schedules render, emits event.
+     */
+    commit(label, mutatorFn) {
+        // Deep clone current state for undo
+        const beforeElements = JSON.parse(JSON.stringify(this.doc.elements));
+        const beforeOrder = [...this.doc.order];
+        const beforeSelection = [...this.doc.selection];
+
+        mutatorFn(this.doc);
+
+        const afterElements = JSON.parse(JSON.stringify(this.doc.elements));
+        const afterOrder = [...this.doc.order];
+        const afterSelection = [...this.doc.selection];
+
+        const cmd = {
+            name: label,
+            do: (doc) => {
+                doc.elements = JSON.parse(JSON.stringify(afterElements));
+                doc.order = [...afterOrder];
+                doc.selection = [...afterSelection];
+                return { changedIds: Object.keys(afterElements) };
+            },
+            undo: (doc) => {
+                doc.elements = JSON.parse(JSON.stringify(beforeElements));
+                doc.order = [...beforeOrder];
+                doc.selection = [...beforeSelection];
+                return { changedIds: Object.keys(beforeElements) };
+            }
+        };
+
+        if (this.isBatching) {
+            this.batchCommands.push(cmd);
+        } else {
+            this.history.push(cmd);
+        }
+
+        events.emit('document:changed', { action: 'commit', label });
+        requestRender();
+    }
+
     dispatch(command) {
         if (this.isBatching) {
             this.batchCommands.push(command);
             const res = command.do(this.doc);
+            requestRender();
             return res;
         }
 
         const res = command.do(this.doc);
         this.history.push(command);
         events.emit('document:changed', { changedIds: res?.changedIds || [], action: 'dispatch' });
+        requestRender();
         return res;
     }
 
@@ -37,7 +82,6 @@ export class Store {
         this.isBatching = false;
         if (this.batchCommands.length === 0) return;
 
-        // Combine into one history entry
         const batchCmd = {
             name,
             commands: [...this.batchCommands],
@@ -62,6 +106,7 @@ export class Store {
         this.history.push(batchCmd);
         this.batchCommands = [];
         events.emit('document:changed', { action: 'batch-end' });
+        requestRender();
     }
 
     undo() {
@@ -69,6 +114,7 @@ export class Store {
         if (res) {
             events.emit('document:changed', { changedIds: res.changedIds || [], action: 'undo' });
             events.emit('selection:changed', { selection: [...this.doc.selection] });
+            requestRender();
         }
         return res;
     }
@@ -78,6 +124,7 @@ export class Store {
         if (res) {
             events.emit('document:changed', { changedIds: res.changedIds || [], action: 'redo' });
             events.emit('selection:changed', { selection: [...this.doc.selection] });
+            requestRender();
         }
         return res;
     }
@@ -90,6 +137,7 @@ export class Store {
 
         this.doc.selection = newSel;
         events.emit('selection:changed', { selection: [...this.doc.selection] });
+        requestRender();
     }
 
     clearSelection() {
@@ -107,14 +155,16 @@ export class Store {
     }
 
     getAllElements() {
-        return this.doc.order.map(id => this.doc.elements[id]).filter(Boolean);
+        return this.doc.order
+            .map(id => this.doc.elements[id])
+            .filter(Boolean);
     }
 
     replaceDocument(newDoc) {
         this.doc = newDoc;
         this.history.clear();
-        events.emit('document:loaded', { doc: this.doc });
-        events.emit('document:changed', { action: 'load' });
+        events.emit('document:changed', { action: 'replace' });
         events.emit('selection:changed', { selection: [...this.doc.selection] });
+        requestRender();
     }
 }

@@ -5,7 +5,7 @@
 import { createElement } from '../model/elements.js';
 import { AddElementCommand } from '../core/commands.js';
 import { translationMatrix } from '../model/matrix.js';
-import { events } from '../core/events.js';
+import { requestRender } from '../core/scheduler.js';
 
 export class CircleTool {
     constructor(camera, store) {
@@ -28,16 +28,14 @@ export class CircleTool {
         this.store.doc.elements[this.previewEl.id] = this.previewEl;
         this.store.doc.order.push(this.previewEl.id);
         this.store.setSelection([this.previewEl.id]);
-        events.emit('document:changed', { action: 'draw-start' });
+        requestRender();
     }
 
     onPointerMove(pt) {
         if (!this.isDrawing || !this.previewEl) return;
         const radius = Math.hypot(pt.x - this.center.x, pt.y - this.center.y);
         this.previewEl.geometry.r = Math.max(0.5, radius);
-
-        events.emit('document:changed', { action: 'draw-move' });
-        events.emit('selection:changed', { selection: [this.previewEl.id] });
+        requestRender();
     }
 
     onPointerUp() {
@@ -56,5 +54,6 @@ export class CircleTool {
         this.store.dispatch(new AddElementCommand(finalEl));
         this.store.setSelection([finalEl.id]);
         this.previewEl = null;
+        requestRender();
     }
 }

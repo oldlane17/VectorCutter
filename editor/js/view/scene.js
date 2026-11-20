@@ -1,11 +1,11 @@
 /**
  * VectorCutter - Scene Renderer
  * Maps document elements to SVG DOM nodes in world space.
- * Artwork lives inside <g id="world" transform="matrix(...)">.
- * NO selection styles or UI clutter exist inside this tree.
+ * Pure model reader driven by the centralized render scheduler (§1.3).
  */
 
 import { matrixToSVGTransform } from '../model/matrix.js';
+import { generateStarVertices, generatePolygonVertices, verticesToFilletPath } from '../model/generators.js';
 
 export class SceneRenderer {
     constructor(worldGroup, store) {
@@ -33,7 +33,8 @@ export class SceneRenderer {
             if (!el) continue;
 
             let node = this.nodeMap.get(id);
-            if (!node) {
+            if (!node || node.tagName.toLowerCase() !== this.getExpectedTag(el)) {
+                if (node) node.remove();
                 node = this.createSVGNode(el);
                 this.nodeMap.set(id, node);
             } else {
@@ -54,17 +55,21 @@ export class SceneRenderer {
         }
     }
 
+    getExpectedTag(el) {
+        if (el.params && el.params.cornerRadius > 0) return 'path';
+        if (el.type === 'rect') return 'rect';
+        if (el.type === 'circle') return 'circle';
+        if (el.type === 'ellipse') return 'ellipse';
+        if (el.type === 'polygon' || el.type === 'star') return 'polygon';
+        if (el.type === 'line') return 'line';
+        if (el.type === 'text') return 'text';
+        if (el.type === 'group') return 'g';
+        return 'path';
+    }
+
     createSVGNode(el) {
         const ns = "http://www.w3.org/2000/svg";
-        let tag = 'path';
-        if (el.type === 'rect') tag = 'rect';
-        else if (el.type === 'circle') tag = 'circle';
-        else if (el.type === 'ellipse') tag = 'ellipse';
-        else if (el.type === 'polygon' || el.type === 'star') tag = 'polygon';
-        else if (el.type === 'line') tag = 'line';
-        else if (el.type === 'text') tag = 'text';
-        else if (el.type === 'group') tag = 'g';
-
+        const tag = this.getExpectedTag(el);
         const node = document.createElementNS(ns, tag);
         node.dataset.elementId = el.id;
         this.updateSVGNode(node, el);
@@ -72,6 +77,14 @@ export class SceneRenderer {
     }
 
     updateSVGNode(node, el) {
+        // Hidden elements (§2)
+        if (el.visible === false) {
+            node.style.display = 'none';
+            return;
+        } else {
+            node.style.display = '';
+        }
+
         const isLaserMode = !!this.store.doc.settings.laserMode;
 
         if (isLaserMode) {
@@ -118,11 +131,19 @@ export class SceneRenderer {
             node.removeAttribute('transform');
         }
 
-        // Visibility
-        node.style.display = el.visible === false ? 'none' : '';
-
-        // Geometry
+        // Geometry rendering
         const g = el.geometry || {};
+        const p = el.params || null;
+
+        if (p && p.cornerRadius > 0) {
+            let verts = [];
+            if (el.type === 'star') verts = generateStarVertices(p);
+            else if (el.type === 'polygon') verts = generatePolygonVertices(p);
+            const pathD = verticesToFilletPath(verts, p.cornerRadius);
+            node.setAttribute('d', pathD);
+            return;
+        }
+
         switch (el.type) {
             case 'rect':
                 node.setAttribute('x', g.x || 0);
@@ -144,32 +165,42 @@ export class SceneRenderer {
                 node.setAttribute('ry', g.ry || 0);
                 break;
             case 'polygon': {
-                const sides = g.sides || 6;
-                const r = g.radius || 25;
-                const cx = g.cx || 0;
-                const cy = g.cy || 0;
-                const pts = [];
-                for (let i = 0; i < sides; i++) {
-                    const a = (i * 2 * Math.PI) / sides - Math.PI / 2;
-                    pts.push(`${(cx + r * Math.cos(a)).toFixed(2)},${(cy + r * Math.sin(a)).toFixed(2)}`);
+                const verts = p ? generatePolygonVertices(p) : [];
+                if (verts.length > 0) {
+                    node.setAttribute('points', verts.map(v => `${v.x.toFixed(2)},${v.y.toFixed(2)}`).join(' '));
+                } else {
+                    const sides = g.sides || 6;
+                    const r = g.radius || 25;
+                    const cx = g.cx || 0;
+                    const cy = g.cy || 0;
+                    const pts = [];
+                    for (let i = 0; i < sides; i++) {
+                        const a = (i * 2 * Math.PI) / sides - Math.PI / 2;
+                        pts.push(`${(cx + r * Math.cos(a)).toFixed(2)},${(cy + r * Math.sin(a)).toFixed(2)}`);
+                    }
+                    node.setAttribute('points', pts.join(' '));
                 }
-                node.setAttribute('points', pts.join(' '));
                 break;
             }
             case 'star': {
-                const points = g.points || 5;
-                const outerR = g.outerRadius || 25;
-                const innerR = g.innerRadius || 12.5;
-                const cx = g.cx || 0;
-                const cy = g.cy || 0;
-                const pts = [];
-                const total = points * 2;
-                for (let i = 0; i < total; i++) {
-                    const r = (i % 2 === 0) ? outerR : innerR;
-                    const a = (i * Math.PI) / points - Math.PI / 2;
-                    pts.push(`${(cx + r * Math.cos(a)).toFixed(2)},${(cy + r * Math.sin(a)).toFixed(2)}`);
+                const verts = p ? generateStarVertices(p) : [];
+                if (verts.length > 0) {
+                    node.setAttribute('points', verts.map(v => `${v.x.toFixed(2)},${v.y.toFixed(2)}`).join(' '));
+                } else {
+                    const points = g.points || 5;
+                    const outerR = g.outerRadius || 25;
+                    const innerR = g.innerRadius || 12.5;
+                    const cx = g.cx || 0;
+                    const cy = g.cy || 0;
+                    const pts = [];
+                    const total = points * 2;
+                    for (let i = 0; i < total; i++) {
+                        const r = (i % 2 === 0) ? outerR : innerR;
+                        const a = (i * Math.PI) / points - Math.PI / 2;
+                        pts.push(`${(cx + r * Math.cos(a)).toFixed(2)},${(cy + r * Math.sin(a)).toFixed(2)}`);
+                    }
+                    node.setAttribute('points', pts.join(' '));
                 }
-                node.setAttribute('points', pts.join(' '));
                 break;
             }
             case 'line':
@@ -178,21 +209,19 @@ export class SceneRenderer {
                 node.setAttribute('x2', g.x2 || 0);
                 node.setAttribute('y2', g.y2 || 0);
                 break;
-            case 'path':
-                node.setAttribute('d', g.d || 'M 0 0');
-                break;
             case 'text':
                 node.setAttribute('x', g.x || 0);
                 node.setAttribute('y', g.y || 0);
-                node.setAttribute('font-size', g.fontSize || 14);
-                node.setAttribute('font-family', g.fontFamily || 'Arial');
+                node.setAttribute('font-size', g.fontSize || 16);
+                node.setAttribute('font-family', g.fontFamily || 'sans-serif');
+                node.setAttribute('font-weight', g.fontWeight || 'normal');
                 node.textContent = g.text || '';
                 break;
-        }
-
-        // Laser mode tagging
-        if (el.laser?.op) {
-            node.setAttribute('data-laser-op', el.laser.op);
+            case 'path':
+                node.setAttribute('d', g.d || '');
+                break;
+            default:
+                break;
         }
     }
 }

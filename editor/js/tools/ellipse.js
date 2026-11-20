@@ -5,7 +5,7 @@
 import { createElement } from '../model/elements.js';
 import { AddElementCommand } from '../core/commands.js';
 import { translationMatrix } from '../model/matrix.js';
-import { events } from '../core/events.js';
+import { requestRender } from '../core/scheduler.js';
 
 export class EllipseTool {
     constructor(camera, store) {
@@ -29,7 +29,7 @@ export class EllipseTool {
         this.store.doc.elements[this.previewEl.id] = this.previewEl;
         this.store.doc.order.push(this.previewEl.id);
         this.store.setSelection([this.previewEl.id]);
-        events.emit('document:changed', { action: 'draw-start' });
+        requestRender();
     }
 
     onPointerMove(pt, e) {
@@ -45,9 +45,7 @@ export class EllipseTool {
 
         this.previewEl.geometry.rx = Math.max(0.5, rx);
         this.previewEl.geometry.ry = Math.max(0.5, ry);
-
-        events.emit('document:changed', { action: 'draw-move' });
-        events.emit('selection:changed', { selection: [this.previewEl.id] });
+        requestRender();
     }
 
     onPointerUp() {
@@ -55,7 +53,7 @@ export class EllipseTool {
         this.isDrawing = false;
 
         if (this.previewEl.geometry.rx < 3 && this.previewEl.geometry.ry < 3) {
-            this.previewEl.geometry.rx = 35; // 70x40mm default
+            this.previewEl.geometry.rx = 35;
             this.previewEl.geometry.ry = 20;
         }
 
@@ -67,5 +65,6 @@ export class EllipseTool {
         this.store.dispatch(new AddElementCommand(finalEl));
         this.store.setSelection([finalEl.id]);
         this.previewEl = null;
+        requestRender();
     }
 }

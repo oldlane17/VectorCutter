@@ -1,32 +1,35 @@
 /**
- * VectorCutter - Main ES Module Entry Point
+ * VectorCutter - Main ES Module Entry Point (Revision 2)
+ * Central coordinator integrating 2D design, live 60 FPS rendering, objects tree,
+ * direct SVG code editor, and the "Prepare for 3D" workflow.
  */
 
-import { storage } from './core/storage.js?v=2.3.0';
-import { Store } from './core/store.js?v=2.3.0';
-import { Camera } from './view/camera.js?v=2.3.0';
-import { GridRenderer } from './view/grid.js?v=2.3.0';
-import { InputController } from './view/input.js?v=2.3.0';
-import { SceneRenderer } from './view/scene.js?v=2.3.0';
-import { OverlayRenderer } from './view/overlay.js?v=2.3.0';
-import { ToolManager } from './tools/tool-manager.js?v=2.3.0';
-import { ThemeController } from './ui/theme.js?v=2.3.0';
-import { SidebarController } from './ui/sidebar.js?v=2.3.0';
-import { QuickbarController } from './ui/quickbar.js?v=2.3.0';
-import { PropertiesController } from './ui/properties.js?v=2.3.0';
-import { MenubarController } from './ui/menubar.js?v=2.3.0';
-import { ModalsController } from './ui/modals.js?v=2.3.0';
-import { events } from './core/events.js?v=2.3.0';
-import { importSVGString } from './io/svg-import.js?v=2.3.0';
+import { storage } from './core/storage.js?v=2.4.0';
+import { Store } from './core/store.js?v=2.4.0';
+import { Camera } from './view/camera.js?v=2.4.0';
+import { GridRenderer } from './view/grid.js?v=2.4.0';
+import { InputController } from './view/input.js?v=2.4.0';
+import { SceneRenderer } from './view/scene.js?v=2.4.0';
+import { OverlayRenderer } from './view/overlay.js?v=2.4.0';
+import { ToolManager } from './tools/tool-manager.js?v=2.4.0';
+import { ThemeController } from './ui/theme.js?v=2.4.0';
+import { SidebarController } from './ui/sidebar.js?v=2.4.0';
+import { QuickbarController } from './ui/quickbar.js?v=2.4.0';
+import { PropertiesController } from './ui/properties.js?v=2.4.0';
+import { MenubarController } from './ui/menubar.js?v=2.4.0';
+import { ModalsController } from './ui/modals.js?v=2.4.0';
+import { events } from './core/events.js?v=2.4.0';
+import { importSVGString } from './io/svg-import.js?v=2.4.0';
+import { registerRenderHook, requestRender, renderAll } from './core/scheduler.js?v=2.4.0';
 
 class VectorCutterApp {
     constructor() {
-        console.log('[VectorCutter] Initializing ES Module Architecture...');
+        console.log('[VectorCutter] Booting Modular Architecture Revision 2...');
 
-        // 1. Core Model & Store
+        // 1. Single Source of Truth Store (§1.1)
         this.store = new Store();
 
-        // 2. View Elements
+        // 2. View DOM Elements
         this.container = document.getElementById('canvasContainer');
         this.gridCanvas = document.getElementById('gridCanvas');
         this.artworkSvg = document.getElementById('artworkSvg');
@@ -64,15 +67,46 @@ class VectorCutterApp {
         // 6. Laser Mode Toggle
         this.setupLaserModeToggle();
 
-        // 7. Lifecycle & Rendering Loop
+        // 7. Render Scheduler Hook Registrations (§1.3)
+        this.setupRenderHooks();
+
+        // 8. Viewport Resizing & Subscriptions
         this.setupResize();
         this.setupSubscriptions();
         this.checkUrlProject();
-        this.startRenderLoop();
 
-        // Debug handle for browser console
+        // Initial render tick (§1.6)
+        requestRender();
+
+        // Expose debug handle
         window.vc = this;
         console.log('[VectorCutter] Ready! Window handle available at window.vc');
+    }
+
+    setupRenderHooks() {
+        registerRenderHook('canvas', () => {
+            const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+            this.worldGroup.setAttribute('transform', this.camera.matrix());
+            this.grid.render(this.camera, isDark);
+            this.scene.render();
+            this.overlay.render();
+        });
+
+        registerRenderHook('objectList', () => {
+            if (this.properties.currentTab === 'properties') {
+                this.properties.objectsPanel?.render();
+            }
+        });
+
+        registerRenderHook('codeEditor', () => {
+            if (this.properties.currentTab === 'code') {
+                this.properties.codePanel?.syncFromModel();
+            }
+        });
+
+        registerRenderHook('statusBar', () => {
+            this.updateStatusBar();
+        });
     }
 
     setupLaserModeToggle() {
@@ -82,6 +116,7 @@ class VectorCutterApp {
                 this.store.doc.settings.laserMode = !this.store.doc.settings.laserMode;
                 toggle.classList.toggle('active', this.store.doc.settings.laserMode);
                 events.emit('document:changed', { action: 'laser-mode' });
+                requestRender();
             });
         }
     }
@@ -97,8 +132,7 @@ class VectorCutterApp {
             this.artworkSvg.setAttribute('width', rect.width);
             this.artworkSvg.setAttribute('height', rect.height);
 
-            // Re-render
-            this.render();
+            requestRender();
         };
 
         window.addEventListener('resize', resize);
@@ -113,15 +147,21 @@ class VectorCutterApp {
     }
 
     setupSubscriptions() {
-        events.on('document:changed', () => this.render());
-        events.on('selection:changed', () => this.overlay.render());
+        events.on('document:changed', () => requestRender());
+        events.on('selection:changed', () => {
+            this.overlay.render();
+            if (this.properties.currentTab === 'properties') {
+                this.properties.render();
+            } else if (this.properties.currentTab === '3d') {
+                this.properties.panel3D?.rebuildMesh();
+            }
+        });
         events.on('camera:changed', () => {
-            // Apply camera matrix to artwork world
             this.worldGroup.setAttribute('transform', this.camera.matrix());
             this.overlay.render();
             this.updateStatusBar();
         });
-        events.on('theme:changed', () => this.render());
+        events.on('theme:changed', () => requestRender());
 
         // Update status bar coordinates on pointer move
         this.container.addEventListener('pointermove', (e) => {
@@ -140,26 +180,6 @@ class VectorCutterApp {
             const pct = Math.round((this.camera.scale / 3.779527559) * 100);
             zoomEl.textContent = `${pct}%`;
         }
-    }
-
-    render() {
-        const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-        this.worldGroup.setAttribute('transform', this.camera.matrix());
-        this.grid.render(this.camera, isDark);
-        this.scene.render();
-        this.overlay.render();
-        this.updateStatusBar();
-    }
-
-    startRenderLoop() {
-        let lastFrameTime = performance.now();
-        const loop = (now) => {
-            // Smooth animated render tick
-            const dt = now - lastFrameTime;
-            lastFrameTime = now;
-            requestAnimationFrame(loop);
-        };
-        requestAnimationFrame(loop);
     }
 
     checkUrlProject() {

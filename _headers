@@ -3,8 +3,8 @@
   X-Frame-Options: SAMEORIGIN
   Referrer-Policy: strict-origin-when-cross-origin
 
-/editor_5.8.html
-  Cache-Control: no-store
+/editor.html
+  Cache-Control: no-store, no-cache, must-revalidate
 
 /editor*
   Cache-Control: no-store, no-cache, must-revalidate
@@ -15,9 +15,9 @@
 /editor/js/*
   Cache-Control: no-store, no-cache, must-revalidate
 
-/components/*
-  Cache-Control: public, max-age=86400
-
-/*.svg
+/sidebar/*
   Content-Type: image/svg+xml; charset=utf-8
+  Cache-Control: no-store, no-cache, must-revalidate
+
+/components/*
   Cache-Control: public, max-age=86400

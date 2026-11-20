@@ -5,7 +5,7 @@
 import { createElement } from '../model/elements.js';
 import { AddElementCommand } from '../core/commands.js';
 import { translationMatrix } from '../model/matrix.js';
-import { events } from '../core/events.js';
+import { requestRender } from '../core/scheduler.js';
 
 export class RectTool {
     constructor(camera, store) {
@@ -29,7 +29,7 @@ export class RectTool {
         this.store.doc.elements[this.previewEl.id] = this.previewEl;
         this.store.doc.order.push(this.previewEl.id);
         this.store.setSelection([this.previewEl.id]);
-        events.emit('document:changed', { action: 'draw-start' });
+        requestRender();
     }
 
     onPointerMove(pt, e) {
@@ -53,15 +53,13 @@ export class RectTool {
         this.previewEl.geometry.width = width;
         this.previewEl.geometry.height = height;
 
-        events.emit('document:changed', { action: 'draw-move' });
-        events.emit('selection:changed', { selection: [this.previewEl.id] });
+        requestRender();
     }
 
-    onPointerUp(pt) {
+    onPointerUp() {
         if (!this.isDrawing || !this.previewEl) return;
         this.isDrawing = false;
 
-        // If clicked without dragging, give default dimensions 60x40mm centered
         if (this.previewEl.geometry.width < 3 && this.previewEl.geometry.height < 3) {
             const defW = 60;
             const defH = 40;
@@ -70,7 +68,6 @@ export class RectTool {
             this.previewEl.geometry.height = defH;
         }
 
-        // Clean up temporary doc insertion and dispatch formal command
         const finalEl = { ...this.previewEl };
         delete this.store.doc.elements[this.previewEl.id];
         const idx = this.store.doc.order.indexOf(this.previewEl.id);
@@ -79,5 +76,6 @@ export class RectTool {
         this.store.dispatch(new AddElementCommand(finalEl));
         this.store.setSelection([finalEl.id]);
         this.previewEl = null;
+        requestRender();
     }
 }

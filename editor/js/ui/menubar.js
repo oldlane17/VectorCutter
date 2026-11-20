@@ -1,20 +1,20 @@
 /**
  * VectorCutter - Menubar Controller
- * Wires top File, Edit, Modify, View, and Help dropdown actions.
+ * Connects standard desktop application menus (File, Edit, Modify, View, Help).
  */
 
-import { downloadSVG, exportSVGString } from '../io/svg-export.js?v=2.3.0';
-import { importSVGString } from '../io/svg-import.js?v=2.3.0';
-import { downloadDXF } from '../io/dxf.js?v=2.3.0';
-import { downloadPNG } from '../io/png-export.js?v=2.3.0';
-import { ImageTracer } from '../io/trace.js?v=2.3.0';
-import { performBooleanUnion, performBooleanDifference, performBooleanIntersect, performBooleanExclude, elementToPathD } from '../ops/boolean.js?v=2.3.0';
-import { applyKerfOffset, outlineStroke } from '../ops/offset.js?v=2.3.0';
-import { linearRepeat, rotationalRepeat, gridRepeat, mirrorRepeat } from '../ops/repeat.js?v=2.3.0';
-import { storage } from '../core/storage.js?v=2.3.0';
-import { events } from '../core/events.js?v=2.3.0';
-import { DeleteElementsCommand, AddElementCommand } from '../core/commands.js?v=2.3.0';
-import { translationMatrix, multiplyMatrix } from '../model/matrix.js?v=2.3.0';
+import { downloadSVG, exportSVGString } from '../io/svg-export.js';
+import { importSVGString } from '../io/svg-import.js';
+import { downloadDXF } from '../io/dxf.js';
+import { downloadPNG } from '../io/png-export.js';
+import { ImageTracer } from '../io/trace.js';
+import { performBooleanUnion, performBooleanDifference, performBooleanIntersect, performBooleanExclude, elementToPathD } from '../ops/boolean.js';
+import { applyKerfOffset, outlineStroke } from '../ops/offset.js';
+import { linearRepeat, rotationalRepeat, gridRepeat, mirrorRepeat } from '../ops/repeat.js';
+import { storage } from '../core/storage.js';
+import { events } from '../core/events.js';
+import { DeleteElementsCommand, AddElementCommand } from '../core/commands.js';
+import { translationMatrix, multiplyMatrix } from '../model/matrix.js';
 
 export class MenubarController {
     constructor(store, camera, modals) {
@@ -22,13 +22,13 @@ export class MenubarController {
         this.camera = camera;
         this.modals = modals;
 
-        this.bindEvents();
+        this.bindMenus();
     }
 
-    bindEvents() {
+    bindMenus() {
         // File -> New
         this.on('menuNew', () => {
-            if (confirm('Create a new blank document? All unsaved changes will be cleared.')) {
+            if (confirm('Create new document? Unsaved changes will be cleared.')) {
                 this.store.replaceDocument({
                     version: 1,
                     units: 'mm',
@@ -38,6 +38,8 @@ export class MenubarController {
                     order: [],
                     selection: []
                 });
+                const titleInput = document.getElementById('projectTitleInput');
+                if (titleInput) titleInput.value = 'Untitled Project';
             }
         });
 
@@ -76,7 +78,7 @@ export class MenubarController {
             downloadPNG(svgStr, 'vectorcutter.png');
         });
 
-        // File -> Save to Dashboard (Storage Contract)
+        // File -> Save to Dashboard
         this.on('menuDashboardSave', () => {
             const titleInput = document.getElementById('projectTitleInput');
             const name = titleInput?.value || 'VectorCutter Project';
@@ -106,7 +108,7 @@ export class MenubarController {
             selected.forEach(el => {
                 const cloned = JSON.parse(JSON.stringify(el));
                 cloned.id = 'el_' + Math.random().toString(36).substr(2, 9);
-                cloned.name = `${el.name} (Copy)`;
+                cloned.name = `${el.name || el.type} (Copy)`;
                 cloned.transform = multiplyMatrix(translationMatrix(10, 10), el.transform);
                 this.store.dispatch(new AddElementCommand(cloned));
                 newIds.push(cloned.id);
@@ -132,9 +134,10 @@ export class MenubarController {
                 const pathEl = {
                     ...JSON.parse(JSON.stringify(el)),
                     type: 'path',
-                    name: `${el.name} (Path)`,
+                    name: `${el.name || el.type} (Path)`,
                     geometry: { d }
                 };
+                delete pathEl.params; // Breaking generator link (§4.3)
                 this.store.dispatch(new DeleteElementsCommand([el.id], this.store.doc));
                 this.store.dispatch(new AddElementCommand(pathEl));
                 newIds.push(pathEl.id);
@@ -146,6 +149,9 @@ export class MenubarController {
         // Edit -> Trace Image
         const tracer = new ImageTracer(this.store, this.camera);
         this.on('menuTraceImage', () => tracer.openDialog());
+
+        // Modify -> Prepare for 3D (§7.2)
+        this.on('menuPrepare3D', () => events.emit('open:tab', '3d'));
 
         // Modify -> Booleans
         this.on('menuBooleanUnion', () => performBooleanUnion(this.store));

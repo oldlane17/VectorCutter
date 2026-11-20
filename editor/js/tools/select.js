@@ -8,6 +8,7 @@ import { translationMatrix, rotationMatrix, scaleMatrix, multiplyMatrix, transfo
 import { TransformElementsCommand, DeleteElementsCommand, AddElementCommand, UpdateElementPropsCommand } from '../core/commands.js';
 import { getElementLocalBounds } from '../model/bounds.js';
 import { events } from '../core/events.js';
+import { requestRender } from '../core/scheduler.js';
 
 export class SelectTool {
     constructor(camera, store) {
@@ -41,7 +42,7 @@ export class SelectTool {
             // Arrow keys nudging
             if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.code) && selected.length > 0) {
                 e.preventDefault();
-                const step = e.shiftKey ? 10 : 1; // mm
+                const step = e.shiftKey ? 10 : (e.altKey ? 0.1 : 1); // mm
                 let dx = 0, dy = 0;
                 if (e.code === 'ArrowLeft') dx = -step;
                 if (e.code === 'ArrowRight') dx = step;
@@ -56,6 +57,7 @@ export class SelectTool {
                 });
 
                 this.store.dispatch(new TransformElementsCommand(transforms));
+                requestRender();
                 return;
             }
 
@@ -64,12 +66,14 @@ export class SelectTool {
                 e.preventDefault();
                 this.store.dispatch(new DeleteElementsCommand(selected.map(s => s.id), this.store.doc));
                 this.store.clearSelection();
+                requestRender();
                 return;
             }
 
             // Escape: Clear selection
             if (e.code === 'Escape') {
                 this.store.clearSelection();
+                requestRender();
                 return;
             }
 
@@ -77,6 +81,7 @@ export class SelectTool {
             if ((e.ctrlKey || e.metaKey) && e.code === 'KeyA') {
                 e.preventDefault();
                 this.store.setSelection([...this.store.doc.order]);
+                requestRender();
                 return;
             }
 
@@ -98,13 +103,13 @@ export class SelectTool {
         selected.forEach(el => {
             const clone = JSON.parse(JSON.stringify(el));
             clone.id = 'el_' + Math.random().toString(36).substr(2, 9);
-            // Offset clone by 10mm
             clone.transform = multiplyMatrix(translationMatrix(10, 10), clone.transform);
             this.store.dispatch(new AddElementCommand(clone));
             newIds.push(clone.id);
         });
         this.store.endBatch('Duplicate Elements');
         this.store.setSelection(newIds);
+        requestRender();
     }
 
     onPointerDown(pt, e) {
@@ -123,6 +128,9 @@ export class SelectTool {
         // 2. Hit-test world elements
         const hitId = this.hitTest(pt.screenX, pt.screenY, e.target);
         if (hitId) {
+            const hitEl = this.store.getElement(hitId);
+            if (hitEl && hitEl.locked) return; // Locked objects cannot be selected on canvas (§2)
+
             if (e.shiftKey) {
                 const sel = new Set(this.store.doc.selection);
                 if (sel.has(hitId)) sel.delete(hitId);
@@ -158,6 +166,7 @@ export class SelectTool {
     onPointerMove(pt, e) {
         if (this.isTransforming && this.activeHandle) {
             this.applyHandleTransform(pt, e);
+            requestRender();
             return;
         }
 
@@ -167,13 +176,12 @@ export class SelectTool {
 
             this.initialTransforms.forEach((initM, id) => {
                 const el = this.store.getElement(id);
-                if (el) {
+                if (el && !el.locked) {
                     el.transform = multiplyMatrix(translationMatrix(dx, dy), initM);
                 }
             });
 
-            events.emit('document:changed', { action: 'drag-move' });
-            events.emit('selection:changed', { selection: [...this.store.doc.selection] });
+            requestRender();
             return;
         }
 
@@ -195,187 +203,112 @@ export class SelectTool {
             this.isTransforming = false;
             this.activeHandle = null;
             this.commitTransformHistory();
+            requestRender();
             return;
         }
 
         if (this.isDragging) {
             this.isDragging = false;
-            this.commitTransformHistory();
+            this.commitDragHistory();
+            requestRender();
             return;
         }
 
         if (this.isMarquee) {
             this.isMarquee = false;
-            if (this.marqueeEl) {
-                this.marqueeEl.remove();
-                this.marqueeEl = null;
-            }
-
-            const minX = Math.min(this.marqueeStart.wx, pt.x);
-            const maxX = Math.max(this.marqueeStart.wx, pt.x);
-            const minY = Math.min(this.marqueeStart.wy, pt.y);
-            const maxY = Math.max(this.marqueeStart.wy, pt.y);
-
-            if (maxX - minX > 2 || maxY - minY > 2) {
-                const matchedIds = [];
-                for (const id of this.store.doc.order) {
-                    const el = this.store.doc.elements[id];
-                    if (!el) continue;
-                    const box = getElementLocalBounds(el);
-                    const elX = el.transform[4] + box.x;
-                    const elY = el.transform[5] + box.y;
-                    const elR = elX + box.width;
-                    const elB = elY + box.height;
-
-                    // AABB intersection check
-                    if (elX <= maxX && elR >= minX && elY <= maxY && elB >= minY) {
-                        matchedIds.push(id);
-                    }
-                }
-                this.store.setSelection(matchedIds);
-            }
+            this.finishMarquee(pt);
+            requestRender();
+            return;
         }
-    }
-
-    createMarqueeElement() {
-        const overlaySvg = document.getElementById('overlaySvg');
-        if (!overlaySvg) return;
-
-        const ns = "http://www.w3.org/2000/svg";
-        const rect = document.createElementNS(ns, 'rect');
-        rect.setAttribute('x', this.marqueeStart.sx);
-        rect.setAttribute('y', this.marqueeStart.sy);
-        rect.setAttribute('width', '1');
-        rect.setAttribute('height', '1');
-        rect.setAttribute('fill', 'rgba(0, 122, 204, 0.12)');
-        rect.setAttribute('stroke', '#007acc');
-        rect.setAttribute('stroke-width', '1');
-        rect.setAttribute('stroke-dasharray', '4 3');
-        rect.style.pointerEvents = 'none';
-
-        overlaySvg.appendChild(rect);
-        this.marqueeEl = rect;
     }
 
     captureInitialState() {
         this.initialTransforms.clear();
         this.initialGeometries.clear();
-
         const selected = this.store.getSelectedElements();
+
         selected.forEach(el => {
             this.initialTransforms.set(el.id, [...el.transform]);
-            this.initialGeometries.set(el.id, JSON.parse(JSON.stringify(el.geometry || {})));
+            this.initialGeometries.set(el.id, JSON.parse(JSON.stringify(el.geometry)));
         });
 
         if (selected.length === 1) {
             const el = selected[0];
             this.initialLocalBox = getElementLocalBounds(el);
-            const m = el.transform;
-            this.initialAngle = Math.atan2(m[1], m[0]);
             const cx = this.initialLocalBox.x + this.initialLocalBox.width / 2;
             const cy = this.initialLocalBox.y + this.initialLocalBox.height / 2;
-            this.initialCenter = transformPoint(m, { x: cx, y: cy });
+            this.initialCenter = transformPoint(cx, cy, el.transform);
+            this.initialAngle = Math.atan2(this.dragStart.y - this.initialCenter.y, this.dragStart.x - this.initialCenter.x);
         }
     }
 
     applyHandleTransform(pt, e) {
         const selected = this.store.getSelectedElements();
-        if (selected.length !== 1) return;
+        if (selected.length === 0) return;
 
-        const el = selected[0];
-        const initM = this.initialTransforms.get(el.id);
-        const initG = this.initialGeometries.get(el.id);
-        if (!initM || !initG || !this.initialLocalBox) return;
+        // Rotation Handle
+        if (this.activeHandle === 'rot') {
+            const currentAngle = Math.atan2(pt.y - this.initialCenter.y, pt.x - this.initialCenter.x);
+            let dAngle = currentAngle - this.initialAngle;
 
-        if (this.activeHandle === 'rotate') {
-            const angleRad = Math.atan2(pt.y - this.initialCenter.y, pt.x - this.initialCenter.x);
-            let deg = (angleRad * 180) / Math.PI + 90;
-
+            // Shift key snaps to 15-degree steps
             if (e && e.shiftKey) {
-                deg = Math.round(deg / 15) * 15;
+                const deg = (dAngle * 180) / Math.PI;
+                const snappedDeg = Math.round(deg / 15) * 15;
+                dAngle = (snappedDeg * Math.PI) / 180;
             }
 
-            const mRot = rotationMatrix(deg, this.initialCenter.x, this.initialCenter.y);
-            // Translate to center, apply rotation
-            el.transform = multiplyMatrix(mRot, translationMatrix(this.initialCenter.x - initM[4], this.initialCenter.y - initM[5]));
-            el.transform[4] = this.initialCenter.x - (this.initialLocalBox.width / 2) * Math.cos(deg * Math.PI / 180);
-            el.transform[5] = this.initialCenter.y - (this.initialLocalBox.height / 2) * Math.sin(deg * Math.PI / 180);
-
-            events.emit('document:changed', { action: 'rotate' });
-            events.emit('selection:changed', { selection: [el.id] });
+            selected.forEach(el => {
+                const initM = this.initialTransforms.get(el.id);
+                if (initM) {
+                    const toCenter = translationMatrix(-this.initialCenter.x, -this.initialCenter.y);
+                    const rot = rotationMatrix(dAngle);
+                    const fromCenter = translationMatrix(this.initialCenter.x, this.initialCenter.y);
+                    const t = multiplyMatrix(fromCenter, multiplyMatrix(rot, toCenter));
+                    el.transform = multiplyMatrix(t, initM);
+                }
+            });
             return;
         }
 
-        // 8-point resize handles
-        const dxWorld = pt.x - this.dragStart.x;
-        const dyWorld = pt.y - this.dragStart.y;
+        // Resize handles (nw, n, ne, e, se, s, sw, w)
+        if (selected.length === 1 && this.initialLocalBox) {
+            const el = selected[0];
+            const initM = this.initialTransforms.get(el.id);
+            if (!initM) return;
 
-        // Transform world delta into element's local coordinate system
-        const cos = Math.cos(-this.initialAngle);
-        const sin = Math.sin(-this.initialAngle);
-        const localDx = dxWorld * cos - dyWorld * sin;
-        const localDy = dxWorld * sin + dyWorld * cos;
+            const box = this.initialLocalBox;
+            const dx = pt.x - this.dragStart.x;
+            const dy = pt.y - this.dragStart.y;
 
-        const w0 = this.initialLocalBox.width;
-        const h0 = this.initialLocalBox.height;
+            let scaleX = 1;
+            let scaleY = 1;
 
-        let dw = 0, dh = 0;
-        let shiftLocalX = 0, shiftLocalY = 0;
+            if (this.activeHandle.includes('e')) scaleX = (box.width + dx) / box.width;
+            if (this.activeHandle.includes('w')) scaleX = (box.width - dx) / box.width;
+            if (this.activeHandle.includes('s')) scaleY = (box.height + dy) / box.height;
+            if (this.activeHandle.includes('n')) scaleY = (box.height - dy) / box.height;
 
-        const h = this.activeHandle;
-        if (h.includes('e')) { dw = localDx; }
-        if (h.includes('w')) { dw = -localDx; shiftLocalX = localDx; }
-        if (h.includes('s')) { dh = localDy; }
-        if (h.includes('n')) { dh = -localDy; shiftLocalY = localDy; }
-
-        // Shift key: lock aspect ratio
-        if (e && e.shiftKey && w0 > 0 && h0 > 0 && (h.length === 2)) {
-            const aspect = w0 / h0;
-            if (Math.abs(dw) > Math.abs(dh)) {
-                dh = dw / aspect;
-                if (h.includes('n')) shiftLocalY = -dh;
-            } else {
-                dw = dh * aspect;
-                if (h.includes('w')) shiftLocalX = -dw;
+            // Aspect ratio lock with Shift
+            if (e && e.shiftKey) {
+                const s = Math.max(Math.abs(scaleX), Math.abs(scaleY));
+                scaleX = (scaleX < 0 ? -1 : 1) * s;
+                scaleY = (scaleY < 0 ? -1 : 1) * s;
             }
+
+            scaleX = Math.max(0.01, scaleX);
+            scaleY = Math.max(0.01, scaleY);
+
+            el.transform = multiplyMatrix(initM, scaleMatrix(scaleX, scaleY));
         }
-
-        const newW = Math.max(1, w0 + dw);
-        const newH = Math.max(1, h0 + dh);
-
-        // Apply new geometry
-        if (el.type === 'rect') {
-            el.geometry.width = newW;
-            el.geometry.height = newH;
-        } else if (el.type === 'circle') {
-            el.geometry.r = Math.max(0.5, newW / 2);
-        } else if (el.type === 'ellipse') {
-            el.geometry.rx = Math.max(0.5, newW / 2);
-            el.geometry.ry = Math.max(0.5, newH / 2);
-        } else if (el.type === 'polygon') {
-            el.geometry.radius = Math.max(1, newW / 2);
-        } else if (el.type === 'star') {
-            el.geometry.outerRadius = Math.max(1, newW / 2);
-            el.geometry.innerRadius = Math.max(0.5, newW * 0.25);
-        }
-
-        // Shift origin in world coordinates
-        const worldShiftX = shiftLocalX * Math.cos(this.initialAngle) - shiftLocalY * Math.sin(this.initialAngle);
-        const worldShiftY = shiftLocalX * Math.sin(this.initialAngle) + shiftLocalY * Math.cos(this.initialAngle);
-
-        el.transform[4] = initM[4] + worldShiftX;
-        el.transform[5] = initM[5] + worldShiftY;
-
-        events.emit('document:changed', { action: 'resize' });
-        events.emit('selection:changed', { selection: [el.id] });
     }
 
-    commitTransformHistory() {
+    commitDragHistory() {
         const transforms = [];
-        this.initialTransforms.forEach((before, id) => {
-            const el = this.store.getElement(id);
-            if (el) {
-                transforms.push({ id, before, after: [...el.transform] });
+        this.store.getSelectedElements().forEach(el => {
+            const before = this.initialTransforms.get(el.id);
+            if (before) {
+                transforms.push({ id: el.id, before, after: [...el.transform] });
             }
         });
         if (transforms.length > 0) {
@@ -383,15 +316,89 @@ export class SelectTool {
         }
     }
 
-    hitTest(sx, sy, target) {
-        if (target && target.dataset?.elementId) {
-            return target.dataset.elementId;
+    commitTransformHistory() {
+        const transforms = [];
+        this.store.getSelectedElements().forEach(el => {
+            const before = this.initialTransforms.get(el.id);
+            if (before) {
+                transforms.push({ id: el.id, before, after: [...el.transform] });
+            }
+        });
+        if (transforms.length > 0) {
+            this.store.dispatch(new TransformElementsCommand(transforms));
         }
-        let curr = target;
-        while (curr && curr !== document.body) {
-            if (curr.dataset?.elementId) return curr.dataset.elementId;
-            curr = curr.parentElement;
+    }
+
+    hitTest(screenX, screenY, target) {
+        let el = target;
+        while (el && el !== document.body) {
+            if (el.dataset?.elementId) {
+                return el.dataset.elementId;
+            }
+            el = el.parentElement;
         }
+
+        // Point-in-polygon bounding hit-test
+        const worldPt = this.camera.toWorld(screenX, screenY);
+        const order = [...this.store.doc.order].reverse();
+
+        for (const id of order) {
+            const item = this.store.getElement(id);
+            if (!item || item.visible === false || item.locked) continue;
+            const b = getElementLocalBounds(item);
+            const tx = item.transform[4] || 0;
+            const ty = item.transform[5] || 0;
+            if (worldPt.x >= tx + b.x && worldPt.x <= tx + b.x + b.width &&
+                worldPt.y >= ty + b.y && worldPt.y <= ty + b.y + b.height) {
+                return id;
+            }
+        }
+
         return null;
+    }
+
+    createMarqueeElement() {
+        const overlay = document.getElementById('overlaySvg');
+        if (!overlay) return;
+
+        this.marqueeEl = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        this.marqueeEl.setAttribute('fill', 'rgba(0, 122, 204, 0.1)');
+        this.marqueeEl.setAttribute('stroke', '#007acc');
+        this.marqueeEl.setAttribute('stroke-width', '1');
+        this.marqueeEl.setAttribute('stroke-dasharray', '4 4');
+        overlay.appendChild(this.marqueeEl);
+    }
+
+    finishMarquee(pt) {
+        if (this.marqueeEl) {
+            this.marqueeEl.remove();
+            this.marqueeEl = null;
+        }
+
+        const left = Math.min(this.marqueeStart.wx, pt.x);
+        const top = Math.min(this.marqueeStart.wy, pt.y);
+        const right = Math.max(this.marqueeStart.wx, pt.x);
+        const bottom = Math.max(this.marqueeStart.wy, pt.y);
+
+        const hits = [];
+        this.store.doc.order.forEach(id => {
+            const el = this.store.getElement(id);
+            if (!el || el.visible === false || el.locked) return;
+            const b = getElementLocalBounds(el);
+            const tx = el.transform[4] || 0;
+            const ty = el.transform[5] || 0;
+
+            const elL = tx + b.x;
+            const elT = ty + b.y;
+            const elR = elL + b.width;
+            const elB = elT + b.height;
+
+            // Box overlap test
+            if (elL < right && elR > left && elT < bottom && elB > top) {
+                hits.push(id);
+            }
+        });
+
+        this.store.setSelection(hits);
     }
 }

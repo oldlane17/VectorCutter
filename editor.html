@@ -7,9 +7,15 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="apple-touch-icon" href="/favicon.ico">
 
-    <!-- Design Tokens & Component Stylesheets (No external CDN requests) -->
-    <link rel="stylesheet" href="editor/css/tokens.css?v=2.3.0">
-    <link rel="stylesheet" href="editor/css/layout.css?v=2.3.0">
+    <!-- Design Tokens & Component Stylesheets -->
+    <link rel="stylesheet" href="editor/css/tokens.css?v=2.4.0">
+    <link rel="stylesheet" href="editor/css/layout.css?v=2.4.0">
+
+    <!-- Pinned External 3D & Geometry Libraries (§7 & §0.4) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/clipper-lib@6.4.2/clipper.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/earcut@2.2.4/dist/earcut.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js"></script>
 </head>
 <body>
     <div class="vc-app">
@@ -52,6 +58,8 @@
                 <div class="vc-menu-item">
                     Modify
                     <div class="vc-dropdown">
+                        <div class="vc-dropdown-item" id="menuPrepare3D">Prepare for 3D... <span class="vc-shortcut">Ctrl+Shift+3</span></div>
+                        <div class="vc-separator"></div>
                         <div class="vc-dropdown-item" id="menuBooleanUnion">Boolean Union (Weld)</div>
                         <div class="vc-dropdown-item" id="menuBooleanDiff">Boolean Difference</div>
                         <div class="vc-dropdown-item" id="menuBooleanIntersect">Boolean Intersect</div>
@@ -76,6 +84,7 @@
                         <div class="vc-dropdown-item" id="menuResetZoom">Reset Zoom (1:1) <span class="vc-shortcut">Ctrl+0</span></div>
                         <div class="vc-separator"></div>
                         <div class="vc-dropdown-item" id="menuToggleGrid">Toggle Grid <span class="vc-shortcut">Ctrl+G</span></div>
+                        <div class="vc-dropdown-item" id="menuToggleSvgCode">SVG Code Panel <span class="vc-shortcut">Ctrl+Shift+E</span></div>
                     </div>
                 </div>
 
@@ -116,64 +125,68 @@
                         <input type="text" id="sidebarSearch" placeholder="Search tools (/)" title="Press / to search">
                     </div>
                     <button class="vc-btn" id="sidebarCollapseBtn" title="Collapse / Expand Sidebar">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="15 18 9 12 15 6"></polyline>
-                        </svg>
+                        <svg class="vc-icon" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg>
                     </button>
                 </div>
 
                 <!-- Shapes & Tools Section -->
                 <div class="vc-tools-group">
                     <button class="vc-tool-btn active" data-tool="select" title="Select (V)">
-                        <img src="sidebar/select.svg" alt="Select">
+                        <svg class="vc-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="3 3"/></svg>
                         <span class="vc-tool-label">Select</span>
                         <span class="vc-tool-shortcut">V</span>
                     </button>
                     <button class="vc-tool-btn" data-tool="rectangle" title="Rectangle (R)">
-                        <img src="sidebar/rectangle.svg" alt="Rectangle">
+                        <svg class="vc-icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/></svg>
                         <span class="vc-tool-label">Rectangle</span>
                         <span class="vc-tool-shortcut">R</span>
                     </button>
                     <button class="vc-tool-btn" data-tool="circle" title="Circle (C)">
-                        <img src="sidebar/circle.svg" alt="Circle">
+                        <svg class="vc-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>
                         <span class="vc-tool-label">Circle</span>
                         <span class="vc-tool-shortcut">C</span>
                     </button>
                     <button class="vc-tool-btn" data-tool="ellipse" title="Ellipse">
-                        <img src="sidebar/ellipse.svg" alt="Ellipse">
+                        <svg class="vc-icon" viewBox="0 0 24 24"><ellipse cx="12" cy="12" rx="9" ry="5"/></svg>
                         <span class="vc-tool-label">Ellipse</span>
                     </button>
                     <button class="vc-tool-btn" data-tool="polygon" title="Polygon (Hexagon)">
-                        <img src="sidebar/polygon.svg" alt="Polygon">
+                        <svg class="vc-icon" viewBox="0 0 24 24"><path d="M12 2l8.66 5v10L12 22l-8.66-5V7L12 2z"/></svg>
                         <span class="vc-tool-label">Polygon</span>
                     </button>
                     <button class="vc-tool-btn" data-tool="star" title="Star (5-point)">
-                        <img src="sidebar/star.svg" alt="Star">
+                        <svg class="vc-icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                         <span class="vc-tool-label">Star</span>
                     </button>
                     <button class="vc-tool-btn" data-tool="line" title="Line (L)">
-                        <img src="sidebar/line.svg" alt="Line">
+                        <svg class="vc-icon" viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4"/></svg>
                         <span class="vc-tool-label">Line</span>
                         <span class="vc-tool-shortcut">L</span>
                     </button>
                     <button class="vc-tool-btn" data-tool="curve" title="Curve / Node Edit (N)">
-                        <img src="sidebar/curve.svg" alt="Curve">
+                        <svg class="vc-icon" viewBox="0 0 24 24"><path d="M4 18C8 18 8 6 12 6s4 12 8 12"/></svg>
                         <span class="vc-tool-label">Curve / Node</span>
                         <span class="vc-tool-shortcut">N</span>
                     </button>
                     <button class="vc-tool-btn" data-tool="path" title="Pen / Path (P)">
-                        <img src="sidebar/path.svg" alt="Pen">
+                        <svg class="vc-icon" viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><circle cx="11" cy="11" r="2"/></svg>
                         <span class="vc-tool-label">Pen / Path</span>
                         <span class="vc-tool-shortcut">P</span>
                     </button>
                     <button class="vc-tool-btn" data-tool="text" title="Text (T)">
-                        <img src="sidebar/text.svg" alt="Text">
+                        <svg class="vc-icon" viewBox="0 0 24 24"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
                         <span class="vc-tool-label">Text</span>
                         <span class="vc-tool-shortcut">T</span>
                     </button>
                 </div>
 
-                <div style="margin: 12px 0 6px 0; border-top: 1px solid var(--vc-border-subtle); padding-top: 8px;">
+                <div style="margin: 10px 0 6px 0; border-top: 1px solid var(--vc-border-subtle); padding-top: 8px; display: flex; flex-direction: column; gap: 4px;">
+                    <button class="vc-tool-btn" id="toolSvgCode" title="SVG Code (Ctrl+Shift+E)">
+                        <svg class="vc-icon" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                        <span class="vc-tool-label">&lt;/&gt; SVG Code</span>
+                        <span class="vc-tool-shortcut">Ctrl+Shift+E</span>
+                    </button>
+
                     <button class="vc-btn" id="sidebarBrowseShapesBtn" style="width: 100%; justify-content: center; background: rgba(0, 122, 204, 0.15); border: 1px dashed var(--vc-accent-blue); color: var(--vc-accent-hover);" title="Browse preset shapes library">
                         <span>📐 Browse Shape Library</span>
                     </button>
@@ -199,72 +212,75 @@
                 <!-- Floating Quickbar -->
                 <div class="vc-quickbar" id="quickbar">
                     <button class="vc-quickbar-btn active" data-quick-tool="select" title="Select (V)">
-                        <img src="sidebar/select.svg" alt="Select">
+                        <svg class="vc-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="3 3"/></svg>
                     </button>
                     <button class="vc-quickbar-btn" data-quick-tool="rectangle" title="Rectangle (R)">
-                        <img src="sidebar/rectangle.svg" alt="Rect">
+                        <svg class="vc-icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/></svg>
                     </button>
                     <button class="vc-quickbar-btn" data-quick-tool="circle" title="Circle (C)">
-                        <img src="sidebar/circle.svg" alt="Circle">
+                        <svg class="vc-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>
                     </button>
                     <button class="vc-quickbar-btn" data-quick-tool="polygon" title="Polygon">
-                        <img src="sidebar/polygon.svg" alt="Polygon">
+                        <svg class="vc-icon" viewBox="0 0 24 24"><path d="M12 2l8.66 5v10L12 22l-8.66-5V7L12 2z"/></svg>
                     </button>
                     <button class="vc-quickbar-btn" data-quick-tool="star" title="Star">
-                        <img src="sidebar/star.svg" alt="Star">
+                        <svg class="vc-icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
                     </button>
                     <button class="vc-quickbar-btn" data-quick-tool="curve" title="Node Edit (N)">
-                        <img src="sidebar/curve.svg" alt="Node">
+                        <svg class="vc-icon" viewBox="0 0 24 24"><path d="M4 18C8 18 8 6 12 6s4 12 8 12"/></svg>
                     </button>
                     <button class="vc-quickbar-btn" data-quick-tool="path" title="Pen (P)">
-                        <img src="sidebar/path.svg" alt="Pen">
+                        <svg class="vc-icon" viewBox="0 0 24 24"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
                     </button>
 
                     <div class="vc-quickbar-divider"></div>
 
                     <!-- Selection Actions -->
                     <button class="vc-quickbar-btn selection-action" id="quickRotateCCW" title="Rotate 90° CCW">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg class="vc-icon" viewBox="0 0 24 24">
                             <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
                             <path d="M3 3v5h5"/>
                         </svg>
                     </button>
                     <button class="vc-quickbar-btn selection-action" id="quickRotateCW" title="Rotate 90° CW">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg class="vc-icon" viewBox="0 0 24 24">
                             <path d="M21 12a9 9 0 1 1-9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
                             <path d="M21 3v5h-5"/>
                         </svg>
                     </button>
                     <button class="vc-quickbar-btn selection-action" id="quick180" title="Rotate 180°">
-                        <span style="font-size:10px;font-weight:bold;">180</span>
+                        <span style="font-size:10px;font-weight:bold;color:#fff;">180</span>
                     </button>
                     <button class="vc-quickbar-btn selection-action" id="quickFlipH" title="Flip Horizontal">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg class="vc-icon" viewBox="0 0 24 24">
                             <path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3"/>
                             <path d="M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"/>
                             <line x1="12" y1="2" x2="12" y2="22"/>
                         </svg>
                     </button>
                     <button class="vc-quickbar-btn selection-action" id="quickFlipV" title="Flip Vertical">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg class="vc-icon" viewBox="0 0 24 24">
                             <path d="M3 8V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3"/>
                             <path d="M3 16v3a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-3"/>
                             <line x1="2" y1="12" x2="22" y2="12"/>
                         </svg>
                     </button>
                     <button class="vc-quickbar-btn selection-action" id="quickDuplicate" title="Duplicate (Ctrl+D)">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg class="vc-icon" viewBox="0 0 24 24">
                             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
                             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
                         </svg>
                     </button>
                     <button class="vc-quickbar-btn selection-action" id="quickDelete" title="Delete (Del)">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <svg class="vc-icon" viewBox="0 0 24 24">
                             <polyline points="3 6 5 6 21 6"/>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                         </svg>
                     </button>
                 </div>
+
+                <!-- Live Generator Options Bar (under quickbar) -->
+                <div class="vc-tool-options-bar" id="toolOptionsBar" style="display: none;"></div>
             </section>
 
             <!-- Right Panel Resizer -->
@@ -289,6 +305,6 @@
     </div>
 
     <!-- Application ES Module Bootloader -->
-    <script type="module" src="editor/js/main.js?v=2.3.0"></script>
+    <script type="module" src="editor/js/main.js?v=2.4.0"></script>
 </body>
 </html>

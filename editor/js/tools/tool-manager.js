@@ -1,9 +1,10 @@
 /**
  * VectorCutter - Tool Manager
- * Dispatches pointer events to the active tool.
+ * Dispatches pointer events to the active tool and drives live 60 FPS interaction (§1.4).
  */
 
 import { events } from '../core/events.js';
+import { requestRender } from '../core/scheduler.js';
 import { SelectTool } from './select.js';
 import { PanTool } from './pan.js';
 import { RectTool } from './rect.js';
@@ -50,25 +51,34 @@ export class ToolManager {
             this.tools[this.currentTool].activate();
         }
         events.emit('tool:changed', this.currentTool);
+        requestRender();
     }
 
     bindEvents() {
         this.container.addEventListener('pointerdown', (e) => {
-            // Ignore middle click or space-pan (handled by InputController)
             if (e.button === 1 || this.container.classList.contains('space-pan')) return;
+            try {
+                this.container.setPointerCapture(e.pointerId);
+            } catch (err) {}
             const pt = this.getEventPoint(e);
             this.tools[this.currentTool]?.onPointerDown(pt, e);
+            requestRender();
         });
 
         window.addEventListener('pointermove', (e) => {
             if (this.container.classList.contains('is-panning')) return;
             const pt = this.getEventPoint(e);
             this.tools[this.currentTool]?.onPointerMove(pt, e);
+            requestRender();
         });
 
         window.addEventListener('pointerup', (e) => {
+            try {
+                this.container.releasePointerCapture(e.pointerId);
+            } catch (err) {}
             const pt = this.getEventPoint(e);
             this.tools[this.currentTool]?.onPointerUp(pt, e);
+            requestRender();
         });
     }
 

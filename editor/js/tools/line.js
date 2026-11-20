@@ -1,11 +1,11 @@
 /**
- * VectorCutter - Straight Line Drawing Tool
+ * VectorCutter - Line Drawing Tool
  */
 
 import { createElement } from '../model/elements.js';
 import { AddElementCommand } from '../core/commands.js';
 import { translationMatrix } from '../model/matrix.js';
-import { events } from '../core/events.js';
+import { requestRender } from '../core/scheduler.js';
 
 export class LineTool {
     constructor(camera, store) {
@@ -23,13 +23,14 @@ export class LineTool {
             x1: 0,
             y1: 0,
             x2: 1,
-            y2: 0,
+            y2: 1,
+            style: { fill: 'none', stroke: '#007acc', strokeWidth: 0.5 },
             transform: translationMatrix(pt.x, pt.y)
         });
         this.store.doc.elements[this.previewEl.id] = this.previewEl;
         this.store.doc.order.push(this.previewEl.id);
         this.store.setSelection([this.previewEl.id]);
-        events.emit('document:changed', { action: 'draw-start' });
+        requestRender();
     }
 
     onPointerMove(pt, e) {
@@ -37,30 +38,27 @@ export class LineTool {
         let dx = pt.x - this.start.x;
         let dy = pt.y - this.start.y;
 
-        // Shift key locks 0°, 45°, 90° angles
+        // Shift snaps to 0°, 45°, 90°
         if (e && e.shiftKey) {
             const angle = Math.atan2(dy, dx);
             const snappedAngle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
-            const dist = Math.hypot(dx, dy);
-            dx = dist * Math.cos(snappedAngle);
-            dy = dist * Math.sin(snappedAngle);
+            const len = Math.hypot(dx, dy);
+            dx = len * Math.cos(snappedAngle);
+            dy = len * Math.sin(snappedAngle);
         }
 
         this.previewEl.geometry.x2 = dx;
         this.previewEl.geometry.y2 = dy;
-
-        events.emit('document:changed', { action: 'draw-move' });
-        events.emit('selection:changed', { selection: [this.previewEl.id] });
+        requestRender();
     }
 
     onPointerUp() {
         if (!this.isDrawing || !this.previewEl) return;
         this.isDrawing = false;
 
-        const g = this.previewEl.geometry;
-        const len = Math.hypot(g.x2 - g.x1, g.y2 - g.y1);
+        const len = Math.hypot(this.previewEl.geometry.x2, this.previewEl.geometry.y2);
         if (len < 3) {
-            this.previewEl.geometry.x2 = 50; // 50mm horizontal line default
+            this.previewEl.geometry.x2 = 50;
             this.previewEl.geometry.y2 = 0;
         }
 
@@ -72,5 +70,6 @@ export class LineTool {
         this.store.dispatch(new AddElementCommand(finalEl));
         this.store.setSelection([finalEl.id]);
         this.previewEl = null;
+        requestRender();
     }
 }
