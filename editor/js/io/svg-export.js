@@ -98,4 +98,4 @@ export function downloadSVG(store, filename = 'vectorcutter.svg') {
     URL.revokeObjectURL(url);
 }
 
-export { exportSVGString as generatePureSVG };
+export { exportSVGString };
