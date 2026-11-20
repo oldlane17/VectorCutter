@@ -31,7 +31,8 @@ Object.assign(SVGEditor.prototype, {
         // Initialize grid and axes
         this.updateGrid();
         this.updateAxes();
-    },
+    }
+,
 
     updateAxes() {
         if (!this.axesGroup) return;
@@ -133,7 +134,8 @@ Object.assign(SVGEditor.prototype, {
         originLabel.setAttribute('font-family', 'Arial, sans-serif');
         originLabel.textContent = '(0,0)';
         this.axesGroup.appendChild(originLabel);
-    },
+    }
+,
 
     updateGrid() {
         if (!this.gridGroup) return;
@@ -207,7 +209,8 @@ Object.assign(SVGEditor.prototype, {
         }
         
         this.addGridLabels(startX, endX, startY, endY, adjustedGridSize);
-    },
+    }
+,
 
     addGridLabels(startX, endX, startY, endY, adjustedGridSize) {
         const ns = "http://www.w3.org/2000/svg";
@@ -302,7 +305,8 @@ Object.assign(SVGEditor.prototype, {
                 this.gridGroup.appendChild(label);
             }
         }
-    },
+    }
+,
 
     getAdaptiveGridStep() {
         // Base grid step in pixels
@@ -328,7 +332,8 @@ Object.assign(SVGEditor.prototype, {
         
         // Convert back to pixels
         return niceStep * magnitude * this.unitFactors[this.currentUnits];
-    },
+    }
+,
 
     formatUnitValue(value) {
         // Convert from pixels to current units and format
@@ -344,7 +349,8 @@ Object.assign(SVGEditor.prototype, {
         } else {
             return unitValue.toFixed(3);
         }
-    },
+    }
+,
 
     updateViewBox() {
         this.canvas.setAttribute('viewBox', 
@@ -361,7 +367,8 @@ Object.assign(SVGEditor.prototype, {
         if (this.selectedElements && this.selectedElements.length > 0 && !this.isDragging && !this.isResizing && !this.isRotating) {
             this.updateSelectionHandles();
         }
-    },
+    }
+,
 
     screenToSVG(clientX, clientY) {
         // Create a DOMPoint for the mouse position
@@ -375,7 +382,8 @@ Object.assign(SVGEditor.prototype, {
         let svgPoint = point.matrixTransform(matrix);
 
         return { x: svgPoint.x, y: svgPoint.y };
-    },
+    }
+,
 
     svgToScreen(svgX, svgY) {
         const rect = this.canvas.getBoundingClientRect();
@@ -389,7 +397,8 @@ Object.assign(SVGEditor.prototype, {
         const screenY = rect.top + (yNormalized * rect.height);
         
         return { x: screenX, y: screenY };
-    },
+    }
+,
 
     updateCanvasCursor() {
         if (this.canvasMode === 'pan') {
@@ -399,7 +408,8 @@ Object.assign(SVGEditor.prototype, {
         } else {
             this.canvasContainer.style.cursor = 'crosshair';
         }
-    },
+    }
+,
 
     initScrollMode() {
         const savedMode = localStorage.getItem('vc_scroll_mode') || 'trackpad';
