@@ -2,22 +2,22 @@
  * VectorCutter - Main ES Module Entry Point
  */
 
-import { storage } from './core/storage.js';
-import { Store } from './core/store.js';
-import { Camera } from './view/camera.js';
-import { GridRenderer } from './view/grid.js';
-import { InputController } from './view/input.js';
-import { SceneRenderer } from './view/scene.js';
-import { OverlayRenderer } from './view/overlay.js';
-import { ToolManager } from './tools/tool-manager.js';
-import { ThemeController } from './ui/theme.js';
-import { SidebarController } from './ui/sidebar.js';
-import { QuickbarController } from './ui/quickbar.js';
-import { PropertiesController } from './ui/properties.js';
-import { MenubarController } from './ui/menubar.js';
-import { ModalsController } from './ui/modals.js';
-import { events } from './core/events.js';
-import { importSVGString } from './io/svg-import.js';
+import { storage } from './core/storage.js?v=2.3.0';
+import { Store } from './core/store.js?v=2.3.0';
+import { Camera } from './view/camera.js?v=2.3.0';
+import { GridRenderer } from './view/grid.js?v=2.3.0';
+import { InputController } from './view/input.js?v=2.3.0';
+import { SceneRenderer } from './view/scene.js?v=2.3.0';
+import { OverlayRenderer } from './view/overlay.js?v=2.3.0';
+import { ToolManager } from './tools/tool-manager.js?v=2.3.0';
+import { ThemeController } from './ui/theme.js?v=2.3.0';
+import { SidebarController } from './ui/sidebar.js?v=2.3.0';
+import { QuickbarController } from './ui/quickbar.js?v=2.3.0';
+import { PropertiesController } from './ui/properties.js?v=2.3.0';
+import { MenubarController } from './ui/menubar.js?v=2.3.0';
+import { ModalsController } from './ui/modals.js?v=2.3.0';
+import { events } from './core/events.js?v=2.3.0';
+import { importSVGString } from './io/svg-import.js?v=2.3.0';
 
 class VectorCutterApp {
     constructor() {

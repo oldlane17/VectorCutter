@@ -3,18 +3,18 @@
  * Wires top File, Edit, Modify, View, and Help dropdown actions.
  */
 
-import { downloadSVG, exportSVGString } from '../io/svg-export.js';
-import { importSVGString } from '../io/svg-import.js';
-import { downloadDXF } from '../io/dxf.js';
-import { downloadPNG } from '../io/png-export.js';
-import { ImageTracer } from '../io/trace.js';
-import { performBooleanUnion, performBooleanDifference, performBooleanIntersect, performBooleanExclude, elementToPathD } from '../ops/boolean.js';
-import { applyKerfOffset, outlineStroke } from '../ops/offset.js';
-import { linearRepeat, rotationalRepeat, gridRepeat, mirrorRepeat } from '../ops/repeat.js';
-import { storage } from '../core/storage.js';
-import { events } from '../core/events.js';
-import { DeleteElementsCommand, AddElementCommand } from '../core/commands.js';
-import { translationMatrix, multiplyMatrix } from '../model/matrix.js';
+import { downloadSVG, exportSVGString } from '../io/svg-export.js?v=2.3.0';
+import { importSVGString } from '../io/svg-import.js?v=2.3.0';
+import { downloadDXF } from '../io/dxf.js?v=2.3.0';
+import { downloadPNG } from '../io/png-export.js?v=2.3.0';
+import { ImageTracer } from '../io/trace.js?v=2.3.0';
+import { performBooleanUnion, performBooleanDifference, performBooleanIntersect, performBooleanExclude, elementToPathD } from '../ops/boolean.js?v=2.3.0';
+import { applyKerfOffset, outlineStroke } from '../ops/offset.js?v=2.3.0';
+import { linearRepeat, rotationalRepeat, gridRepeat, mirrorRepeat } from '../ops/repeat.js?v=2.3.0';
+import { storage } from '../core/storage.js?v=2.3.0';
+import { events } from '../core/events.js?v=2.3.0';
+import { DeleteElementsCommand, AddElementCommand } from '../core/commands.js?v=2.3.0';
+import { translationMatrix, multiplyMatrix } from '../model/matrix.js?v=2.3.0';
 
 export class MenubarController {
     constructor(store, camera, modals) {
