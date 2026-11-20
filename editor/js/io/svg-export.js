@@ -97,3 +97,5 @@ export function downloadSVG(store, filename = 'vectorcutter.svg') {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 }
+
+export { exportSVGString as generatePureSVG };
