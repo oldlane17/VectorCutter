@@ -4,23 +4,23 @@
  * direct SVG code editor, and the "Prepare for 3D" workflow.
  */
 
-import { storage } from './core/storage.js?v=2.4.0';
-import { Store } from './core/store.js?v=2.4.0';
-import { Camera } from './view/camera.js?v=2.4.0';
-import { GridRenderer } from './view/grid.js?v=2.4.0';
-import { InputController } from './view/input.js?v=2.4.0';
-import { SceneRenderer } from './view/scene.js?v=2.4.0';
-import { OverlayRenderer } from './view/overlay.js?v=2.4.0';
-import { ToolManager } from './tools/tool-manager.js?v=2.4.0';
-import { ThemeController } from './ui/theme.js?v=2.4.0';
-import { SidebarController } from './ui/sidebar.js?v=2.4.0';
-import { QuickbarController } from './ui/quickbar.js?v=2.4.0';
-import { PropertiesController } from './ui/properties.js?v=2.4.0';
-import { MenubarController } from './ui/menubar.js?v=2.4.0';
-import { ModalsController } from './ui/modals.js?v=2.4.0';
-import { events } from './core/events.js?v=2.4.0';
-import { importSVGString } from './io/svg-import.js?v=2.4.0';
-import { registerRenderHook, requestRender, renderAll } from './core/scheduler.js?v=2.4.0';
+import { storage } from './core/storage.js';
+import { Store } from './core/store.js';
+import { Camera } from './view/camera.js';
+import { GridRenderer } from './view/grid.js';
+import { InputController } from './view/input.js';
+import { SceneRenderer } from './view/scene.js';
+import { OverlayRenderer } from './view/overlay.js';
+import { ToolManager } from './tools/tool-manager.js';
+import { ThemeController } from './ui/theme.js';
+import { SidebarController } from './ui/sidebar.js';
+import { QuickbarController } from './ui/quickbar.js';
+import { PropertiesController } from './ui/properties.js';
+import { MenubarController } from './ui/menubar.js';
+import { ModalsController } from './ui/modals.js';
+import { events } from './core/events.js';
+import { importSVGString } from './io/svg-import.js';
+import { registerRenderHook, requestRender, renderAll } from './core/scheduler.js';
 
 class VectorCutterApp {
     constructor() {
@@ -76,6 +76,7 @@ class VectorCutterApp {
         this.checkUrlProject();
 
         // Initial render tick (§1.6)
+        this.render();
         requestRender();
 
         // Expose debug handle
@@ -83,13 +84,18 @@ class VectorCutterApp {
         console.log('[VectorCutter] Ready! Window handle available at window.vc');
     }
 
+    render() {
+        const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+        this.worldGroup.setAttribute('transform', this.camera.matrix());
+        this.grid.render(this.camera, isDark);
+        this.scene.render();
+        this.overlay.render();
+        this.updateStatusBar();
+    }
+
     setupRenderHooks() {
         registerRenderHook('canvas', () => {
-            const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-            this.worldGroup.setAttribute('transform', this.camera.matrix());
-            this.grid.render(this.camera, isDark);
-            this.scene.render();
-            this.overlay.render();
+            this.render();
         });
 
         registerRenderHook('objectList', () => {
@@ -116,6 +122,7 @@ class VectorCutterApp {
                 this.store.doc.settings.laserMode = !this.store.doc.settings.laserMode;
                 toggle.classList.toggle('active', this.store.doc.settings.laserMode);
                 events.emit('document:changed', { action: 'laser-mode' });
+                this.render();
                 requestRender();
             });
         }
@@ -132,6 +139,7 @@ class VectorCutterApp {
             this.artworkSvg.setAttribute('width', rect.width);
             this.artworkSvg.setAttribute('height', rect.height);
 
+            this.render();
             requestRender();
         };
 
@@ -147,7 +155,10 @@ class VectorCutterApp {
     }
 
     setupSubscriptions() {
-        events.on('document:changed', () => requestRender());
+        events.on('document:changed', () => {
+            this.render();
+            requestRender();
+        });
         events.on('selection:changed', () => {
             this.overlay.render();
             if (this.properties.currentTab === 'properties') {
@@ -155,13 +166,18 @@ class VectorCutterApp {
             } else if (this.properties.currentTab === '3d') {
                 this.properties.panel3D?.rebuildMesh();
             }
+            requestRender();
         });
         events.on('camera:changed', () => {
             this.worldGroup.setAttribute('transform', this.camera.matrix());
+            this.grid.render(this.camera, document.documentElement.getAttribute('data-theme') !== 'light');
             this.overlay.render();
             this.updateStatusBar();
         });
-        events.on('theme:changed', () => requestRender());
+        events.on('theme:changed', () => {
+            this.render();
+            requestRender();
+        });
 
         // Update status bar coordinates on pointer move
         this.container.addEventListener('pointermove', (e) => {

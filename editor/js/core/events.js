@@ -1,6 +1,7 @@
 /**
  * VectorCutter - Event Bus
  * Light, fast pub/sub for decoupling view, model, and UI layers.
+ * Uses globalThis singleton to ensure a single event bus across any module graph.
  */
 
 export class EventEmitter {
@@ -35,4 +36,10 @@ export class EventEmitter {
     }
 }
 
-export const events = new EventEmitter();
+if (!globalThis.__vc_events) {
+    globalThis.__vc_events = new EventEmitter();
+}
+export const events = globalThis.__vc_events;
+if (typeof window !== 'undefined') {
+    window.vcEvents = events;
+}
