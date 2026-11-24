@@ -178,6 +178,24 @@ class VectorCutterApp {
             this.render();
             requestRender();
         });
+        events.on('grid:toggle', () => {
+            this.grid.enabled = !this.grid.enabled;
+            if (this.gridCanvas) {
+                this.gridCanvas.style.display = this.grid.enabled ? 'block' : 'none';
+            }
+            this.render();
+            requestRender();
+        });
+
+        // Global shortcuts (e.g. Ctrl+G for Grid Toggle)
+        window.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'g' && !e.shiftKey) {
+                const tag = document.activeElement?.tagName;
+                if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+                e.preventDefault();
+                events.emit('grid:toggle');
+            }
+        });
 
         // Update status bar coordinates on pointer move
         this.container.addEventListener('pointermove', (e) => {
@@ -204,10 +222,22 @@ class VectorCutterApp {
         if (pid) {
             const project = storage.getProjectById(pid);
             if (project && project.content) {
-                if (typeof project.content === 'string' && project.content.trim().startsWith('<svg')) {
-                    importSVGString(project.content, this.store, 'replace');
+                let parsed = null;
+                if (typeof project.content === 'string') {
+                    if (project.content.trim().startsWith('<svg')) {
+                        importSVGString(project.content, this.store, 'replace');
+                    } else {
+                        try {
+                            parsed = JSON.parse(project.content);
+                        } catch (err) {
+                            console.error('Failed to parse project JSON:', err);
+                        }
+                    }
                 } else if (typeof project.content === 'object') {
-                    this.store.replaceDocument(project.content);
+                    parsed = project.content;
+                }
+                if (parsed) {
+                    this.store.replaceDocument(parsed);
                 }
                 const titleInput = document.getElementById('projectTitleInput');
                 if (titleInput && project.name) titleInput.value = project.name;

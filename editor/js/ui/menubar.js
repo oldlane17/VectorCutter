@@ -185,10 +185,7 @@ export class MenubarController {
         });
 
         this.on('menuToggleGrid', () => {
-            const gridCanvas = document.getElementById('gridCanvas');
-            if (gridCanvas) {
-                gridCanvas.style.display = gridCanvas.style.display === 'none' ? 'block' : 'none';
-            }
+            events.emit('grid:toggle');
         });
 
         // Help -> Modals

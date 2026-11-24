@@ -498,19 +498,56 @@ white-space: nowrap;
             renderProjects();
         }
 
+        function generatePreviewFromJSON(jsonStr) {
+            try {
+                const doc = JSON.parse(jsonStr);
+                if (!doc || !doc.elements) return null;
+                let svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-150 -150 300 300" style="width:100%;height:100%;">';
+                const elements = doc.elements;
+                const order = doc.order || Object.keys(elements);
+                order.forEach(id => {
+                    const el = elements[id];
+                    if (!el || el.visible === false) return;
+                    const g = el.geometry || {};
+                    const t = el.transform ? `matrix(${el.transform.join(' ')})` : '';
+                    const fill = el.style?.fill || 'rgba(0,122,204,0.1)';
+                    const stroke = el.style?.stroke || '#007acc';
+                    const sw = el.style?.strokeWidth || 1;
+                    if (el.type === 'rect') {
+                        svg += `<rect x="${g.x||0}" y="${g.y||0}" width="${g.width||0}" height="${g.height||0}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" transform="${t}"/>`;
+                    } else if (el.type === 'circle') {
+                        svg += `<circle cx="${g.cx||0}" cy="${g.cy||0}" r="${g.r||0}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" transform="${t}"/>`;
+                    } else if (el.type === 'path' && g.d) {
+                        svg += `<path d="${g.d}" fill="${fill}" stroke="${stroke}" stroke-width="${sw}" transform="${t}"/>`;
+                    } else if (el.type === 'line') {
+                        svg += `<line x1="${g.x1||0}" y1="${g.y1||0}" x2="${g.x2||0}" y2="${g.y2||0}" stroke="${stroke}" stroke-width="${sw}" transform="${t}"/>`;
+                    }
+                });
+                svg += '</svg>';
+                return svg;
+            } catch (e) {
+                return null;
+            }
+        }
+
         function downloadProject(id) {
             const projects = getProjects();
             const proj = projects.find(p => p.id == id);
-            if(proj && proj.content) {
-                const blob = new Blob([proj.content], {type: 'image/svg+xml'});
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = (proj.name || 'project') + '.svg';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+            if(proj) {
+                const svgContent = proj.svgPreview || (typeof proj.content === 'string' && proj.content.trim().startsWith('<svg') ? proj.content : generatePreviewFromJSON(proj.content));
+                if (svgContent) {
+                    const blob = new Blob([svgContent], {type: 'image/svg+xml'});
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = (proj.name || 'project') + '.svg';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                } else {
+                    alert('No SVG content available to download.');
+                }
             }
         }
 
@@ -535,8 +572,11 @@ white-space: nowrap;
                     previewHtml = proj.svgPreview;
                 } else if (typeof proj.content === 'string' && proj.content.trim().startsWith('<svg')) {
                     previewHtml = proj.content;
+                } else if (typeof proj.content === 'string') {
+                    const dynamicSvg = generatePreviewFromJSON(proj.content);
+                    previewHtml = dynamicSvg || '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:11px;">Vector Project</div>';
                 } else {
-                    previewHtml = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:11px;">Project (No SVG preview)</div>';
+                    previewHtml = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:11px;">Vector Project</div>';
                 }
                 
                 // Card HTML

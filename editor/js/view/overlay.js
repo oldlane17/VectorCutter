@@ -98,14 +98,13 @@ export class OverlayRenderer {
                     this.handleElements.push(rect);
                 });
 
-                // Rotation Handle (24px out from top center)
-                const upNorm = {
-                    x: -Math.sin(rotRad),
-                    y: -Math.cos(rotRad)
-                };
+                // Rotation Handle (24px directly outward from top center edge)
+                const dirX = pN.x - pS.x;
+                const dirY = pN.y - pS.y;
+                const dirLen = Math.hypot(dirX, dirY) || 1;
                 const rotPt = {
-                    x: pN.x + upNorm.x * 24,
-                    y: pN.y + upNorm.y * 24
+                    x: pN.x + (dirX / dirLen) * 24,
+                    y: pN.y + (dirY / dirLen) * 24
                 };
 
                 // Stalk line

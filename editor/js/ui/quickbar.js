@@ -14,6 +14,13 @@ export class QuickbarController {
         this.toolManager = toolManager;
         this.store = store;
 
+        // Prevent ANY click or pointerdown inside quickbar from bubbling to canvas
+        ['pointerdown', 'mousedown', 'touchstart', 'click'].forEach(evt => {
+            this.quickbar.addEventListener(evt, (e) => {
+                e.stopPropagation();
+            });
+        });
+
         this.bindEvents();
         this.bindToolBehaviourControls();
         this.updateState();

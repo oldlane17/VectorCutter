@@ -310,29 +310,58 @@ export class SelectTool {
             const initM = this.initialTransforms.get(el.id);
             if (!initM) return;
 
+            const [a, b, c, d] = initM;
+            const det = a * d - b * c;
+            if (Math.abs(det) < 1e-8) return;
+
+            // World displacement
+            const dx_w = pt.x - this.dragStart.x;
+            const dy_w = pt.y - this.dragStart.y;
+
+            // Project world displacement into element local coordinates
+            const dx_loc = (d * dx_w - c * dy_w) / det;
+            const dy_loc = (-b * dx_w + a * dy_w) / det;
+
             const box = this.initialLocalBox;
-            const dx = pt.x - this.dragStart.x;
-            const dy = pt.y - this.dragStart.y;
+            const w0 = Math.max(0.001, box.width);
+            const h0 = Math.max(0.001, box.height);
 
-            let scaleX = 1;
-            let scaleY = 1;
+            let anchorX = box.x;
+            let anchorY = box.y;
+            let kx = 1;
+            let ky = 1;
 
-            if (this.activeHandle.includes('e')) scaleX = (box.width + dx) / box.width;
-            if (this.activeHandle.includes('w')) scaleX = (box.width - dx) / box.width;
-            if (this.activeHandle.includes('s')) scaleY = (box.height + dy) / box.height;
-            if (this.activeHandle.includes('n')) scaleY = (box.height - dy) / box.height;
+            if (this.activeHandle.includes('e')) {
+                anchorX = box.x;
+                const wPrime = w0 + dx_loc;
+                kx = Math.max(0.01, wPrime / w0);
+            } else if (this.activeHandle.includes('w')) {
+                anchorX = box.x + w0;
+                const wPrime = w0 - dx_loc;
+                kx = Math.max(0.01, wPrime / w0);
+            }
+
+            if (this.activeHandle.includes('s')) {
+                anchorY = box.y;
+                const hPrime = h0 + dy_loc;
+                ky = Math.max(0.01, hPrime / h0);
+            } else if (this.activeHandle.includes('n')) {
+                anchorY = box.y + h0;
+                const hPrime = h0 - dy_loc;
+                ky = Math.max(0.01, hPrime / h0);
+            }
 
             // Aspect ratio lock with Shift
             if (e && e.shiftKey) {
-                const s = Math.max(Math.abs(scaleX), Math.abs(scaleY));
-                scaleX = (scaleX < 0 ? -1 : 1) * s;
-                scaleY = (scaleY < 0 ? -1 : 1) * s;
+                if (this.activeHandle.length === 2) { // corner handles (nw, ne, se, sw)
+                    const uniform = Math.max(kx, ky);
+                    kx = uniform;
+                    ky = uniform;
+                }
             }
 
-            scaleX = Math.max(0.01, scaleX);
-            scaleY = Math.max(0.01, scaleY);
-
-            el.transform = multiplyMatrix(initM, scaleMatrix(scaleX, scaleY));
+            const sLocal = scaleMatrix(kx, ky, anchorX, anchorY);
+            el.transform = multiplyMatrix(initM, sLocal);
         }
     }
 
