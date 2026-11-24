@@ -530,6 +530,14 @@ white-space: nowrap;
 
             projects.forEach(proj => {
                 const dateStr = new Date(proj.id).toLocaleDateString() + ' ' + new Date(proj.id).toLocaleTimeString();
+                let previewHtml = '';
+                if (proj.svgPreview) {
+                    previewHtml = proj.svgPreview;
+                } else if (typeof proj.content === 'string' && proj.content.trim().startsWith('<svg')) {
+                    previewHtml = proj.content;
+                } else {
+                    previewHtml = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;font-size:11px;">Project (No SVG preview)</div>';
+                }
                 
                 // Card HTML
                 const card = document.createElement('div');
@@ -538,7 +546,7 @@ white-space: nowrap;
                     <div>
                         <div class="project-title">${proj.name || 'Untitled Project'}</div>
                         <div class="project-date">${dateStr}</div>
-                        <div class="project-preview">${proj.content}</div> <!-- SVG renders here -->
+                        <div class="project-preview">${previewHtml}</div>
                     </div>
                     
                     <!-- Overlay for actions -->
@@ -564,6 +572,7 @@ white-space: nowrap;
                 if(svgEl) {
                     svgEl.setAttribute('width', '100%');
                     svgEl.setAttribute('height', '100%');
+                    svgEl.setAttribute('preserveAspectRatio', 'xMidYMid meet');
                     svgEl.removeAttribute('style'); // Clear specific dimensions
                 }
 

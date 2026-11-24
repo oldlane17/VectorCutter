@@ -4,8 +4,9 @@
 
 import { events } from '../core/events.js';
 import { rotationMatrix, scaleMatrix, multiplyMatrix, translationMatrix } from '../model/matrix.js';
-import { TransformElementsCommand, DeleteElementsCommand, AddElementCommand } from '../core/commands.js';
-import { getElementLocalBounds } from '../model/bounds.js';
+import { TransformElementsCommand, DeleteElementsCommand, AddElementCommand, UpdateElementPropsCommand } from '../core/commands.js';
+import { getElementLocalBounds, getRotationCentre } from '../model/bounds.js';
+import { requestRender } from '../core/scheduler.js';
 
 export class QuickbarController {
     constructor(quickbarEl, toolManager, store) {
@@ -14,6 +15,7 @@ export class QuickbarController {
         this.store = store;
 
         this.bindEvents();
+        this.bindToolBehaviourControls();
         this.updateState();
     }
 
@@ -69,15 +71,101 @@ export class QuickbarController {
         events.on('tool:changed', () => this.updateState());
     }
 
+    bindToolBehaviourControls() {
+        // --- 1. Selection Mode (Rect / Lasso) ---
+        this.quickbar.querySelectorAll('[data-sel-mode]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.quickbar.querySelectorAll('[data-sel-mode]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                window.__vcSelectionMode = btn.dataset.selMode; // 'rect' | 'lasso'
+            });
+        });
+
+        // --- 2. Snap Mode (Grid / Geometry / None) ---
+        this.quickbar.querySelectorAll('[data-snap]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.quickbar.querySelectorAll('[data-snap]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                window.__vcSnapMode = btn.dataset.snap; // 'grid' | 'geometry' | 'none'
+                events.emit('snap:changed', window.__vcSnapMode);
+            });
+        });
+
+        // --- 3. Quick Color Picks (Stroke & Fill) ---
+        const strokeBtn = document.getElementById('qbStrokeColor');
+        const fillBtn = document.getElementById('qbFillColor');
+
+        if (strokeBtn) {
+            strokeBtn.addEventListener('click', () => {
+                const inp = document.createElement('input');
+                inp.type = 'color';
+                inp.value = window.__vcDefaultStroke || '#007acc';
+                inp.style.position = 'fixed';
+                inp.style.opacity = '0';
+                document.body.appendChild(inp);
+                inp.click();
+                inp.addEventListener('input', () => {
+                    const col = inp.value;
+                    window.__vcDefaultStroke = col;
+                    const prev = document.getElementById('qbStrokePreview');
+                    if (prev) prev.style.background = col;
+
+                    const sel = this.store.getSelectedElements();
+                    if (sel.length > 0) {
+                        this.store.commit('Change Stroke Color', doc => {
+                            sel.forEach(el => {
+                                if (doc.elements[el.id]) {
+                                    doc.elements[el.id].style.stroke = col;
+                                }
+                            });
+                        });
+                        requestRender();
+                    }
+                });
+                inp.addEventListener('change', () => inp.remove());
+            });
+        }
+
+        if (fillBtn) {
+            fillBtn.addEventListener('click', () => {
+                const inp = document.createElement('input');
+                inp.type = 'color';
+                inp.value = window.__vcDefaultFill || '#007acc';
+                inp.style.position = 'fixed';
+                inp.style.opacity = '0';
+                document.body.appendChild(inp);
+                inp.click();
+                inp.addEventListener('input', () => {
+                    const col = inp.value;
+                    window.__vcDefaultFill = col;
+                    const prev = document.getElementById('qbFillPreview');
+                    if (prev) prev.style.background = col;
+
+                    const sel = this.store.getSelectedElements();
+                    if (sel.length > 0) {
+                        this.store.commit('Change Fill Color', doc => {
+                            sel.forEach(el => {
+                                if (doc.elements[el.id]) {
+                                    doc.elements[el.id].style.fill = col;
+                                }
+                            });
+                        });
+                        requestRender();
+                    }
+                });
+                inp.addEventListener('change', () => inp.remove());
+            });
+        }
+    }
+
     rotateSelection(deg) {
         const selected = this.store.getSelectedElements();
         if (selected.length === 0) return;
 
         const transforms = [];
         selected.forEach(el => {
-            const box = getElementLocalBounds(el);
-            const cx = el.transform[4] + box.width / 2;
-            const cy = el.transform[5] + box.height / 2;
+            if (el.locked) return;
+            const { x: cx, y: cy } = getRotationCentre(el);
             const rot = rotationMatrix(deg, cx, cy);
             transforms.push({
                 id: el.id,
@@ -86,7 +174,10 @@ export class QuickbarController {
             });
         });
 
-        this.store.dispatch(new TransformElementsCommand(transforms));
+        if (transforms.length > 0) {
+            this.store.dispatch(new TransformElementsCommand(transforms));
+            requestRender();
+        }
     }
 
     flipSelection(direction) {
@@ -95,9 +186,8 @@ export class QuickbarController {
 
         const transforms = [];
         selected.forEach(el => {
-            const box = getElementLocalBounds(el);
-            const cx = el.transform[4] + box.width / 2;
-            const cy = el.transform[5] + box.height / 2;
+            if (el.locked) return;
+            const { x: cx, y: cy } = getRotationCentre(el);
             const scale = direction === 'h' ? scaleMatrix(-1, 1, cx, cy) : scaleMatrix(1, -1, cx, cy);
             transforms.push({
                 id: el.id,
@@ -106,7 +196,10 @@ export class QuickbarController {
             });
         });
 
-        this.store.dispatch(new TransformElementsCommand(transforms));
+        if (transforms.length > 0) {
+            this.store.dispatch(new TransformElementsCommand(transforms));
+            requestRender();
+        }
     }
 
     duplicateSelection() {
@@ -126,10 +219,19 @@ export class QuickbarController {
         });
         this.store.endBatch('Duplicate Elements');
         this.store.setSelection(newIds);
+        requestRender();
     }
 
     deleteSelection() {
         if (this.store.doc.selection.length === 0) return;
-        this.store.dispatch(new DeleteElementsCommand(this.store.doc.selection, this.store.doc));
+        const unlocked = this.store.doc.selection.filter(id => {
+            const el = this.store.getElement(id);
+            return el && !el.locked;
+        });
+        if (unlocked.length > 0) {
+            this.store.dispatch(new DeleteElementsCommand(unlocked, this.store.doc));
+            this.store.clearSelection();
+            requestRender();
+        }
     }
 }

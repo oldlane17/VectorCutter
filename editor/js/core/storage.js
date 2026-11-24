@@ -93,6 +93,7 @@ class StorageService {
                 id: project.id || Date.now(),
                 name: project.name || 'Untitled Project',
                 content: project.content || '',
+                svgPreview: project.svgPreview || '',
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             });

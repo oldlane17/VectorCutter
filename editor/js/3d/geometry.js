@@ -155,8 +155,9 @@ export async function extractElementRings(el) {
     }
 
     // Apply object transform to world coordinates
+    const m = el.transform || [1, 0, 0, 1, 0, 0];
     const worldRings = rawRings.map(ring => {
-        return ring.map(pt => transformPoint(pt.x, pt.y, el.transform));
+        return ring.map(pt => transformPoint(m, pt));
     });
 
     return cleanAndClassifyRings(worldRings);

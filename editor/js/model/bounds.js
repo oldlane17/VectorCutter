@@ -96,3 +96,38 @@ export function getTransformedCorners(localBox, transform) {
     ];
     return corners.map(pt => transformPoint(transform, pt));
 }
+
+/**
+ * Point in polygon test for convex or non-convex polygons
+ */
+export function pointInPolygon(px, py, corners) {
+    let inside = false;
+    for (let i = 0, j = corners.length - 1; i < corners.length; j = i++) {
+        const xi = corners[i].x, yi = corners[i].y;
+        const xj = corners[j].x, yj = corners[j].y;
+        if (((yi > py) !== (yj > py)) && (px < ((xj - xi) * (py - yi)) / (yj - yi) + xi)) {
+            inside = !inside;
+        }
+    }
+    return inside;
+}
+
+/**
+ * Returns world coordinates of the rotation centre for an element
+ */
+export function getRotationCentre(el) {
+    if (!el) return { x: 0, y: 0 };
+    const m = el.transform || [1, 0, 0, 1, 0, 0];
+    if (el.rotationCenter) {
+        if (el.rotationCenter.mode === 'absolute') {
+            return { x: el.rotationCenter.x, y: el.rotationCenter.y };
+        }
+        // 'object' mode: relative to local element coordinates
+        return transformPoint(m, { x: el.rotationCenter.x, y: el.rotationCenter.y });
+    }
+    // Default: visual mass centre
+    const box = getElementLocalBounds(el);
+    const localCx = box.x + box.width / 2;
+    const localCy = box.y + box.height / 2;
+    return transformPoint(m, { x: localCx, y: localCy });
+}

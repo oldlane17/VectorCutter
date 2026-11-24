@@ -5,9 +5,43 @@
  */
 
 import { createElement } from '../model/elements.js';
-import { translationMatrix } from '../model/matrix.js';
+import { translationMatrix, multiplyMatrix } from '../model/matrix.js';
 import { AddElementCommand } from '../core/commands.js';
 import { requestRender } from '../core/scheduler.js';
+
+export function parseSVGTransform(transformStr) {
+    if (!transformStr) return [1, 0, 0, 1, 0, 0];
+    let matrix = [1, 0, 0, 1, 0, 0];
+
+    const regex = /([a-zA-Z]+)\s*\(([^)]+)\)/g;
+    let match;
+    while ((match = regex.exec(transformStr)) !== null) {
+        const type = match[1].toLowerCase();
+        const args = match[2].trim().split(/[\s,]+/).map(Number).filter(n => !isNaN(n));
+        if (type === 'matrix' && args.length === 6) {
+            matrix = multiplyMatrix(matrix, args);
+        } else if (type === 'translate' && args.length >= 1) {
+            matrix = multiplyMatrix(matrix, translationMatrix(args[0], args[1] || 0));
+        } else if (type === 'scale' && args.length >= 1) {
+            matrix = multiplyMatrix(matrix, [args[0], 0, 0, args[1] !== undefined ? args[1] : args[0], 0, 0]);
+        } else if (type === 'rotate' && args.length >= 1) {
+            const rad = (args[0] * Math.PI) / 180;
+            const cos = Math.cos(rad);
+            const sin = Math.sin(rad);
+            const cx = args[1] || 0;
+            const cy = args[2] || 0;
+            if (cx === 0 && cy === 0) {
+                matrix = multiplyMatrix(matrix, [cos, sin, -sin, cos, 0, 0]);
+            } else {
+                const toC = translationMatrix(-cx, -cy);
+                const rM = [cos, sin, -sin, cos, 0, 0];
+                const fromC = translationMatrix(cx, cy);
+                matrix = multiplyMatrix(matrix, multiplyMatrix(fromC, multiplyMatrix(rM, toC)));
+            }
+        }
+    }
+    return matrix;
+}
 
 export function importSVGString(svgText, store, mode = 'append') {
     try {
@@ -57,6 +91,12 @@ function walkNode(node, list, currentTransform) {
     // Ignore defs, metadata, scripts
     if (['defs', 'metadata', 'style', 'script', 'clippath', 'mask'].includes(tag)) return;
 
+    let nodeTransform = currentTransform || [1, 0, 0, 1, 0, 0];
+    const tfAttr = node.getAttribute('transform');
+    if (tfAttr) {
+        nodeTransform = multiplyMatrix(nodeTransform, parseSVGTransform(tfAttr));
+    }
+
     // Presentation attributes
     const fill = node.getAttribute('fill') || 'none';
     const stroke = node.getAttribute('stroke') || '#000000';
@@ -84,7 +124,7 @@ function walkNode(node, list, currentTransform) {
                 height: parseFloat(node.getAttribute('height')) || 10,
                 rx: parseFloat(node.getAttribute('rx')) || 0,
                 ry: parseFloat(node.getAttribute('ry')) || 0,
-                style, laser, transform: currentTransform
+                style, laser, transform: nodeTransform
             });
             break;
         case 'circle':
@@ -92,7 +132,7 @@ function walkNode(node, list, currentTransform) {
                 cx: parseFloat(node.getAttribute('cx')) || 0,
                 cy: parseFloat(node.getAttribute('cy')) || 0,
                 r: parseFloat(node.getAttribute('r')) || 5,
-                style, laser, transform: currentTransform
+                style, laser, transform: nodeTransform
             });
             break;
         case 'ellipse':
@@ -101,7 +141,7 @@ function walkNode(node, list, currentTransform) {
                 cy: parseFloat(node.getAttribute('cy')) || 0,
                 rx: parseFloat(node.getAttribute('rx')) || 10,
                 ry: parseFloat(node.getAttribute('ry')) || 5,
-                style, laser, transform: currentTransform
+                style, laser, transform: nodeTransform
             });
             break;
         case 'line':
@@ -110,7 +150,7 @@ function walkNode(node, list, currentTransform) {
                 y1: parseFloat(node.getAttribute('y1')) || 0,
                 x2: parseFloat(node.getAttribute('x2')) || 10,
                 y2: parseFloat(node.getAttribute('y2')) || 0,
-                style, laser, transform: currentTransform
+                style, laser, transform: nodeTransform
             });
             break;
         case 'polyline':
@@ -124,14 +164,14 @@ function walkNode(node, list, currentTransform) {
                     }
                 }
                 if (tag === 'polygon') d += ' Z';
-                el = createElement('path', { d, style, laser, transform: currentTransform });
+                el = createElement('path', { d, style, laser, transform: nodeTransform });
             }
             break;
         }
         case 'path':
             el = createElement('path', {
                 d: node.getAttribute('d') || 'M 0 0',
-                style, laser, transform: currentTransform
+                style, laser, transform: nodeTransform
             });
             break;
         case 'text':
@@ -141,12 +181,12 @@ function walkNode(node, list, currentTransform) {
                 text: node.textContent.trim(),
                 fontSize: parseFloat(node.getAttribute('font-size')) || 14,
                 fontFamily: node.getAttribute('font-family') || 'Arial',
-                style, laser, transform: currentTransform
+                style, laser, transform: nodeTransform
             });
             break;
         case 'g':
         case 'svg':
-            Array.from(node.children).forEach(child => walkNode(child, list, currentTransform));
+            Array.from(node.children).forEach(child => walkNode(child, list, nodeTransform));
             break;
     }
 
@@ -170,6 +210,13 @@ function walkNode(node, list, currentTransform) {
         if (threeDAttr) {
             try {
                 el.threeD = JSON.parse(decodeURIComponent(threeDAttr));
+            } catch (e) {}
+        }
+
+        const rotCenterAttr = node.getAttribute('data-vc-rotcenter');
+        if (rotCenterAttr) {
+            try {
+                el.rotationCenter = JSON.parse(decodeURIComponent(rotCenterAttr));
             } catch (e) {}
         }
 

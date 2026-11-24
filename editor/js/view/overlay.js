@@ -4,7 +4,7 @@
  * Zero scaling distortion with zoom.
  */
 
-import { getElementLocalBounds, getTransformedCorners } from '../model/bounds.js';
+import { getElementLocalBounds, getTransformedCorners, getRotationCentre } from '../model/bounds.js';
 import { getRotatedResizeCursor } from './cursors.js';
 
 export class OverlayRenderer {
@@ -74,72 +74,107 @@ export class OverlayRenderer {
                 { type: 'w',  pt: pW,  baseAngle: 180 }
             ];
 
-            // Render 8 resize handles (constant 9x9 px squares)
-            const handleSize = 9;
-            handles.forEach(h => {
-                const rect = document.createElementNS(ns, 'rect');
-                rect.setAttribute('x', h.pt.x - handleSize / 2);
-                rect.setAttribute('y', h.pt.y - handleSize / 2);
-                rect.setAttribute('width', handleSize);
-                rect.setAttribute('height', handleSize);
-                rect.setAttribute('fill', '#ffffff');
-                rect.setAttribute('stroke', '#007acc');
-                rect.setAttribute('stroke-width', '1.5');
-                rect.dataset.handle = h.type;
+            // Only render handles if element is not locked (§4)
+            if (!el.locked) {
+                // Render 8 resize handles (constant 9x9 px squares)
+                const handleSize = 9;
+                handles.forEach(h => {
+                    const rect = document.createElementNS(ns, 'rect');
+                    rect.setAttribute('x', h.pt.x - handleSize / 2);
+                    rect.setAttribute('y', h.pt.y - handleSize / 2);
+                    rect.setAttribute('width', handleSize);
+                    rect.setAttribute('height', handleSize);
+                    rect.setAttribute('fill', '#ffffff');
+                    rect.setAttribute('stroke', '#007acc');
+                    rect.setAttribute('stroke-width', '1.5');
+                    rect.dataset.handle = h.type;
 
-                // Rotated resize cursor
-                const effAngle = (h.baseAngle + rotDeg + 360) % 360;
-                rect.style.cursor = getRotatedResizeCursor(effAngle);
-                rect.style.pointerEvents = 'auto';
+                    // Rotated resize cursor
+                    const effAngle = (h.baseAngle + rotDeg + 360) % 360;
+                    rect.style.cursor = getRotatedResizeCursor(effAngle);
+                    rect.style.pointerEvents = 'auto';
 
-                this.svg.appendChild(rect);
-                this.handleElements.push(rect);
-            });
+                    this.svg.appendChild(rect);
+                    this.handleElements.push(rect);
+                });
 
-            // Rotation Handle (24px out from top center)
-            const upNorm = {
-                x: -Math.sin(rotRad),
-                y: -Math.cos(rotRad)
-            };
-            const rotPt = {
-                x: pN.x + upNorm.x * 24,
-                y: pN.y + upNorm.y * 24
-            };
+                // Rotation Handle (24px out from top center)
+                const upNorm = {
+                    x: -Math.sin(rotRad),
+                    y: -Math.cos(rotRad)
+                };
+                const rotPt = {
+                    x: pN.x + upNorm.x * 24,
+                    y: pN.y + upNorm.y * 24
+                };
 
-            // Stalk line
-            const stalk = document.createElementNS(ns, 'line');
-            stalk.setAttribute('x1', pN.x);
-            stalk.setAttribute('y1', pN.y);
-            stalk.setAttribute('x2', rotPt.x);
-            stalk.setAttribute('y2', rotPt.y);
-            stalk.setAttribute('stroke', '#007acc');
-            stalk.setAttribute('stroke-width', '1');
-            this.svg.appendChild(stalk);
+                // Stalk line
+                const stalk = document.createElementNS(ns, 'line');
+                stalk.setAttribute('x1', pN.x);
+                stalk.setAttribute('y1', pN.y);
+                stalk.setAttribute('x2', rotPt.x);
+                stalk.setAttribute('y2', rotPt.y);
+                stalk.setAttribute('stroke', '#007acc');
+                stalk.setAttribute('stroke-width', '1');
+                this.svg.appendChild(stalk);
 
-            // Rotation knob
-            const rotKnob = document.createElementNS(ns, 'circle');
-            rotKnob.setAttribute('cx', rotPt.x);
-            rotKnob.setAttribute('cy', rotPt.y);
-            rotKnob.setAttribute('r', 4.5);
-            rotKnob.setAttribute('fill', '#007acc');
-            rotKnob.setAttribute('stroke', '#ffffff');
-            rotKnob.setAttribute('stroke-width', '1.5');
-            rotKnob.style.cursor = 'grab';
-            rotKnob.style.pointerEvents = 'auto';
-            rotKnob.dataset.handle = 'rotate';
-            this.svg.appendChild(rotKnob);
-            this.handleElements.push(rotKnob);
+                // Rotation knob
+                const rotKnob = document.createElementNS(ns, 'circle');
+                rotKnob.setAttribute('cx', rotPt.x);
+                rotKnob.setAttribute('cy', rotPt.y);
+                rotKnob.setAttribute('r', 4.5);
+                rotKnob.setAttribute('fill', '#007acc');
+                rotKnob.setAttribute('stroke', '#ffffff');
+                rotKnob.setAttribute('stroke-width', '1.5');
+                rotKnob.style.cursor = 'grab';
+                rotKnob.style.pointerEvents = 'auto';
+                rotKnob.dataset.handle = 'rot';
+                this.svg.appendChild(rotKnob);
+                this.handleElements.push(rotKnob);
+            }
+
+            // Custom Rotation Centre Crosshair Indicator (if configured)
+            if (el.rotationCenter) {
+                const rotWorld = getRotationCentre(el);
+                const rotScreen = this.camera.toScreen(rotWorld.x, rotWorld.y);
+                const gCross = document.createElementNS(ns, 'g');
+                gCross.setAttribute('stroke', '#ff9900');
+                gCross.setAttribute('stroke-width', '1.5');
+
+                const circle = document.createElementNS(ns, 'circle');
+                circle.setAttribute('cx', rotScreen.x);
+                circle.setAttribute('cy', rotScreen.y);
+                circle.setAttribute('r', 6);
+                circle.setAttribute('fill', 'none');
+
+                const lH = document.createElementNS(ns, 'line');
+                lH.setAttribute('x1', rotScreen.x - 9);
+                lH.setAttribute('y1', rotScreen.y);
+                lH.setAttribute('x2', rotScreen.x + 9);
+                lH.setAttribute('y2', rotScreen.y);
+
+                const lV = document.createElementNS(ns, 'line');
+                lV.setAttribute('x1', rotScreen.x);
+                lV.setAttribute('y1', rotScreen.y - 9);
+                lV.setAttribute('x2', rotScreen.x);
+                lV.setAttribute('y2', rotScreen.y + 9);
+
+                gCross.appendChild(circle);
+                gCross.appendChild(lH);
+                gCross.appendChild(lV);
+                this.svg.appendChild(gCross);
+            }
 
             // Measurement Label (e.g. "60.0 mm x 40.0 mm")
             const dimLabel = document.createElementNS(ns, 'text');
             dimLabel.setAttribute('x', pS.x);
             dimLabel.setAttribute('y', pS.y + 16);
             dimLabel.setAttribute('text-anchor', 'middle');
-            dimLabel.setAttribute('fill', '#007acc');
+            dimLabel.setAttribute('fill', el.locked ? '#888888' : '#007acc');
             dimLabel.setAttribute('font-size', '11');
             dimLabel.setAttribute('font-family', 'sans-serif');
             dimLabel.setAttribute('font-weight', 'bold');
-            dimLabel.textContent = `${localBox.width.toFixed(1)} × ${localBox.height.toFixed(1)} mm`;
+            dimLabel.textContent = `${localBox.width.toFixed(1)} × ${localBox.height.toFixed(1)} mm${el.locked ? ' 🔒' : ''}`;
             this.svg.appendChild(dimLabel);
             return;
         }

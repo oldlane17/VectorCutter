@@ -6,7 +6,7 @@
 
 import { translationMatrix, rotationMatrix, scaleMatrix, multiplyMatrix, transformPoint } from '../model/matrix.js';
 import { TransformElementsCommand, DeleteElementsCommand, AddElementCommand, UpdateElementPropsCommand } from '../core/commands.js';
-import { getElementLocalBounds } from '../model/bounds.js';
+import { getElementLocalBounds, getTransformedCorners, pointInPolygon, getRotationCentre } from '../model/bounds.js';
 import { events } from '../core/events.js';
 import { requestRender } from '../core/scheduler.js';
 
@@ -23,6 +23,7 @@ export class SelectTool {
         this.dragStart = { x: 0, y: 0 };
         this.marqueeStart = { sx: 0, sy: 0, wx: 0, wy: 0 };
         this.marqueeEl = null;
+        this.lassoPoints = [];
 
         this.initialTransforms = new Map();
         this.initialGeometries = new Map();
@@ -51,22 +52,28 @@ export class SelectTool {
 
                 const transforms = [];
                 selected.forEach(el => {
+                    if (el.locked) return;
                     const before = [...el.transform];
                     el.transform = multiplyMatrix(translationMatrix(dx, dy), el.transform);
                     transforms.push({ id: el.id, before, after: [...el.transform] });
                 });
 
-                this.store.dispatch(new TransformElementsCommand(transforms));
-                requestRender();
+                if (transforms.length > 0) {
+                    this.store.dispatch(new TransformElementsCommand(transforms));
+                    requestRender();
+                }
                 return;
             }
 
             // Delete / Backspace
             if ((e.code === 'Delete' || e.code === 'Backspace') && selected.length > 0) {
                 e.preventDefault();
-                this.store.dispatch(new DeleteElementsCommand(selected.map(s => s.id), this.store.doc));
-                this.store.clearSelection();
-                requestRender();
+                const unlocked = selected.filter(s => !s.locked);
+                if (unlocked.length > 0) {
+                    this.store.dispatch(new DeleteElementsCommand(unlocked.map(s => s.id), this.store.doc));
+                    this.store.clearSelection();
+                    requestRender();
+                }
                 return;
             }
 
@@ -117,6 +124,9 @@ export class SelectTool {
 
         // 1. Clicked a handle (resize or rotate)
         if (handle) {
+            const selectedEls = this.store.getSelectedElements();
+            if (selectedEls.some(el => el.locked)) return; // Locked objects cannot be transformed
+
             this.isTransforming = true;
             this.activeHandle = handle;
             this.dragStart = { x: pt.x, y: pt.y };
@@ -148,7 +158,7 @@ export class SelectTool {
             return;
         }
 
-        // 3. Clicked empty canvas -> Start Marquee Box Selection
+        // 3. Clicked empty canvas -> Start Marquee Box or Lasso Selection
         if (!e.shiftKey) {
             this.store.clearSelection();
         }
@@ -160,6 +170,7 @@ export class SelectTool {
             wx: pt.x,
             wy: pt.y
         };
+        this.lassoPoints = [{ x: pt.screenX, y: pt.screenY, wx: pt.x, wy: pt.y }];
         this.createMarqueeElement();
     }
 
@@ -186,15 +197,22 @@ export class SelectTool {
         }
 
         if (this.isMarquee && this.marqueeEl) {
-            const left = Math.min(this.marqueeStart.sx, pt.screenX);
-            const top = Math.min(this.marqueeStart.sy, pt.screenY);
-            const w = Math.abs(pt.screenX - this.marqueeStart.sx);
-            const h = Math.abs(pt.screenY - this.marqueeStart.sy);
+            const mode = window.__vcSelectionMode || 'rect';
+            if (mode === 'lasso') {
+                this.lassoPoints.push({ x: pt.screenX, y: pt.screenY, wx: pt.x, wy: pt.y });
+                const ptsStr = this.lassoPoints.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+                this.marqueeEl.setAttribute('points', ptsStr);
+            } else {
+                const left = Math.min(this.marqueeStart.sx, pt.screenX);
+                const top = Math.min(this.marqueeStart.sy, pt.screenY);
+                const w = Math.abs(pt.screenX - this.marqueeStart.sx);
+                const h = Math.abs(pt.screenY - this.marqueeStart.sy);
 
-            this.marqueeEl.setAttribute('x', left);
-            this.marqueeEl.setAttribute('y', top);
-            this.marqueeEl.setAttribute('width', Math.max(1, w));
-            this.marqueeEl.setAttribute('height', Math.max(1, h));
+                this.marqueeEl.setAttribute('x', left);
+                this.marqueeEl.setAttribute('y', top);
+                this.marqueeEl.setAttribute('width', Math.max(1, w));
+                this.marqueeEl.setAttribute('height', Math.max(1, h));
+            }
         }
     }
 
@@ -235,9 +253,22 @@ export class SelectTool {
         if (selected.length === 1) {
             const el = selected[0];
             this.initialLocalBox = getElementLocalBounds(el);
-            const cx = this.initialLocalBox.x + this.initialLocalBox.width / 2;
-            const cy = this.initialLocalBox.y + this.initialLocalBox.height / 2;
-            this.initialCenter = transformPoint(cx, cy, el.transform);
+            this.initialCenter = getRotationCentre(el);
+            this.initialAngle = Math.atan2(this.dragStart.y - this.initialCenter.y, this.dragStart.x - this.initialCenter.x);
+        } else if (selected.length > 1) {
+            // Group center
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            selected.forEach(el => {
+                const b = getElementLocalBounds(el);
+                const corners = getTransformedCorners(b, el.transform);
+                corners.forEach(c => {
+                    minX = Math.min(minX, c.x);
+                    minY = Math.min(minY, c.y);
+                    maxX = Math.max(maxX, c.x);
+                    maxY = Math.max(maxY, c.y);
+                });
+            });
+            this.initialCenter = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
             this.initialAngle = Math.atan2(this.dragStart.y - this.initialCenter.y, this.dragStart.x - this.initialCenter.x);
         }
     }
@@ -246,8 +277,8 @@ export class SelectTool {
         const selected = this.store.getSelectedElements();
         if (selected.length === 0) return;
 
-        // Rotation Handle
-        if (this.activeHandle === 'rot') {
+        // Rotation Handle ('rot' or 'rotate')
+        if (this.activeHandle === 'rot' || this.activeHandle === 'rotate') {
             const currentAngle = Math.atan2(pt.y - this.initialCenter.y, pt.x - this.initialCenter.x);
             let dAngle = currentAngle - this.initialAngle;
 
@@ -259,10 +290,11 @@ export class SelectTool {
             }
 
             selected.forEach(el => {
+                if (el.locked) return;
                 const initM = this.initialTransforms.get(el.id);
                 if (initM) {
                     const toCenter = translationMatrix(-this.initialCenter.x, -this.initialCenter.y);
-                    const rot = rotationMatrix(dAngle);
+                    const rot = rotationMatrix((dAngle * 180) / Math.PI);
                     const fromCenter = translationMatrix(this.initialCenter.x, this.initialCenter.y);
                     const t = multiplyMatrix(fromCenter, multiplyMatrix(rot, toCenter));
                     el.transform = multiplyMatrix(t, initM);
@@ -274,6 +306,7 @@ export class SelectTool {
         // Resize handles (nw, n, ne, e, se, s, sw, w)
         if (selected.length === 1 && this.initialLocalBox) {
             const el = selected[0];
+            if (el.locked) return;
             const initM = this.initialTransforms.get(el.id);
             if (!initM) return;
 
@@ -338,18 +371,16 @@ export class SelectTool {
             el = el.parentElement;
         }
 
-        // Point-in-polygon bounding hit-test
         const worldPt = this.camera.toWorld(screenX, screenY);
         const order = [...this.store.doc.order].reverse();
 
         for (const id of order) {
             const item = this.store.getElement(id);
             if (!item || item.visible === false || item.locked) continue;
+            if (!item.transform || !Array.isArray(item.transform)) continue;
             const b = getElementLocalBounds(item);
-            const tx = item.transform[4] || 0;
-            const ty = item.transform[5] || 0;
-            if (worldPt.x >= tx + b.x && worldPt.x <= tx + b.x + b.width &&
-                worldPt.y >= ty + b.y && worldPt.y <= ty + b.y + b.height) {
+            const corners = getTransformedCorners(b, item.transform);
+            if (pointInPolygon(worldPt.x, worldPt.y, corners)) {
                 return id;
             }
         }
@@ -361,12 +392,22 @@ export class SelectTool {
         const overlay = document.getElementById('overlaySvg');
         if (!overlay) return;
 
-        this.marqueeEl = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-        this.marqueeEl.setAttribute('fill', 'rgba(0, 122, 204, 0.1)');
-        this.marqueeEl.setAttribute('stroke', '#007acc');
-        this.marqueeEl.setAttribute('stroke-width', '1');
-        this.marqueeEl.setAttribute('stroke-dasharray', '4 4');
-        overlay.appendChild(this.marqueeEl);
+        const mode = window.__vcSelectionMode || 'rect';
+        if (mode === 'lasso') {
+            this.marqueeEl = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            this.marqueeEl.setAttribute('fill', 'rgba(0, 122, 204, 0.1)');
+            this.marqueeEl.setAttribute('stroke', '#007acc');
+            this.marqueeEl.setAttribute('stroke-width', '1');
+            this.marqueeEl.setAttribute('stroke-dasharray', '4 4');
+            overlay.appendChild(this.marqueeEl);
+        } else {
+            this.marqueeEl = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            this.marqueeEl.setAttribute('fill', 'rgba(0, 122, 204, 0.1)');
+            this.marqueeEl.setAttribute('stroke', '#007acc');
+            this.marqueeEl.setAttribute('stroke-width', '1');
+            this.marqueeEl.setAttribute('stroke-dasharray', '4 4');
+            overlay.appendChild(this.marqueeEl);
+        }
     }
 
     finishMarquee(pt) {
@@ -375,30 +416,46 @@ export class SelectTool {
             this.marqueeEl = null;
         }
 
-        const left = Math.min(this.marqueeStart.wx, pt.x);
-        const top = Math.min(this.marqueeStart.wy, pt.y);
-        const right = Math.max(this.marqueeStart.wx, pt.x);
-        const bottom = Math.max(this.marqueeStart.wy, pt.y);
-
+        const mode = window.__vcSelectionMode || 'rect';
         const hits = [];
-        this.store.doc.order.forEach(id => {
-            const el = this.store.getElement(id);
-            if (!el || el.visible === false || el.locked) return;
-            const b = getElementLocalBounds(el);
-            const tx = el.transform[4] || 0;
-            const ty = el.transform[5] || 0;
 
-            const elL = tx + b.x;
-            const elT = ty + b.y;
-            const elR = elL + b.width;
-            const elB = elT + b.height;
+        if (mode === 'lasso' && this.lassoPoints.length > 2) {
+            const polyWorld = this.lassoPoints.map(p => ({ x: p.wx, y: p.wy }));
+            this.store.doc.order.forEach(id => {
+                const el = this.store.getElement(id);
+                if (!el || el.visible === false || el.locked) return;
+                const b = getElementLocalBounds(el);
+                const corners = getTransformedCorners(b, el.transform || [1, 0, 0, 1, 0, 0]);
+                // If any corner is inside lasso or center is inside
+                const center = getRotationCentre(el);
+                if (pointInPolygon(center.x, center.y, polyWorld) || corners.some(c => pointInPolygon(c.x, c.y, polyWorld))) {
+                    hits.push(id);
+                }
+            });
+        } else {
+            const left = Math.min(this.marqueeStart.wx, pt.x);
+            const top = Math.min(this.marqueeStart.wy, pt.y);
+            const right = Math.max(this.marqueeStart.wx, pt.x);
+            const bottom = Math.max(this.marqueeStart.wy, pt.y);
 
-            // Box overlap test
-            if (elL < right && elR > left && elT < bottom && elB > top) {
-                hits.push(id);
-            }
-        });
+            this.store.doc.order.forEach(id => {
+                const el = this.store.getElement(id);
+                if (!el || el.visible === false || el.locked) return;
+                const b = getElementLocalBounds(el);
+                const corners = getTransformedCorners(b, el.transform || [1, 0, 0, 1, 0, 0]);
+                const elL = Math.min(...corners.map(c => c.x));
+                const elR = Math.max(...corners.map(c => c.x));
+                const elT = Math.min(...corners.map(c => c.y));
+                const elB = Math.max(...corners.map(c => c.y));
 
+                // Box overlap test
+                if (elL < right && elR > left && elT < bottom && elB > top) {
+                    hits.push(id);
+                }
+            });
+        }
+
+        this.lassoPoints = [];
         this.store.setSelection(hits);
     }
 }

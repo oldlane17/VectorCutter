@@ -25,7 +25,17 @@ export class Preview3D {
     }
 
     init() {
-        if (!window.THREE || !this.container) return;
+        if (!this.container) return;
+
+        if (!window.THREE) {
+            this.retryCount = (this.retryCount || 0) + 1;
+            if (this.retryCount < 50) {
+                setTimeout(() => this.init(), 100);
+            } else {
+                this.container.innerHTML = '<div style="color:var(--vc-text-muted);padding:24px;text-align:center;font-size:11px;">Three.js / WebGL unavailable.</div>';
+            }
+            return;
+        }
 
         const w = this.container.clientWidth || 340;
         const h = 260;
@@ -67,6 +77,22 @@ export class Preview3D {
         // 6. Bind Mouse Orbit/Pan/Zoom
         this.bindControls();
         this.render();
+
+        if (this.pendingMesh) {
+            this.updateMesh(this.pendingMesh.data, this.pendingMesh.color);
+            this.pendingMesh = null;
+        }
+    }
+
+    dispose() {
+        if (this.renderer && this.renderer.domElement) {
+            this.renderer.domElement.remove();
+        }
+        if (this.mesh) {
+            if (this.mesh.geometry) this.mesh.geometry.dispose();
+            if (this.mesh.material) this.mesh.material.dispose();
+            this.mesh = null;
+        }
     }
 
     bindControls() {
@@ -167,7 +193,10 @@ export class Preview3D {
     }
 
     updateMesh(meshData, colorHex = '#007acc') {
-        if (!this.scene) return;
+        if (!this.scene) {
+            this.pendingMesh = { data: meshData, color: colorHex };
+            return;
+        }
 
         if (this.mesh) {
             this.scene.remove(this.mesh);

@@ -7,6 +7,7 @@ import { events } from '../core/events.js';
 import { requestRender } from '../core/scheduler.js';
 import { DeleteElementsCommand, AddElementCommand } from '../core/commands.js';
 import { translationMatrix, multiplyMatrix } from '../model/matrix.js';
+import { getRotationCentre, getElementLocalBounds } from '../model/bounds.js';
 
 export class ObjectsPanel {
     constructor(containerEl, store) {
@@ -230,6 +231,7 @@ export class ObjectsPanel {
 
         menu.innerHTML = `
             <div class="vc-dropdown-item" id="ctxPrepare3D">Prepare for 3D...</div>
+            <div class="vc-dropdown-item" id="ctxSetRotCenter">Set Rotation Centre...</div>
             <div class="vc-separator"></div>
             <div class="vc-dropdown-item" id="ctxDuplicate">Duplicate</div>
             <div class="vc-dropdown-item" id="ctxDelete">Delete</div>
@@ -243,6 +245,11 @@ export class ObjectsPanel {
         menu.querySelector('#ctxPrepare3D')?.addEventListener('click', () => {
             menu.remove();
             events.emit('open:tab', '3d');
+        });
+
+        menu.querySelector('#ctxSetRotCenter')?.addEventListener('click', () => {
+            menu.remove();
+            this.showRotationCenterModal(id);
         });
 
         menu.querySelector('#ctxDuplicate')?.addEventListener('click', () => {
@@ -283,6 +290,81 @@ export class ObjectsPanel {
                     doc.order.unshift(id);
                 }
             });
+        });
+    }
+
+    showRotationCenterModal(id) {
+        document.getElementById('vcRotCenterModal')?.remove();
+        const el = this.store.getElement(id);
+        if (!el) return;
+
+        const currentRot = el.rotationCenter || null;
+        const initialMode = currentRot ? currentRot.mode : 'object';
+        const defaultCenter = getRotationCentre(el);
+        const defaultX = currentRot ? currentRot.x : (initialMode === 'object' ? 0 : defaultCenter.x);
+        const defaultY = currentRot ? currentRot.y : (initialMode === 'object' ? 0 : defaultCenter.y);
+
+        const card = document.createElement('div');
+        card.id = 'vcRotCenterModal';
+        card.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%, -50%);background:var(--vc-bg-surface-1);border:1px solid var(--vc-border-default);border-radius:8px;padding:16px;z-index:9999;box-shadow:0 10px 30px rgba(0,0,0,0.5);width:300px;font-family:sans-serif;font-size:12px;color:var(--vc-text-primary);';
+
+        card.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-weight:bold;">
+                <span>ROTATION CENTRE</span>
+                <span id="closeRotCenter" style="cursor:pointer;font-size:16px;color:var(--vc-text-muted);">&times;</span>
+            </div>
+            <div style="margin-bottom:8px;">
+                <label style="display:block;margin-bottom:2px;color:var(--vc-text-muted);">X (mm)</label>
+                <input type="number" id="rotCenterX" value="${defaultX.toFixed(1)}" step="1" style="width:100%;height:28px;background:var(--vc-bg-surface-2);border:1px solid var(--vc-border-default);border-radius:4px;color:var(--vc-text-primary);padding:0 8px;box-sizing:border-box;">
+            </div>
+            <div style="margin-bottom:12px;">
+                <label style="display:block;margin-bottom:2px;color:var(--vc-text-muted);">Y (mm)</label>
+                <input type="number" id="rotCenterY" value="${defaultY.toFixed(1)}" step="1" style="width:100%;height:28px;background:var(--vc-bg-surface-2);border:1px solid var(--vc-border-default);border-radius:4px;color:var(--vc-text-primary);padding:0 8px;box-sizing:border-box;">
+            </div>
+            <div style="margin-bottom:14px;">
+                <div style="margin-bottom:6px;color:var(--vc-text-muted);">Reference:</div>
+                <label style="display:flex;align-items:center;gap:6px;margin-bottom:4px;cursor:pointer;">
+                    <input type="radio" name="rotCenterMode" value="object" ${initialMode === 'object' ? 'checked' : ''}>
+                    Relative to object
+                </label>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+                    <input type="radio" name="rotCenterMode" value="absolute" ${initialMode === 'absolute' ? 'checked' : ''}>
+                    Absolute document coordinates
+                </label>
+            </div>
+            <div style="display:flex;justify-content:space-between;gap:8px;">
+                <button id="btnResetRotCenter" style="flex:1;height:28px;background:var(--vc-bg-surface-2);border:1px solid var(--vc-border-default);color:var(--vc-text-primary);border-radius:4px;cursor:pointer;">Reset</button>
+                <button id="btnApplyRotCenter" style="flex:1;height:28px;background:var(--vc-accent-blue);border:none;color:#fff;border-radius:4px;cursor:pointer;font-weight:bold;">Apply</button>
+            </div>
+        `;
+
+        document.body.appendChild(card);
+
+        const close = () => card.remove();
+        card.querySelector('#closeRotCenter')?.addEventListener('click', close);
+
+        card.querySelector('#btnResetRotCenter')?.addEventListener('click', () => {
+            this.store.commit('Reset Rotation Centre to Mass Centre', doc => {
+                if (doc.elements[id]) {
+                    delete doc.elements[id].rotationCenter;
+                }
+            });
+            requestRender();
+            close();
+        });
+
+        card.querySelector('#btnApplyRotCenter')?.addEventListener('click', () => {
+            const x = parseFloat(card.querySelector('#rotCenterX')?.value) || 0;
+            const y = parseFloat(card.querySelector('#rotCenterY')?.value) || 0;
+            const mode = card.querySelector('input[name="rotCenterMode"]:checked')?.value || 'object';
+
+            this.store.commit('Set Rotation Centre', doc => {
+                if (doc.elements[id]) {
+                    doc.elements[id].rotationCenter = { mode, x, y };
+                }
+            });
+            requestRender();
+            close();
         });
     }
 

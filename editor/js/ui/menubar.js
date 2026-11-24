@@ -82,11 +82,13 @@ export class MenubarController {
         this.on('menuDashboardSave', () => {
             const titleInput = document.getElementById('projectTitleInput');
             const name = titleInput?.value || 'VectorCutter Project';
-            const content = this.store.doc;
+            const docJson = JSON.stringify(this.store.doc);
+            const svgThumb = exportSVGString(this.store);
             storage.saveProject({
                 id: Date.now(),
                 name,
-                content: JSON.stringify(content)
+                content: docJson,
+                svgPreview: svgThumb
             });
             alert(`Project "${name}" saved to Dashboard!`);
         });

@@ -260,6 +260,10 @@ export class Panel3D {
     initPreview() {
         const wrap = this.container.querySelector('#vc3DPreviewWrap');
         if (wrap) {
+            if (this.preview) {
+                this.preview.dispose();
+                this.preview = null;
+            }
             this.preview = new Preview3D(wrap);
         }
     }
