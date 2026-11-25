@@ -9,6 +9,7 @@ import { translationMatrix } from '../model/matrix.js';
 import { importSVGString } from '../io/svg-import.js';
 import { events } from '../core/events.js';
 import { storage } from '../core/storage.js';
+import { fontManager } from '../io/fonts.js';
 
 export class ModalsController {
     constructor(store, camera) {
@@ -293,12 +294,10 @@ export class ModalsController {
                     <div style="display:flex;justify-content:space-between;align-items:center;">
                         <label for="setDefaultFont">Default Font</label>
                         <select id="setDefaultFont" style="width:180px;padding:5px 8px;background:var(--vc-bg-surface-2);color:var(--vc-text-primary);border:1px solid var(--vc-border-default);border-radius:4px;">
-                            <option value="Arial" ${curFont === 'Arial' ? 'selected' : ''}>Arial</option>
-                            <option value="Helvetica" ${curFont === 'Helvetica' ? 'selected' : ''}>Helvetica</option>
-                            <option value="Verdana" ${curFont === 'Verdana' ? 'selected' : ''}>Verdana</option>
-                            <option value="Georgia" ${curFont === 'Georgia' ? 'selected' : ''}>Georgia</option>
-                            <option value="Times New Roman" ${curFont === 'Times New Roman' ? 'selected' : ''}>Times New Roman</option>
-                            <option value="Courier New" ${curFont === 'Courier New' ? 'selected' : ''}>Courier New</option>
+                            ${['Arial', 'Helvetica', 'Verdana', 'Georgia', 'Times New Roman', 'Courier New', ...(fontManager.manifest || []).filter(f => !f.singleLine).map(f => f.family)]
+                                .filter((v, i, a) => a.indexOf(v) === i)
+                                .map(f => `<option value="${f}" ${curFont === f ? 'selected' : ''}>${f}</option>`)
+                                .join('')}
                         </select>
                     </div>
 

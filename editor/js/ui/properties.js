@@ -12,6 +12,7 @@ import { ObjectsPanel } from './objects-panel.js';
 import { CodeEditorPanel } from './code-editor.js';
 import { Panel3D } from '../3d/panel.js';
 import { requestRender } from '../core/scheduler.js';
+import { fontManager, detectLaTeX } from '../io/fonts.js';
 
 export class PropertiesController {
     constructor(panelEl, store) {
@@ -420,19 +421,36 @@ export class PropertiesController {
 
         if (el.type === 'text') {
             const g = el.geometry || {};
-            const fonts = ['Arial', 'Helvetica', 'Verdana', 'Georgia', 'Times New Roman', 'Courier New'];
+            const isLatex = !!(g.isLaTeX || detectLaTeX(g.text));
+            const sysFonts = ['Arial', 'Helvetica', 'Verdana', 'Georgia', 'Times New Roman', 'Courier New'];
             const curFont = g.fontFamily || 'Arial';
-            const fontOptions = fonts.map(f => `<option value="${f}" ${curFont === f ? 'selected' : ''}>${f}</option>`).join('');
-            const escapedText = (g.text || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+            let fontOptions = `<optgroup label="System Fonts">` +
+                sysFonts.map(f => `<option value="${f}" ${curFont === f ? 'selected' : ''}>${f}</option>`).join('') +
+                `</optgroup>`;
+
+            const byCat = {};
+            (fontManager.manifest || []).forEach(f => {
+                if (sysFonts.includes(f.family) || f.singleLine) return;
+                const cat = f.category || 'other';
+                if (!byCat[cat]) byCat[cat] = [];
+                byCat[cat].push(f.family);
+            });
+            Object.keys(byCat).forEach(cat => {
+                fontOptions += `<optgroup label="${cat.toUpperCase()}">` +
+                    byCat[cat].map(fam => `<option value="${fam}" ${curFont === fam ? 'selected' : ''}>${fam}</option>`).join('') +
+                    `</optgroup>`;
+            });
+
+            const escapedText = (g.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             return `
                 <div class="vc-panel-section">
-                    <div class="vc-panel-title">TEXT</div>
-                    <div class="prop-row">
-                        <label for="propTextContent">Content</label>
-                        <div class="control"><input type="text" id="propTextContent" value="${escapedText}" placeholder="Enter text..."></div>
-                        <div class="unit"></div>
+                    <div class="vc-panel-title">TEXT & LATEX</div>
+                    <div style="margin-bottom:8px;">
+                        <textarea id="propTextContent" rows="4" placeholder="Enter text or LaTeX (e.g. \\frac{a}{b}, $$E=mc^2$$)..." style="width:100%;min-height:84px;resize:vertical;padding:8px;font-size:13px;line-height:1.4;background:var(--vc-bg-surface-2);color:var(--vc-text-primary);border:1px solid var(--vc-border-default);border-radius:4px;font-family:inherit;box-sizing:border-box;">${escapedText}</textarea>
+                        <div id="latexActiveBadge" style="display:${isLatex ? 'block' : 'none'};margin-top:4px;font-size:11px;color:#38bdf8;font-weight:600;">✓ LaTeX MathJax Vector Mode Active</div>
                     </div>
-                    <div class="prop-row">
+                    <div class="prop-row" id="propTextFontRow" style="display:${isLatex ? 'none' : 'flex'};">
                         <label for="propTextFont">Font</label>
                         <div class="control">
                             <select id="propTextFont">${fontOptions}</select>
@@ -460,15 +478,24 @@ export class PropertiesController {
         // Text element live inputs
         if (el.type === 'text') {
             content.querySelector('#propTextContent')?.addEventListener('input', (e) => {
+                const val = e.target.value;
+                const isLatex = detectLaTeX(val);
+                const fontRow = content.querySelector('#propTextFontRow');
+                const badge = content.querySelector('#latexActiveBadge');
+                if (fontRow) fontRow.style.display = isLatex ? 'none' : 'flex';
+                if (badge) badge.style.display = isLatex ? 'block' : 'none';
+
                 this.store.commit('Edit Text', (doc) => {
                     const target = doc.elements[el.id];
                     if (target && target.geometry) {
-                        target.geometry.text = e.target.value;
+                        target.geometry.text = val;
+                        target.geometry.isLaTeX = isLatex;
                     }
                 });
                 requestRender();
             });
             content.querySelector('#propTextFont')?.addEventListener('change', (e) => {
+                fontManager.ensureFontLoaded(e.target.value);
                 this.store.commit('Change Font', (doc) => {
                     const target = doc.elements[el.id];
                     if (target && target.geometry) {

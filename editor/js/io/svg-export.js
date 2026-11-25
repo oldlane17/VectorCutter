@@ -102,9 +102,17 @@ export function exportSVGString(store, options = {}) {
             case 'path':
                 svg += `  <path d="${g.d || 'M 0 0'}" fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"${meta}/>\n`;
                 break;
-            case 'text':
+            case 'text': {
+                if (g.isLaTeX) {
+                    const renderedNode = document.querySelector(`#worldGroup [data-element-id="${el.id}"]`);
+                    if (renderedNode && renderedNode.innerHTML) {
+                        svg += `  <g fill="${fill}" stroke="${stroke}" stroke-width="${strokeW}"${meta}>${renderedNode.innerHTML}</g>\n`;
+                        break;
+                    }
+                }
                 svg += `  <text x="${g.x || 0}" y="${g.y || 0}" font-size="${g.fontSize || 14}" font-family="${g.fontFamily || 'Arial'}" fill="${fill}" stroke="${stroke}"${meta}>${g.text || ''}</text>\n`;
                 break;
+            }
         }
     });
 

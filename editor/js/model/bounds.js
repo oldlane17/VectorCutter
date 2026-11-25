@@ -54,7 +54,15 @@ export function getElementLocalBounds(el) {
         case 'path':
             // Approximate path bounds from coordinates or fallback
             return parsePathBounds(g.d || 'M 0 0');
-        case 'text':
+        case 'text': {
+            if (el._latexBounds) {
+                return {
+                    x: g.x || 0,
+                    y: (g.y || 0) - el._latexBounds.height,
+                    width: el._latexBounds.width,
+                    height: el._latexBounds.height
+                };
+            }
             const len = (g.text || '').length;
             const size = g.fontSize || 14;
             return {
@@ -63,6 +71,7 @@ export function getElementLocalBounds(el) {
                 width: Math.max(20, len * size * 0.6),
                 height: size * 1.2
             };
+        }
         default:
             return { x: 0, y: 0, width: 50, height: 50 };
     }

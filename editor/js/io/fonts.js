@@ -5,11 +5,51 @@
 
 import { storage } from '../core/storage.js';
 
+const SYSTEM_FONTS = new Set([
+    'Arial', 'Helvetica', 'Verdana', 'Georgia', 'Times New Roman', 'Courier New', 'sans-serif', 'serif', 'monospace'
+]);
+
+export function detectLaTeX(text) {
+    if (!text || typeof text !== 'string') return false;
+    const t = text.trim();
+    if (!t) return false;
+    // Explicit math delimiters
+    if ((t.startsWith('$$') && t.endsWith('$$') && t.length > 4) ||
+        (t.startsWith('$') && t.endsWith('$') && t.length > 2) ||
+        (t.startsWith('\\(') && t.endsWith('\\)')) ||
+        (t.startsWith('\\[') && t.endsWith('\\]'))) {
+        return true;
+    }
+    // Common LaTeX commands or math superscripts/subscripts with braces
+    return /\\(?:frac|int|sum|prod|sqrt|lim|sin|cos|tan|log|ln|alpha|beta|gamma|delta|theta|lambda|mu|pi|sigma|omega|infty|partial|nabla|cdot|times|div|pm|leq|geq|neq|approx|equiv|rightarrow|Rightarrow|left|right|text|mathrm|mathbf|mathbb|vec|hat|bar|overline)\b|[a-zA-Z0-9\)\]}]\s*[\^_]\s*\{/.test(t);
+}
+
+export function stripLatexDelimiters(text) {
+    let t = (text || '').trim();
+    if (t.startsWith('$$') && t.endsWith('$$') && t.length >= 4) t = t.slice(2, -2);
+    else if (t.startsWith('$') && t.endsWith('$') && t.length >= 2) t = t.slice(1, -1);
+    else if (t.startsWith('\\(') && t.endsWith('\\)')) t = t.slice(2, -2);
+    else if (t.startsWith('\\[') && t.endsWith('\\]')) t = t.slice(2, -2);
+    return t.trim();
+}
+
 class FontManager {
     constructor() {
         this.manifest = [];
-        this.categories = ['all', 'sans-serif', 'serif', 'script', 'stencil', 'rounded', 'blackletter', 'monospace', 'single-line'];
+        this.loadedFonts = new Set();
+        this.categories = ['all', 'sans-serif', 'serif', 'slab', 'script', 'stencil', 'rounded', 'blackletter', 'pixel', 'monospace', 'single-line'];
         this.loadManifest();
+    }
+
+    ensureFontLoaded(family) {
+        if (!family || SYSTEM_FONTS.has(family) || this.loadedFonts.has(family)) return;
+        const entry = this.manifest.find(f => f.family === family);
+        if (entry?.singleLine) return;
+        this.loadedFonts.add(family);
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family).replace(/%20/g, '+')}&display=swap`;
+        document.head.appendChild(link);
     }
 
     async loadManifest() {
