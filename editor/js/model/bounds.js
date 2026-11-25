@@ -3,6 +3,7 @@
  */
 
 import { transformPoint } from './matrix.js';
+import { generateStarVertices, generatePolygonVertices } from './generators.js';
 
 export function getElementLocalBounds(el) {
     const g = el.geometry || {};
@@ -130,4 +131,102 @@ export function getRotationCentre(el) {
     const localCx = box.x + box.width / 2;
     const localCy = box.y + box.height / 2;
     return transformPoint(m, { x: localCx, y: localCy });
+}
+
+/**
+ * Computes the adaptive minor grid step in mm matching GridRenderer.
+ */
+export function getAdaptiveGridStep(scale) {
+    const targetMinorPx = 14;
+    const rawWorldStep = targetMinorPx / Math.max(0.01, scale);
+    const power = Math.floor(Math.log10(rawWorldStep));
+    const base = Math.pow(10, power);
+    const fraction = rawWorldStep / base;
+    if (fraction < 1.5) return base * 1;
+    if (fraction < 3.5) return base * 2;
+    if (fraction < 7.5) return base * 5;
+    return base * 10;
+}
+
+/**
+ * Extracts all significant geometry snap points (corners, vertices, midpoints, centers)
+ * for an element in world coordinates.
+ */
+export function getElementSnapPoints(el) {
+    if (!el || el.visible === false) return [];
+    const m = el.transform || [1, 0, 0, 1, 0, 0];
+    const g = el.geometry || {};
+    const localPts = [];
+
+    const box = getElementLocalBounds(el);
+    // Bounding box corners & center
+    localPts.push(
+        { x: box.x, y: box.y },
+        { x: box.x + box.width, y: box.y },
+        { x: box.x + box.width, y: box.y + box.height },
+        { x: box.x, y: box.y + box.height },
+        { x: box.x + box.width / 2, y: box.y + box.height / 2 }
+    );
+
+    switch (el.type) {
+        case 'rect':
+            localPts.push(
+                { x: box.x + box.width / 2, y: box.y },
+                { x: box.x + box.width, y: box.y + box.height / 2 },
+                { x: box.x + box.width / 2, y: box.y + box.height },
+                { x: box.x, y: box.y + box.height / 2 }
+            );
+            break;
+        case 'circle': {
+            const cx = g.cx || 0, cy = g.cy || 0, r = g.r || 0;
+            localPts.push(
+                { x: cx, y: cy },
+                { x: cx + r, y: cy }, { x: cx - r, y: cy },
+                { x: cx, y: cy + r }, { x: cx, y: cy - r }
+            );
+            break;
+        }
+        case 'ellipse': {
+            const cx = g.cx || 0, cy = g.cy || 0, rx = g.rx || 0, ry = g.ry || 0;
+            localPts.push(
+                { x: cx, y: cy },
+                { x: cx + rx, y: cy }, { x: cx - rx, y: cy },
+                { x: cx, y: cy + ry }, { x: cx, y: cy - ry }
+            );
+            break;
+        }
+        case 'line': {
+            const x1 = g.x1 || 0, y1 = g.y1 || 0, x2 = g.x2 || 0, y2 = g.y2 || 0;
+            localPts.push(
+                { x: x1, y: y1 },
+                { x: x2, y: y2 },
+                { x: (x1 + x2) / 2, y: (y1 + y2) / 2 }
+            );
+            break;
+        }
+        case 'polygon': {
+            const verts = generatePolygonVertices(el.params && el.params.sides ? el.params : g);
+            verts.forEach(v => localPts.push(v));
+            break;
+        }
+        case 'star': {
+            const verts = generateStarVertices(el.params && el.params.points ? el.params : g);
+            verts.forEach(v => localPts.push(v));
+            break;
+        }
+        case 'path': {
+            const nums = (g.d || '').match(/[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?/g);
+            if (nums && nums.length >= 2) {
+                const step = nums.length > 160 ? Math.floor(nums.length / 80) * 2 : 2;
+                for (let i = 0; i < nums.length - 1; i += step) {
+                    const px = parseFloat(nums[i]);
+                    const py = parseFloat(nums[i + 1]);
+                    if (!isNaN(px) && !isNaN(py)) localPts.push({ x: px, y: py });
+                }
+            }
+            break;
+        }
+    }
+
+    return localPts.map(pt => transformPoint(m, pt));
 }

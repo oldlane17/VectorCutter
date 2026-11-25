@@ -5,6 +5,10 @@
  */
 
 import { getElementLocalBounds, getTransformedCorners, getRotationCentre } from '../model/bounds.js';
+import { scaleMatrix, multiplyMatrix } from '../model/matrix.js';
+import { TransformElementsCommand } from '../core/commands.js';
+import { fromMm, toMm } from '../model/units.js';
+import { requestRender } from '../core/scheduler.js';
 import { getRotatedResizeCursor } from './cursors.js';
 
 export class OverlayRenderer {
@@ -42,13 +46,13 @@ export class OverlayRenderer {
             const rotRad = Math.atan2(m[1], m[0]);
             const rotDeg = (rotRad * 180) / Math.PI;
 
-            // Draw oriented bounding polygon
+            // Draw light blue dashed oriented bounding polygon
             const poly = document.createElementNS(ns, 'polygon');
             poly.setAttribute('points', cornersScreen.map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '));
             poly.setAttribute('fill', 'none');
-            poly.setAttribute('stroke', '#007acc');
-            poly.setAttribute('stroke-width', '1');
-            poly.setAttribute('stroke-dasharray', '4 3');
+            poly.setAttribute('stroke', '#38bdf8');
+            poly.setAttribute('stroke-width', '1.5');
+            poly.setAttribute('stroke-dasharray', '6 4');
             this.svg.appendChild(poly);
 
             // Compute side midpoints and center in screen space
@@ -164,17 +168,56 @@ export class OverlayRenderer {
                 this.svg.appendChild(gCross);
             }
 
-            // Measurement Label (e.g. "60.0 mm x 40.0 mm")
-            const dimLabel = document.createElementNS(ns, 'text');
-            dimLabel.setAttribute('x', pS.x);
-            dimLabel.setAttribute('y', pS.y + 16);
-            dimLabel.setAttribute('text-anchor', 'middle');
-            dimLabel.setAttribute('fill', el.locked ? '#888888' : '#007acc');
-            dimLabel.setAttribute('font-size', '11');
-            dimLabel.setAttribute('font-family', 'sans-serif');
-            dimLabel.setAttribute('font-weight', 'bold');
-            dimLabel.textContent = `${localBox.width.toFixed(1)} × ${localBox.height.toFixed(1)} mm${el.locked ? ' 🔒' : ''}`;
-            this.svg.appendChild(dimLabel);
+            // Effective (transformed) dimensions in current unit
+            const unit = this.store.doc.units || window.__vcDefaultUnit || 'mm';
+            const effW = localBox.width * Math.hypot(m[0], m[1]);
+            const effH = localBox.height * Math.hypot(m[2], m[3]);
+            const dispW = fromMm(effW, unit);
+            const dispH = fromMm(effH, unit);
+
+            // Width Label (bottom center, clickable)
+            const wLabel = document.createElementNS(ns, 'text');
+            wLabel.setAttribute('x', pS.x);
+            wLabel.setAttribute('y', pS.y + 18);
+            wLabel.setAttribute('text-anchor', 'middle');
+            wLabel.setAttribute('fill', el.locked ? '#888888' : '#38bdf8');
+            wLabel.setAttribute('font-size', '11');
+            wLabel.setAttribute('font-family', 'sans-serif');
+            wLabel.setAttribute('font-weight', 'bold');
+            wLabel.textContent = `${dispW.toFixed(1)} ${unit}`;
+            if (!el.locked) {
+                wLabel.style.cursor = 'pointer';
+                wLabel.style.pointerEvents = 'auto';
+                wLabel.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+                wLabel.addEventListener('click', (ev) => {
+                    ev.stopPropagation();
+                    this.openInlineDimEditor('width', pS.x, pS.y + 12, dispW, unit, el, localBox, effW);
+                });
+            }
+            this.svg.appendChild(wLabel);
+
+            // Height Label (right side, without ×, clickable)
+            const hLabel = document.createElementNS(ns, 'text');
+            hLabel.setAttribute('x', pE.x + 12);
+            hLabel.setAttribute('y', pE.y + 4);
+            hLabel.setAttribute('text-anchor', 'start');
+            hLabel.setAttribute('fill', el.locked ? '#888888' : '#38bdf8');
+            hLabel.setAttribute('font-size', '11');
+            hLabel.setAttribute('font-family', 'sans-serif');
+            hLabel.setAttribute('font-weight', 'bold');
+            hLabel.textContent = `${dispH.toFixed(1)} ${unit}${el.locked ? ' 🔒' : ''}`;
+            if (!el.locked) {
+                hLabel.style.cursor = 'pointer';
+                hLabel.style.pointerEvents = 'auto';
+                hLabel.addEventListener('pointerdown', (ev) => ev.stopPropagation());
+                hLabel.addEventListener('click', (ev) => {
+                    ev.stopPropagation();
+                    this.openInlineDimEditor('height', pE.x + 32, pE.y, dispH, unit, el, localBox, effH);
+                });
+            }
+            this.svg.appendChild(hLabel);
+
+            this.renderSnapIndicator(ns);
             return;
         }
 
@@ -204,23 +247,126 @@ export class OverlayRenderer {
                 rect.setAttribute('width', w);
                 rect.setAttribute('height', h);
                 rect.setAttribute('fill', 'none');
-                rect.setAttribute('stroke', '#007acc');
-                rect.setAttribute('stroke-width', '1');
-                rect.setAttribute('stroke-dasharray', '4 3');
+                rect.setAttribute('stroke', '#38bdf8');
+                rect.setAttribute('stroke-width', '1.5');
+                rect.setAttribute('stroke-dasharray', '6 4');
                 this.svg.appendChild(rect);
 
-                // Multi-selection dimensions badge
-                const dimLabel = document.createElementNS(ns, 'text');
-                dimLabel.setAttribute('x', sTopLeft.x + w / 2);
-                dimLabel.setAttribute('y', sTopLeft.y + h + 16);
-                dimLabel.setAttribute('text-anchor', 'middle');
-                dimLabel.setAttribute('fill', '#007acc');
-                dimLabel.setAttribute('font-size', '11');
-                dimLabel.setAttribute('font-family', 'sans-serif');
-                dimLabel.setAttribute('font-weight', 'bold');
-                dimLabel.textContent = `${(maxX - minX).toFixed(1)} × ${(maxY - minY).toFixed(1)} mm (${selected.length} items)`;
-                this.svg.appendChild(dimLabel);
+                const unit = this.store.doc.units || window.__vcDefaultUnit || 'mm';
+                const dispW = fromMm(maxX - minX, unit).toFixed(1);
+                const dispH = fromMm(maxY - minY, unit).toFixed(1);
+
+                // Width label at bottom
+                const wLabel = document.createElementNS(ns, 'text');
+                wLabel.setAttribute('x', sTopLeft.x + w / 2);
+                wLabel.setAttribute('y', sTopLeft.y + h + 18);
+                wLabel.setAttribute('text-anchor', 'middle');
+                wLabel.setAttribute('fill', '#38bdf8');
+                wLabel.setAttribute('font-size', '11');
+                wLabel.setAttribute('font-family', 'sans-serif');
+                wLabel.setAttribute('font-weight', 'bold');
+                wLabel.textContent = `${dispW} ${unit} (${selected.length} items)`;
+                this.svg.appendChild(wLabel);
+
+                // Height label on right
+                const hLabel = document.createElementNS(ns, 'text');
+                hLabel.setAttribute('x', sTopLeft.x + w + 12);
+                hLabel.setAttribute('y', sTopLeft.y + h / 2 + 4);
+                hLabel.setAttribute('text-anchor', 'start');
+                hLabel.setAttribute('fill', '#38bdf8');
+                hLabel.setAttribute('font-size', '11');
+                hLabel.setAttribute('font-family', 'sans-serif');
+                hLabel.setAttribute('font-weight', 'bold');
+                hLabel.textContent = `${dispH} ${unit}`;
+                this.svg.appendChild(hLabel);
             }
         }
+
+        this.renderSnapIndicator(ns);
+    }
+
+    renderSnapIndicator(ns) {
+        const snapPt = window.__vcActiveSnapPoint;
+        if (!snapPt) return;
+        const s = this.camera.toScreen(snapPt.x, snapPt.y);
+        const diamond = document.createElementNS(ns, 'polygon');
+        const r = 6;
+        diamond.setAttribute('points', `${s.x},${s.y - r} ${s.x + r},${s.y} ${s.x},${s.y + r} ${s.x - r},${s.y}`);
+        diamond.setAttribute('fill', 'rgba(244, 63, 94, 0.25)');
+        diamond.setAttribute('stroke', '#f43f5e');
+        diamond.setAttribute('stroke-width', '2');
+        this.svg.appendChild(diamond);
+    }
+
+    openInlineDimEditor(axis, screenX, screenY, currentDispVal, unit, el, localBox, currentEffMm) {
+        const existing = document.getElementById('vcInlineDimInput');
+        if (existing) existing.remove();
+
+        const container = document.getElementById('canvasContainer');
+        if (!container) return;
+
+        const inp = document.createElement('input');
+        inp.id = 'vcInlineDimInput';
+        inp.type = 'number';
+        inp.step = '0.1';
+        inp.min = '0.1';
+        inp.value = currentDispVal.toFixed(1);
+        inp.style.cssText = `
+            position: absolute;
+            left: ${Math.max(8, screenX - 34)}px;
+            top: ${Math.max(8, screenY - 12)}px;
+            width: 72px;
+            height: 24px;
+            background: var(--vc-bg-surface-2, #1e1e1e);
+            color: var(--vc-text-primary, #ffffff);
+            border: 1.5px solid #38bdf8;
+            border-radius: 4px;
+            padding: 0 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-align: center;
+            z-index: 200;
+            outline: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        `;
+
+        ['pointerdown', 'mousedown', 'click'].forEach(evt => {
+            inp.addEventListener(evt, (e) => e.stopPropagation());
+        });
+
+        let committed = false;
+        const commit = () => {
+            if (committed) return;
+            committed = true;
+            const parsed = parseFloat(inp.value);
+            inp.remove();
+            if (!isNaN(parsed) && parsed > 0 && currentEffMm > 0) {
+                const newMm = toMm(parsed, unit);
+                const factor = newMm / currentEffMm;
+                const cx = localBox.x + localBox.width / 2;
+                const cy = localBox.y + localBox.height / 2;
+                const sMat = axis === 'width'
+                    ? scaleMatrix(factor, 1, cx, cy)
+                    : scaleMatrix(1, factor, cx, cy);
+                const before = [...el.transform];
+                const after = multiplyMatrix(before, sMat);
+                this.store.dispatch(new TransformElementsCommand([{ id: el.id, before, after }]));
+                requestRender();
+            }
+        };
+
+        inp.addEventListener('keydown', (e) => {
+            e.stopPropagation();
+            if (e.key === 'Enter') commit();
+            if (e.key === 'Escape') {
+                committed = true;
+                inp.remove();
+            }
+        });
+        inp.addEventListener('blur', commit);
+
+        container.appendChild(inp);
+        inp.focus();
+        inp.select();
     }
 }

@@ -18,10 +18,10 @@ export class TextTool {
             x: 0,
             y: 0,
             text,
-            fontSize: 14, // 14mm
-            fontFamily: 'Arial',
+            fontSize: window.__vcDefaultFontSize || 14, // 14mm
+            fontFamily: window.__vcDefaultFontFamily || 'Arial',
             isLaTeX: false,
-            style: { fill: '#007acc', stroke: 'none' },
+            style: { fill: window.__vcDefaultStroke || '#007acc', stroke: 'none' },
             laser: { op: 'engrave' },
             transform: translationMatrix(pt.x, pt.y)
         });

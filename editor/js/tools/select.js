@@ -6,7 +6,8 @@
 
 import { translationMatrix, rotationMatrix, scaleMatrix, multiplyMatrix, transformPoint } from '../model/matrix.js';
 import { TransformElementsCommand, DeleteElementsCommand, AddElementCommand, UpdateElementPropsCommand } from '../core/commands.js';
-import { getElementLocalBounds, getTransformedCorners, pointInPolygon, getRotationCentre } from '../model/bounds.js';
+import { getElementLocalBounds, getTransformedCorners, pointInPolygon, getRotationCentre, getElementSnapPoints, getAdaptiveGridStep } from '../model/bounds.js';
+import { fromMm } from '../model/units.js';
 import { events } from '../core/events.js';
 import { requestRender } from '../core/scheduler.js';
 
@@ -153,7 +154,7 @@ export class SelectTool {
             }
 
             this.isDragging = true;
-            this.dragStart = { x: pt.x, y: pt.y };
+            this.dragStart = { x: pt.rawX ?? pt.x, y: pt.rawY ?? pt.y };
             this.captureInitialState();
             return;
         }
@@ -177,13 +178,80 @@ export class SelectTool {
     onPointerMove(pt, e) {
         if (this.isTransforming && this.activeHandle) {
             this.applyHandleTransform(pt, e);
+            this.syncPropertiesInputs();
             requestRender();
             return;
         }
 
         if (this.isDragging) {
-            const dx = pt.x - this.dragStart.x;
-            const dy = pt.y - this.dragStart.y;
+            let dx = (pt.rawX ?? pt.x) - this.dragStart.x;
+            let dy = (pt.rawY ?? pt.y) - this.dragStart.y;
+
+            const snapMode = window.__vcSnapMode || 'none';
+            window.__vcActiveSnapPoint = null;
+
+            if (snapMode === 'grid') {
+                const step = getAdaptiveGridStep(this.camera.scale);
+                const firstEntry = this.initialTransforms.entries().next().value;
+                if (firstEntry) {
+                    const [firstId, initM] = firstEntry;
+                    const firstEl = this.store.getElement(firstId);
+                    if (firstEl) {
+                        const b = getElementLocalBounds(firstEl);
+                        const tl = transformPoint(initM, { x: b.x, y: b.y });
+                        const snappedX = Math.round((tl.x + dx) / step) * step;
+                        const snappedY = Math.round((tl.y + dy) / step) * step;
+                        dx = snappedX - tl.x;
+                        dy = snappedY - tl.y;
+                    }
+                }
+            } else if (snapMode === 'geometry') {
+                const threshold = 16 / this.camera.scale;
+                let bestDist = threshold;
+                let snapOffset = null;
+                let snapTargetPt = null;
+
+                // Collect target snap points from all non-selected visible elements
+                const selection = this.store.doc.selection || [];
+                const targetPts = [];
+                const elements = this.store.doc.elements || {};
+                for (const id in elements) {
+                    if (selection.includes(id)) continue;
+                    const other = elements[id];
+                    if (other && other.visible !== false) {
+                        targetPts.push(...getElementSnapPoints(other));
+                    }
+                }
+
+                // Test each selected element's snap points against targetPts
+                if (targetPts.length > 0) {
+                    for (const [id, initM] of this.initialTransforms.entries()) {
+                        const el = this.store.getElement(id);
+                        if (!el || el.locked) continue;
+                        const prevM = el.transform;
+                        el.transform = multiplyMatrix(translationMatrix(dx, dy), initM);
+                        const movedPts = getElementSnapPoints(el);
+                        el.transform = prevM;
+
+                        for (const mp of movedPts) {
+                            for (const tp of targetPts) {
+                                const dist = Math.hypot(tp.x - mp.x, tp.y - mp.y);
+                                if (dist < bestDist) {
+                                    bestDist = dist;
+                                    snapOffset = { x: tp.x - mp.x, y: tp.y - mp.y };
+                                    snapTargetPt = tp;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (snapOffset) {
+                    dx += snapOffset.x;
+                    dy += snapOffset.y;
+                    window.__vcActiveSnapPoint = snapTargetPt;
+                }
+            }
 
             this.initialTransforms.forEach((initM, id) => {
                 const el = this.store.getElement(id);
@@ -192,6 +260,7 @@ export class SelectTool {
                 }
             });
 
+            this.syncPropertiesInputs();
             requestRender();
             return;
         }
@@ -217,6 +286,7 @@ export class SelectTool {
     }
 
     onPointerUp(pt, e) {
+        window.__vcActiveSnapPoint = null;
         if (this.isTransforming) {
             this.isTransforming = false;
             this.activeHandle = null;
@@ -365,6 +435,28 @@ export class SelectTool {
         }
     }
 
+    syncPropertiesInputs() {
+        const selected = this.store.getSelectedElements();
+        if (selected.length !== 1) return;
+        const el = selected[0];
+        const box = getElementLocalBounds(el);
+        const m = el.transform || [1, 0, 0, 1, 0, 0];
+        const unit = this.store.doc.units || window.__vcDefaultUnit || 'mm';
+        const effW = box.width * Math.hypot(m[0], m[1]);
+        const effH = box.height * Math.hypot(m[2], m[3]);
+        const rotDeg = Math.round((Math.atan2(m[1], m[0]) * 180) / Math.PI);
+
+        const setVal = (id, v) => {
+            const inp = document.getElementById(id);
+            if (inp && document.activeElement !== inp) inp.value = v;
+        };
+        setVal('propX', fromMm(m[4], unit).toFixed(1));
+        setVal('propY', fromMm(m[5], unit).toFixed(1));
+        setVal('propW', fromMm(effW, unit).toFixed(1));
+        setVal('propH', fromMm(effH, unit).toFixed(1));
+        setVal('propRot', rotDeg);
+    }
+
     commitDragHistory() {
         const transforms = [];
         this.store.getSelectedElements().forEach(el => {
@@ -424,17 +516,17 @@ export class SelectTool {
         const mode = window.__vcSelectionMode || 'rect';
         if (mode === 'lasso') {
             this.marqueeEl = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-            this.marqueeEl.setAttribute('fill', 'rgba(0, 122, 204, 0.1)');
-            this.marqueeEl.setAttribute('stroke', '#007acc');
-            this.marqueeEl.setAttribute('stroke-width', '1');
-            this.marqueeEl.setAttribute('stroke-dasharray', '4 4');
+            this.marqueeEl.setAttribute('fill', 'rgba(56, 189, 248, 0.12)');
+            this.marqueeEl.setAttribute('stroke', '#38bdf8');
+            this.marqueeEl.setAttribute('stroke-width', '1.5');
+            this.marqueeEl.setAttribute('stroke-dasharray', '6 4');
             overlay.appendChild(this.marqueeEl);
         } else {
             this.marqueeEl = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-            this.marqueeEl.setAttribute('fill', 'rgba(0, 122, 204, 0.1)');
-            this.marqueeEl.setAttribute('stroke', '#007acc');
-            this.marqueeEl.setAttribute('stroke-width', '1');
-            this.marqueeEl.setAttribute('stroke-dasharray', '4 4');
+            this.marqueeEl.setAttribute('fill', 'rgba(56, 189, 248, 0.12)');
+            this.marqueeEl.setAttribute('stroke', '#38bdf8');
+            this.marqueeEl.setAttribute('stroke-width', '1.5');
+            this.marqueeEl.setAttribute('stroke-dasharray', '6 4');
             overlay.appendChild(this.marqueeEl);
         }
     }

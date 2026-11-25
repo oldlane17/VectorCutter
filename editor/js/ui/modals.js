@@ -7,6 +7,8 @@ import { createElement } from '../model/elements.js';
 import { AddElementCommand } from '../core/commands.js';
 import { translationMatrix } from '../model/matrix.js';
 import { importSVGString } from '../io/svg-import.js';
+import { events } from '../core/events.js';
+import { storage } from '../core/storage.js';
 
 export class ModalsController {
     constructor(store, camera) {
@@ -158,7 +160,7 @@ export class ModalsController {
                     <div><strong>N</strong>: Curve / Node Edit</div>
                     <div><strong>T</strong>: Text</div>
                     <div><strong>Ctrl+Z</strong>: Undo</div>
-                    <div><strong>Ctrl+Y</strong>: Redo</div>
+                    <div><strong>Ctrl+M / Ctrl+Y</strong>: Redo</div>
                     <div><strong>Ctrl+D</strong>: Duplicate</div>
                     <div><strong>Del / Backspace</strong>: Delete</div>
                     <div><strong>Arrow Keys</strong>: Nudge 1mm (Shift: 10mm)</div>
@@ -208,7 +210,8 @@ export class ModalsController {
             { name: 'Browse Shape Library', action: () => this.showShapeLibrary() },
             { name: 'Reset Zoom (1:1 mm)', action: () => document.getElementById('menuResetZoom')?.click() },
             { name: 'Toggle Grid', action: () => document.getElementById('menuToggleGrid')?.click() },
-            { name: 'Toggle Theme (Light / Dark)', action: () => document.getElementById('themeToggleBtn')?.click() }
+            { name: 'Toggle Theme (Light / Dark)', action: () => document.getElementById('themeToggleBtn')?.click() },
+            { name: 'Editor Settings', action: () => this.showSettingsModal() }
         ];
 
         const renderList = (filter = '') => {
@@ -233,5 +236,111 @@ export class ModalsController {
         input.addEventListener('input', (e) => renderList(e.target.value));
         modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
         renderList();
+    }
+
+    showSettingsModal() {
+        let modal = document.getElementById('settingsModal');
+        if (modal) modal.remove();
+
+        const saved = storage.getItem('vc_editor_settings', {});
+        const curStroke = saved.defaultStroke || window.__vcDefaultStroke || '#007acc';
+        const curFill = saved.defaultFill !== undefined ? saved.defaultFill : (window.__vcDefaultFill !== undefined ? window.__vcDefaultFill : 'rgba(0, 122, 204, 0.08)');
+        const isFillNone = curFill === 'none';
+        const curFillHex = curFill.startsWith('#') ? curFill : '#007acc';
+        const curUnit = saved.defaultUnit || this.store.doc.units || window.__vcDefaultUnit || 'mm';
+        const curFont = saved.defaultFontFamily || window.__vcDefaultFontFamily || 'Arial';
+        const curFontSize = saved.defaultFontSize || window.__vcDefaultFontSize || 14;
+        const curTheme = storage.getItem('vc_theme', saved.defaultTheme || 'dark');
+
+        modal = document.createElement('div');
+        modal.id = 'settingsModal';
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999;';
+
+        modal.innerHTML = `
+            <div style="background:var(--vc-bg-surface-1);border:1px solid var(--vc-border-default);border-radius:var(--vc-radius-lg);width:440px;max-width:95vw;display:flex;flex-direction:column;padding:18px;box-shadow:var(--vc-shadow-modal);color:var(--vc-text-primary);">
+                <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--vc-border-subtle);padding-bottom:10px;margin-bottom:14px;">
+                    <h2 style="font-size:16px;margin:0;">⚙️ Editor Settings</h2>
+                    <button id="closeSettingsModal" style="background:none;border:none;color:var(--vc-text-muted);font-size:20px;cursor:pointer;">&times;</button>
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:12px;font-size:13px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <label for="setDefaultStroke">Default Stroke Color</label>
+                        <input type="color" id="setDefaultStroke" value="${curStroke}" style="width:48px;height:28px;border:none;background:none;cursor:pointer;">
+                    </div>
+
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <label for="setDefaultFill">Default Fill Color</label>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <input type="color" id="setDefaultFill" value="${curFillHex}" style="width:48px;height:28px;border:none;background:none;cursor:pointer;">
+                            <label style="font-size:11px;display:flex;align-items:center;gap:4px;cursor:pointer;">
+                                <input type="checkbox" id="setDefaultFillNone" ${isFillNone ? 'checked' : ''}> None
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <label for="setDefaultUnit">Dimension Units</label>
+                        <select id="setDefaultUnit" style="width:180px;padding:5px 8px;background:var(--vc-bg-surface-2);color:var(--vc-text-primary);border:1px solid var(--vc-border-default);border-radius:4px;">
+                            <option value="mm" ${curUnit === 'mm' ? 'selected' : ''}>Millimetres (mm)</option>
+                            <option value="cm" ${curUnit === 'cm' ? 'selected' : ''}>Centimetres (cm)</option>
+                            <option value="in" ${curUnit === 'in' ? 'selected' : ''}>Inches (in)</option>
+                            <option value="px" ${curUnit === 'px' ? 'selected' : ''}>Pixels (px)</option>
+                        </select>
+                    </div>
+
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <label for="setDefaultFont">Default Font</label>
+                        <select id="setDefaultFont" style="width:180px;padding:5px 8px;background:var(--vc-bg-surface-2);color:var(--vc-text-primary);border:1px solid var(--vc-border-default);border-radius:4px;">
+                            <option value="Arial" ${curFont === 'Arial' ? 'selected' : ''}>Arial</option>
+                            <option value="Helvetica" ${curFont === 'Helvetica' ? 'selected' : ''}>Helvetica</option>
+                            <option value="Verdana" ${curFont === 'Verdana' ? 'selected' : ''}>Verdana</option>
+                            <option value="Georgia" ${curFont === 'Georgia' ? 'selected' : ''}>Georgia</option>
+                            <option value="Times New Roman" ${curFont === 'Times New Roman' ? 'selected' : ''}>Times New Roman</option>
+                            <option value="Courier New" ${curFont === 'Courier New' ? 'selected' : ''}>Courier New</option>
+                        </select>
+                    </div>
+
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <label for="setDefaultFontSize">Default Font Size (mm)</label>
+                        <input type="number" id="setDefaultFontSize" value="${curFontSize}" min="2" max="200" step="1" style="width:180px;padding:5px 8px;background:var(--vc-bg-surface-2);color:var(--vc-text-primary);border:1px solid var(--vc-border-default);border-radius:4px;">
+                    </div>
+
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <label for="setDefaultTheme">Default Color Theme</label>
+                        <select id="setDefaultTheme" style="width:180px;padding:5px 8px;background:var(--vc-bg-surface-2);color:var(--vc-text-primary);border:1px solid var(--vc-border-default);border-radius:4px;">
+                            <option value="dark" ${curTheme === 'dark' ? 'selected' : ''}>Dark</option>
+                            <option value="light" ${curTheme === 'light' ? 'selected' : ''}>Light</option>
+                            <option value="system" ${curTheme === 'system' ? 'selected' : ''}>System</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px;padding-top:12px;border-top:1px solid var(--vc-border-subtle);">
+                    <button id="btnCancelSettings" class="vc-btn" style="padding:6px 14px;">Cancel</button>
+                    <button id="btnSaveSettings" class="vc-btn" style="padding:6px 16px;background:var(--vc-accent-blue);color:#fff;font-weight:600;">Save Settings</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        modal.querySelector('#closeSettingsModal').addEventListener('click', () => modal.remove());
+        modal.querySelector('#btnCancelSettings').addEventListener('click', () => modal.remove());
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+
+        modal.querySelector('#btnSaveSettings').addEventListener('click', () => {
+            const fillNone = modal.querySelector('#setDefaultFillNone').checked;
+            const settings = {
+                defaultStroke: modal.querySelector('#setDefaultStroke').value,
+                defaultFill: fillNone ? 'none' : modal.querySelector('#setDefaultFill').value,
+                defaultUnit: modal.querySelector('#setDefaultUnit').value,
+                defaultFontFamily: modal.querySelector('#setDefaultFont').value,
+                defaultFontSize: parseFloat(modal.querySelector('#setDefaultFontSize').value) || 14,
+                defaultTheme: modal.querySelector('#setDefaultTheme').value
+            };
+            storage.setItem('vc_editor_settings', settings);
+            events.emit('settings:changed', settings);
+            modal.remove();
+        });
     }
 }

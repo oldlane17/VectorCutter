@@ -4,8 +4,9 @@
  */
 
 import { events } from '../core/events.js';
-import { getElementLocalBounds } from '../model/bounds.js';
-import { translationMatrix, rotationMatrix, scaleMatrix, multiplyMatrix } from '../model/matrix.js';
+import { getElementLocalBounds, getRotationCentre } from '../model/bounds.js';
+import { translationMatrix, rotationMatrix, scaleMatrix, multiplyMatrix, transformPoint } from '../model/matrix.js';
+import { fromMm, toMm } from '../model/units.js';
 import { LaserPanel } from '../laser/panel.js';
 import { ObjectsPanel } from './objects-panel.js';
 import { CodeEditorPanel } from './code-editor.js';
@@ -157,10 +158,24 @@ export class PropertiesController {
 
         const el = selected[0];
         const box = getElementLocalBounds(el);
-        const posX = el.transform[4];
-        const posY = el.transform[5];
-        const rotRad = Math.atan2(el.transform[1], el.transform[0]);
+        const m = el.transform || [1, 0, 0, 1, 0, 0];
+        const unit = this.store.doc.units || window.__vcDefaultUnit || 'mm';
+        const posX = fromMm(m[4], unit);
+        const posY = fromMm(m[5], unit);
+        const effW = fromMm(box.width * Math.hypot(m[0], m[1]), unit);
+        const effH = fromMm(box.height * Math.hypot(m[2], m[3]), unit);
+        const rotRad = Math.atan2(m[1], m[0]);
         const rotDeg = Math.round((rotRad * 180) / Math.PI);
+
+        const hasAdvRot = !!el.rotationCenter;
+        const rotMode = el.rotationCenter?.mode || 'object';
+        const defaultLocalCx = box.x + box.width / 2;
+        const defaultLocalCy = box.y + box.height / 2;
+        const defaultWorldCenter = transformPoint(m, { x: defaultLocalCx, y: defaultLocalCy });
+        const rotCxMm = hasAdvRot ? el.rotationCenter.x : defaultLocalCx;
+        const rotCyMm = hasAdvRot ? el.rotationCenter.y : defaultLocalCy;
+        const rotCxDisp = fromMm(rotCxMm, unit);
+        const rotCyDisp = fromMm(rotCyMm, unit);
 
         const isFillNone = !el.style?.fill || el.style.fill === 'none';
         const isStrokeNone = !el.style?.stroke || el.style.stroke === 'none';
@@ -173,27 +188,57 @@ export class PropertiesController {
                 <div class="prop-row">
                     <label for="propX">X</label>
                     <div class="control"><input type="number" id="propX" value="${posX.toFixed(1)}" step="1"></div>
-                    <div class="unit">mm</div>
+                    <div class="unit">${unit}</div>
                 </div>
                 <div class="prop-row">
                     <label for="propY">Y</label>
                     <div class="control"><input type="number" id="propY" value="${posY.toFixed(1)}" step="1"></div>
-                    <div class="unit">mm</div>
+                    <div class="unit">${unit}</div>
                 </div>
                 <div class="prop-row">
                     <label for="propW">Width</label>
-                    <div class="control"><input type="number" id="propW" value="${box.width.toFixed(1)}" min="0.5" step="1"></div>
-                    <div class="unit">mm</div>
+                    <div class="control"><input type="number" id="propW" value="${effW.toFixed(1)}" min="0.1" step="1"></div>
+                    <div class="unit">${unit}</div>
                 </div>
                 <div class="prop-row">
                     <label for="propH">Height</label>
-                    <div class="control"><input type="number" id="propH" value="${box.height.toFixed(1)}" min="0.5" step="1"></div>
-                    <div class="unit">mm</div>
+                    <div class="control"><input type="number" id="propH" value="${effH.toFixed(1)}" min="0.1" step="1"></div>
+                    <div class="unit">${unit}</div>
                 </div>
                 <div class="prop-row">
                     <label for="propRot">Rotation</label>
                     <div class="control"><input type="number" id="propRot" value="${rotDeg}" min="-360" max="360" step="5"></div>
                     <div class="unit">°</div>
+                </div>
+                <div class="prop-row">
+                    <label for="chkAdvRot" style="cursor:pointer;">Adv. Rotation</label>
+                    <div class="control" style="display:flex;align-items:center;gap:6px;">
+                        <input type="checkbox" id="chkAdvRot" ${hasAdvRot ? 'checked' : ''} style="width:auto;cursor:pointer;">
+                        <span style="font-size:11px;color:var(--vc-text-muted);">Custom Center</span>
+                    </div>
+                    <div class="unit"></div>
+                </div>
+                <div id="advRotContainer" style="display:${hasAdvRot ? 'block' : 'none'};padding-left:6px;border-left:2px solid var(--vc-accent-blue);margin-top:4px;">
+                    <div class="prop-row">
+                        <label for="propRotMode">Reference</label>
+                        <div class="control">
+                            <select id="propRotMode">
+                                <option value="object" ${rotMode === 'object' ? 'selected' : ''}>Figure (Relative)</option>
+                                <option value="absolute" ${rotMode === 'absolute' ? 'selected' : ''}>Grid (Absolute)</option>
+                            </select>
+                        </div>
+                        <div class="unit"></div>
+                    </div>
+                    <div class="prop-row">
+                        <label for="propRotCx">Center X</label>
+                        <div class="control"><input type="number" id="propRotCx" value="${rotCxDisp.toFixed(1)}" step="1"></div>
+                        <div class="unit">${unit}</div>
+                    </div>
+                    <div class="prop-row">
+                        <label for="propRotCy">Center Y</label>
+                        <div class="control"><input type="number" id="propRotCy" value="${rotCyDisp.toFixed(1)}" step="1"></div>
+                        <div class="unit">${unit}</div>
+                    </div>
                 </div>
             </div>
 
@@ -400,35 +445,46 @@ export class PropertiesController {
         };
 
         // Transform live inputs
+        const unit = this.store.doc.units || window.__vcDefaultUnit || 'mm';
         bindInputLive('propX', (val) => {
             this.store.commit('Change X', (doc) => {
-                if (doc.elements[el.id]) doc.elements[el.id].transform[4] = val;
+                if (doc.elements[el.id]) doc.elements[el.id].transform[4] = toMm(val, unit);
             });
         });
         bindInputLive('propY', (val) => {
             this.store.commit('Change Y', (doc) => {
-                if (doc.elements[el.id]) doc.elements[el.id].transform[5] = val;
+                if (doc.elements[el.id]) doc.elements[el.id].transform[5] = toMm(val, unit);
             });
         });
         bindInputLive('propW', (val) => {
+            if (val <= 0) return;
             this.store.commit('Change Width', (doc) => {
                 const target = doc.elements[el.id];
                 if (!target) return;
                 const oldBox = getElementLocalBounds(target);
-                if (oldBox.width > 0) {
-                    const sx = Math.max(0.01, val / oldBox.width);
-                    target.transform = multiplyMatrix(target.transform, scaleMatrix(sx, 1));
+                const m = target.transform || [1, 0, 0, 1, 0, 0];
+                const curEffW = oldBox.width * Math.hypot(m[0], m[1]);
+                if (curEffW > 0) {
+                    const kx = Math.max(0.01, toMm(val, unit) / curEffW);
+                    const cx = oldBox.x + oldBox.width / 2;
+                    const cy = oldBox.y + oldBox.height / 2;
+                    target.transform = multiplyMatrix(m, scaleMatrix(kx, 1, cx, cy));
                 }
             });
         });
         bindInputLive('propH', (val) => {
+            if (val <= 0) return;
             this.store.commit('Change Height', (doc) => {
                 const target = doc.elements[el.id];
                 if (!target) return;
                 const oldBox = getElementLocalBounds(target);
-                if (oldBox.height > 0) {
-                    const sy = Math.max(0.01, val / oldBox.height);
-                    target.transform = multiplyMatrix(target.transform, scaleMatrix(1, sy));
+                const m = target.transform || [1, 0, 0, 1, 0, 0];
+                const curEffH = oldBox.height * Math.hypot(m[2], m[3]);
+                if (curEffH > 0) {
+                    const ky = Math.max(0.01, toMm(val, unit) / curEffH);
+                    const cx = oldBox.x + oldBox.width / 2;
+                    const cy = oldBox.y + oldBox.height / 2;
+                    target.transform = multiplyMatrix(m, scaleMatrix(1, ky, cx, cy));
                 }
             });
         });
@@ -436,12 +492,89 @@ export class PropertiesController {
             this.store.commit('Change Rotation', (doc) => {
                 const target = doc.elements[el.id];
                 if (!target) return;
-                const rad = (val * Math.PI) / 180;
-                const tx = target.transform[4];
-                const ty = target.transform[5];
-                target.transform = [Math.cos(rad), Math.sin(rad), -Math.sin(rad), Math.cos(rad), tx, ty];
+                const m = target.transform || [1, 0, 0, 1, 0, 0];
+                const curDeg = (Math.atan2(m[1], m[0]) * 180) / Math.PI;
+                const deltaDeg = val - curDeg;
+                const { x: cx, y: cy } = getRotationCentre(target);
+                target.transform = multiplyMatrix(rotationMatrix(deltaDeg, cx, cy), m);
+                const xInp = content.querySelector('#propX');
+                const yInp = content.querySelector('#propY');
+                if (xInp) xInp.value = fromMm(target.transform[4], unit).toFixed(1);
+                if (yInp) yInp.value = fromMm(target.transform[5], unit).toFixed(1);
             });
         });
+
+        // Advanced Rotation Center controls
+        const chkAdvRot = content.querySelector('#chkAdvRot');
+        const advRotContainer = content.querySelector('#advRotContainer');
+        const propRotMode = content.querySelector('#propRotMode');
+        const propRotCx = content.querySelector('#propRotCx');
+        const propRotCy = content.querySelector('#propRotCy');
+
+        chkAdvRot?.addEventListener('change', (e) => {
+            const enabled = e.target.checked;
+            if (advRotContainer) advRotContainer.style.display = enabled ? 'block' : 'none';
+            this.store.commit('Toggle Advanced Rotation', (doc) => {
+                const target = doc.elements[el.id];
+                if (!target) return;
+                if (enabled) {
+                    const box = getElementLocalBounds(target);
+                    const mode = propRotMode?.value || 'object';
+                    if (mode === 'absolute') {
+                        const wc = getRotationCentre(target);
+                        target.rotationCenter = { mode: 'absolute', x: wc.x, y: wc.y };
+                    } else {
+                        target.rotationCenter = { mode: 'object', x: box.x + box.width / 2, y: box.y + box.height / 2 };
+                    }
+                    if (propRotCx) propRotCx.value = fromMm(target.rotationCenter.x, unit).toFixed(1);
+                    if (propRotCy) propRotCy.value = fromMm(target.rotationCenter.y, unit).toFixed(1);
+                } else {
+                    delete target.rotationCenter;
+                }
+            });
+            requestRender();
+        });
+
+        propRotMode?.addEventListener('change', (e) => {
+            const newMode = e.target.value;
+            this.store.commit('Change Rotation Reference Mode', (doc) => {
+                const target = doc.elements[el.id];
+                if (!target) return;
+                const worldPt = getRotationCentre(target);
+                const m = target.transform || [1, 0, 0, 1, 0, 0];
+                if (newMode === 'absolute') {
+                    target.rotationCenter = { mode: 'absolute', x: worldPt.x, y: worldPt.y };
+                } else {
+                    // Convert worldPt back to local coordinates
+                    const det = m[0] * m[3] - m[1] * m[2];
+                    if (Math.abs(det) > 1e-8) {
+                        const dx = worldPt.x - m[4];
+                        const dy = worldPt.y - m[5];
+                        const lx = (m[3] * dx - m[2] * dy) / det;
+                        const ly = (-m[1] * dx + m[0] * dy) / det;
+                        target.rotationCenter = { mode: 'object', x: lx, y: ly };
+                    }
+                }
+                if (propRotCx && target.rotationCenter) propRotCx.value = fromMm(target.rotationCenter.x, unit).toFixed(1);
+                if (propRotCy && target.rotationCenter) propRotCy.value = fromMm(target.rotationCenter.y, unit).toFixed(1);
+            });
+            requestRender();
+        });
+
+        const updateRotCenterCoords = () => {
+            const cxVal = toMm(parseFloat(propRotCx?.value) || 0, unit);
+            const cyVal = toMm(parseFloat(propRotCy?.value) || 0, unit);
+            const mode = propRotMode?.value || 'object';
+            this.store.commit('Update Rotation Center', (doc) => {
+                const target = doc.elements[el.id];
+                if (target) {
+                    target.rotationCenter = { mode, x: cxVal, y: cyVal };
+                }
+            });
+            requestRender();
+        };
+        propRotCx?.addEventListener('input', updateRotCenterCoords);
+        propRotCy?.addEventListener('input', updateRotCenterCoords);
 
         // Appearance
         content.querySelector('#propFillPicker')?.addEventListener('input', (e) => {

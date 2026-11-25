@@ -20,6 +20,7 @@ import { MenubarController } from './ui/menubar.js';
 import { ModalsController } from './ui/modals.js';
 import { events } from './core/events.js';
 import { importSVGString } from './io/svg-import.js';
+import { fromMm } from './model/units.js';
 import { registerRenderHook, requestRender, renderAll } from './core/scheduler.js';
 
 class VectorCutterApp {
@@ -186,14 +187,34 @@ class VectorCutterApp {
             this.render();
             requestRender();
         });
+        events.on('settings:changed', (settings) => {
+            this.applySettings(settings);
+        });
 
-        // Global shortcuts (e.g. Ctrl+G for Grid Toggle)
+        // Apply persisted editor settings on boot
+        const savedSettings = storage.getItem('vc_editor_settings', null);
+        if (savedSettings) {
+            this.applySettings(savedSettings);
+        }
+
+        // Global shortcuts (Ctrl+Z Undo, Ctrl+M / Ctrl+Y / Ctrl+Shift+Z Redo, Ctrl+G Grid Toggle)
         window.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'g' && !e.shiftKey) {
-                const tag = document.activeElement?.tagName;
-                if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-                e.preventDefault();
-                events.emit('grid:toggle');
+            const active = document.activeElement;
+            const tag = active?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || active?.isContentEditable) return;
+
+            if (e.ctrlKey || e.metaKey) {
+                const key = e.key.toLowerCase();
+                if (key === 'z' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.store.undo();
+                } else if (key === 'm' || key === 'y' || (key === 'z' && e.shiftKey)) {
+                    e.preventDefault();
+                    this.store.redo();
+                } else if (key === 'g' && !e.shiftKey) {
+                    e.preventDefault();
+                    events.emit('grid:toggle');
+                }
             }
         });
 
@@ -203,9 +224,43 @@ class VectorCutterApp {
             const w = this.camera.toWorld(e.clientX - rect.left, e.clientY - rect.top);
             const coordEl = document.getElementById('statusCoords');
             if (coordEl) {
-                coordEl.textContent = `X: ${w.x.toFixed(1)} mm | Y: ${w.y.toFixed(1)} mm`;
+                const unit = this.store.doc.units || window.__vcDefaultUnit || 'mm';
+                coordEl.textContent = `X: ${fromMm(w.x, unit).toFixed(1)} ${unit} | Y: ${fromMm(w.y, unit).toFixed(1)} ${unit}`;
             }
         });
+    }
+
+    applySettings(settings) {
+        if (!settings) return;
+        if (settings.defaultStroke) {
+            window.__vcDefaultStroke = settings.defaultStroke;
+            const prev = document.getElementById('qbStrokePreview');
+            if (prev) prev.style.background = settings.defaultStroke;
+        }
+        if (settings.defaultFill !== undefined) {
+            window.__vcDefaultFill = settings.defaultFill;
+            const prev = document.getElementById('qbFillPreview');
+            if (prev) prev.style.background = settings.defaultFill === 'none' ? 'transparent' : settings.defaultFill;
+        }
+        if (settings.defaultUnit) {
+            window.__vcDefaultUnit = settings.defaultUnit;
+            this.store.doc.units = settings.defaultUnit;
+            const unitNames = { mm: 'Millimetres (mm)', cm: 'Centimetres (cm)', in: 'Inches (in)', px: 'Pixels (px)' };
+            const statusUnit = document.getElementById('statusUnit');
+            if (statusUnit) statusUnit.textContent = unitNames[settings.defaultUnit] || settings.defaultUnit;
+        }
+        if (settings.defaultFontFamily) {
+            window.__vcDefaultFontFamily = settings.defaultFontFamily;
+        }
+        if (settings.defaultFontSize) {
+            window.__vcDefaultFontSize = settings.defaultFontSize;
+        }
+        if (settings.defaultTheme && this.theme) {
+            this.theme.applyTheme(settings.defaultTheme, true);
+        }
+        this.properties?.render();
+        this.render();
+        requestRender();
     }
 
     updateStatusBar() {

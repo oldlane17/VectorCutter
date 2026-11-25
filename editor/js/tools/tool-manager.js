@@ -5,7 +5,7 @@
 
 import { events } from '../core/events.js';
 import { requestRender } from '../core/scheduler.js';
-import { getElementLocalBounds, getTransformedCorners, getRotationCentre } from '../model/bounds.js';
+import { getElementLocalBounds, getTransformedCorners, getRotationCentre, getElementSnapPoints, getAdaptiveGridStep } from '../model/bounds.js';
 import { SelectTool } from './select.js';
 import { PanTool } from './pan.js';
 import { RectTool } from './rect.js';
@@ -107,14 +107,19 @@ export class ToolManager {
 
         // Apply Snap / Magnet mode
         const snapMode = window.__vcSnapMode || 'none';
+        window.__vcActiveSnapPoint = null;
         if (snapMode === 'grid') {
-            const snapStep = 10; // 10 mm
+            const snapStep = getAdaptiveGridStep(this.camera.scale);
             wx = Math.round(wx / snapStep) * snapStep;
             wy = Math.round(wy / snapStep) * snapStep;
         } else if (snapMode === 'geometry') {
-            const snapped = this.snapToGeometry(world.x, world.y);
+            const excludeSelected = this.currentTool === 'select' && (this.tools.select?.isDragging || this.tools.select?.isTransforming);
+            const snapped = this.snapToGeometry(world.x, world.y, excludeSelected);
             wx = snapped.x;
             wy = snapped.y;
+            if (snapped.snapped) {
+                window.__vcActiveSnapPoint = { x: wx, y: wy };
+            }
         }
 
         return {
@@ -129,20 +134,20 @@ export class ToolManager {
         };
     }
 
-    snapToGeometry(x, y) {
-        const threshold = 14 / this.camera.scale; // ~14 screen pixels tolerance
+    snapToGeometry(x, y, excludeSelected = false) {
+        const threshold = 16 / this.camera.scale; // ~16 screen pixels tolerance
         let closestDist = threshold;
         let bestX = x;
         let bestY = y;
+        let snapped = false;
 
+        const selection = this.store.doc.selection || [];
         const elements = this.store.doc.elements || {};
         for (const id in elements) {
+            if (excludeSelected && selection.includes(id)) continue;
             const el = elements[id];
             if (!el || el.visible === false) continue;
-            const b = getElementLocalBounds(el);
-            const corners = getTransformedCorners(b, el.transform || [1, 0, 0, 1, 0, 0]);
-            const center = getRotationCentre(el);
-            const candidatePoints = [...corners, center];
+            const candidatePoints = getElementSnapPoints(el);
 
             for (const pt of candidatePoints) {
                 const dist = Math.hypot(pt.x - x, pt.y - y);
@@ -150,9 +155,10 @@ export class ToolManager {
                     closestDist = dist;
                     bestX = pt.x;
                     bestY = pt.y;
+                    snapped = true;
                 }
             }
         }
-        return { x: bestX, y: bestY };
+        return { x: bestX, y: bestY, snapped };
     }
 }

@@ -192,6 +192,7 @@ export class MenubarController {
         this.on('menuShapeLibrary', () => this.modals.showShapeLibrary());
         this.on('menuShortcuts', () => this.modals.showShortcutsModal());
         this.on('menuCommandPalette', () => this.modals.showCommandPalette());
+        this.on('menuSettings', () => this.modals.showSettingsModal());
     }
 
     on(id, handler) {

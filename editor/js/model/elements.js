@@ -17,8 +17,8 @@ export function createElement(type, props = {}) {
         parent: props.parent || null,
         transform: props.transform ? [...props.transform] : [...IDENTITY_MATRIX],
         style: {
-            fill: props.style?.fill !== undefined ? props.style.fill : 'rgba(0, 122, 204, 0.08)',
-            stroke: props.style?.stroke !== undefined ? props.style.stroke : '#007acc',
+            fill: props.style?.fill !== undefined ? props.style.fill : (window.__vcDefaultFill !== undefined ? window.__vcDefaultFill : 'rgba(0, 122, 204, 0.08)'),
+            stroke: props.style?.stroke !== undefined ? props.style.stroke : (window.__vcDefaultStroke !== undefined ? window.__vcDefaultStroke : '#007acc'),
             strokeWidth: props.style?.strokeWidth !== undefined ? props.style.strokeWidth : 0.5, // 0.5mm
             strokeDasharray: props.style?.strokeDasharray || '',
             opacity: props.style?.opacity !== undefined ? props.style.opacity : 1,
