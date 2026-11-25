@@ -94,6 +94,23 @@ export class ToolManager {
             this.tools[this.currentTool]?.onPointerUp(pt, e);
             requestRender();
         });
+
+        // Double-click text element to edit inline on canvas
+        this.container.addEventListener('dblclick', (e) => {
+            if (e.target.closest('#quickbar') || e.target.closest('.vc-quickbar') || e.target.closest('.vc-tool-options-bar')) return;
+            const pt = this.getEventPoint(e);
+            const hitId = this.tools.select?.hitTest(pt.screenX, pt.screenY, e.target);
+            if (!hitId) return;
+            const el = this.store.getElement(hitId);
+            if (!el || el.type !== 'text' || el.locked) return;
+
+            this.store.setSelection([hitId]);
+            const inp = document.getElementById('propTextContent');
+            if (inp) {
+                inp.focus();
+                inp.select();
+            }
+        });
     }
 
     getEventPoint(e) {

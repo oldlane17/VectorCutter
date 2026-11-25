@@ -203,15 +203,6 @@ export class ObjectsPanel {
                 this.showContextMenu(e.clientX, e.clientY, id);
             });
         });
-
-        // Scroll selected row into view
-        const firstSelectedId = this.store.doc.selection[0];
-        if (firstSelectedId) {
-            const selRow = list.querySelector(`[data-id="${firstSelectedId}"]`);
-            if (selRow) {
-                selRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-            }
-        }
     }
 
     showContextMenu(x, y, id) {

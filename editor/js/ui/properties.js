@@ -67,6 +67,8 @@ export class PropertiesController {
 
     render() {
         if (!this.panel) return;
+        const prevContainer = this.panel.querySelector('#vcTabContentContainer');
+        const prevScrollTop = prevContainer ? prevContainer.scrollTop : 0;
 
         // 4 Tabs Strip (§6.9)
         const tabsHtml = `
@@ -114,6 +116,7 @@ export class PropertiesController {
 
         // 4. PROPERTIES TAB
         this.renderPropertiesTab(content);
+        content.scrollTop = prevScrollTop;
     }
 
     renderPropertiesTab(content) {
@@ -415,6 +418,36 @@ export class PropertiesController {
             `;
         }
 
+        if (el.type === 'text') {
+            const g = el.geometry || {};
+            const fonts = ['Arial', 'Helvetica', 'Verdana', 'Georgia', 'Times New Roman', 'Courier New'];
+            const curFont = g.fontFamily || 'Arial';
+            const fontOptions = fonts.map(f => `<option value="${f}" ${curFont === f ? 'selected' : ''}>${f}</option>`).join('');
+            const escapedText = (g.text || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return `
+                <div class="vc-panel-section">
+                    <div class="vc-panel-title">TEXT</div>
+                    <div class="prop-row">
+                        <label for="propTextContent">Content</label>
+                        <div class="control"><input type="text" id="propTextContent" value="${escapedText}" placeholder="Enter text..."></div>
+                        <div class="unit"></div>
+                    </div>
+                    <div class="prop-row">
+                        <label for="propTextFont">Font</label>
+                        <div class="control">
+                            <select id="propTextFont">${fontOptions}</select>
+                        </div>
+                        <div class="unit"></div>
+                    </div>
+                    <div class="prop-row">
+                        <label for="propTextSize">Size</label>
+                        <div class="control"><input type="number" id="propTextSize" value="${(g.fontSize || 14).toFixed(1)}" min="1" max="500" step="1"></div>
+                        <div class="unit">mm</div>
+                    </div>
+                </div>
+            `;
+        }
+
         return '';
     }
 
@@ -423,6 +456,40 @@ export class PropertiesController {
         content.querySelector('#btnPrepare3DEntry')?.addEventListener('click', () => {
             this.setTab('3d');
         });
+
+        // Text element live inputs
+        if (el.type === 'text') {
+            content.querySelector('#propTextContent')?.addEventListener('input', (e) => {
+                this.store.commit('Edit Text', (doc) => {
+                    const target = doc.elements[el.id];
+                    if (target && target.geometry) {
+                        target.geometry.text = e.target.value;
+                    }
+                });
+                requestRender();
+            });
+            content.querySelector('#propTextFont')?.addEventListener('change', (e) => {
+                this.store.commit('Change Font', (doc) => {
+                    const target = doc.elements[el.id];
+                    if (target && target.geometry) {
+                        target.geometry.fontFamily = e.target.value;
+                    }
+                });
+                requestRender();
+            });
+            content.querySelector('#propTextSize')?.addEventListener('input', (e) => {
+                const sz = parseFloat(e.target.value);
+                if (!isNaN(sz) && sz > 0) {
+                    this.store.commit('Change Font Size', (doc) => {
+                        const target = doc.elements[el.id];
+                        if (target && target.geometry) {
+                            target.geometry.fontSize = sz;
+                        }
+                    });
+                    requestRender();
+                }
+            });
+        }
 
         // Numeric live input helper
         const bindInputLive = (id, onChange) => {
