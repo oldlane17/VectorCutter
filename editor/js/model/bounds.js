@@ -57,8 +57,8 @@ export function getElementLocalBounds(el) {
         case 'text': {
             if (el._latexBounds) {
                 return {
-                    x: g.x || 0,
-                    y: (g.y || 0) - el._latexBounds.height,
+                    x: el._latexBounds.x !== undefined ? el._latexBounds.x : (g.x || 0),
+                    y: el._latexBounds.y !== undefined ? el._latexBounds.y : ((g.y || 0) - el._latexBounds.height),
                     width: el._latexBounds.width,
                     height: el._latexBounds.height
                 };

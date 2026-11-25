@@ -232,10 +232,13 @@ export class SceneRenderer {
                             node.dataset.renderedTex = cleanTex;
                             node.dataset.renderedSize = String(fontSize);
                         }
-                        // Compute world-space local bounds from MathJax viewBox units (ex -> ~fontSize)
-                        const aspect = cached.vbH > 0 ? (cached.vbW / cached.vbH) : 2;
-                        const hMm = fontSize * 1.3;
-                        el._latexBounds = { width: Math.max(5, hMm * aspect), height: Math.max(5, hMm) };
+                        // Exact world-space local bounds from MathJax viewBox (scaled by fontSize / 1000)
+                        el._latexBounds = {
+                            x: (g.x || 0) + (cached.vbX || 0) * scale,
+                            y: (g.y || 0) + (cached.vbY || -750) * scale,
+                            width: Math.max(1, cached.vbW * scale),
+                            height: Math.max(1, cached.vbH * scale)
+                        };
                     } else if (!this.latexPending.has(cleanTex)) {
                         this.latexPending.add(cleanTex);
                         this.renderLatexAsync(cleanTex);
@@ -280,6 +283,8 @@ export class SceneRenderer {
                 const vb = (mathSvg.getAttribute('viewBox') || '0 0 1000 1000').split(/\s+/).map(Number);
                 this.latexCache.set(cleanTex, {
                     innerHtml: clone.outerHTML,
+                    vbX: vb[0] || 0,
+                    vbY: vb[1] !== undefined && !isNaN(vb[1]) ? vb[1] : -750,
                     vbW: vb[2] || 1000,
                     vbH: vb[3] || 1000
                 });
