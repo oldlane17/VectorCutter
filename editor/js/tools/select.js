@@ -512,18 +512,22 @@ export class SelectTool {
     createMarqueeElement() {
         const overlay = document.getElementById('overlaySvg');
         if (!overlay) return;
+        const existing = document.getElementById('vcMarquee');
+        if (existing) existing.remove();
 
         const mode = window.__vcSelectionMode || 'rect';
         if (mode === 'lasso') {
             this.marqueeEl = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-            this.marqueeEl.setAttribute('fill', 'rgba(56, 189, 248, 0.12)');
+            this.marqueeEl.id = 'vcMarquee';
+            this.marqueeEl.setAttribute('fill', 'rgba(56, 189, 248, 0.14)');
             this.marqueeEl.setAttribute('stroke', '#38bdf8');
             this.marqueeEl.setAttribute('stroke-width', '1.5');
             this.marqueeEl.setAttribute('stroke-dasharray', '6 4');
             overlay.appendChild(this.marqueeEl);
         } else {
             this.marqueeEl = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-            this.marqueeEl.setAttribute('fill', 'rgba(56, 189, 248, 0.12)');
+            this.marqueeEl.id = 'vcMarquee';
+            this.marqueeEl.setAttribute('fill', 'rgba(56, 189, 248, 0.14)');
             this.marqueeEl.setAttribute('stroke', '#38bdf8');
             this.marqueeEl.setAttribute('stroke-width', '1.5');
             this.marqueeEl.setAttribute('stroke-dasharray', '6 4');

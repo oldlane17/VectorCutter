@@ -21,9 +21,11 @@ export class OverlayRenderer {
     }
 
     clear() {
-        while (this.svg.firstChild) {
-            this.svg.removeChild(this.svg.firstChild);
-        }
+        Array.from(this.svg.children).forEach(child => {
+            if (child.id !== 'vcMarquee') {
+                child.remove();
+            }
+        });
         this.handleElements = [];
     }
 
