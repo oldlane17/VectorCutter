@@ -183,6 +183,8 @@ Install the [Live Server](https://marketplace.visualstudio.com/items?itemName=ms
 
 > **🌟 Everyone is welcome to contribute!**  
 > Whether you are an experienced web developer, a laser cutting hobbyist, a teacher, a mathematician, or making your very first pull request on GitHub — we'd love to have you participate. This repo has the goal to create a free alternative to be creative and share it :)
+>
+> Please read **[CONTRIBUTING.md](CONTRIBUTING.md)** for full instructions and our **[Contributor License Agreement (CLA.md)](CLA.md)** before submitting a Pull Request. Sponsorships are also warmly welcome!
 
 
 
@@ -248,9 +250,9 @@ Enhance [`editor/js/`](editor/js/):
 
 ---
 
-## 📄 License
+## 📄 License & CLA
 
-VectorCutter is open-source software licensed under the **[MIT License](LICENSE)**. You are free to use, modify, distribute, and build commercial or non-commercial physical items with these tools.
+VectorCutter is open-source software licensed under the **[MIT License](LICENSE)**, with original code owned by **Old Lane 17**. You are free to use, modify, distribute, and build commercial or non-commercial physical items with these tools. All contributions are subject to the **[Contributor License Agreement (CLA.md)](CLA.md)**.
 
 ---
 
