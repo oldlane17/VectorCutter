@@ -13,6 +13,8 @@ export class InputController {
         this.toolManager = toolManager;
 
         this.scrollMode = storage.getItem('vc_scroll_mode', 'trackpad');
+        const savedSettings = storage.getItem('vc_editor_settings', {});
+        this.invertScroll = savedSettings.invertScroll !== undefined ? !!savedSettings.invertScroll : true;
         this.isSpacePressed = false;
         this.isMiddleDragging = false;
         this.lastPointer = { x: 0, y: 0 };
@@ -24,6 +26,10 @@ export class InputController {
         this.scrollMode = mode === 'mouse' ? 'mouse' : 'trackpad';
         storage.setItem('vc_scroll_mode', this.scrollMode);
         events.emit('scrollmode:changed', this.scrollMode);
+    }
+
+    setInvertScroll(invert) {
+        this.invertScroll = !!invert;
     }
 
     bindEvents() {
@@ -74,6 +80,8 @@ export class InputController {
         }
 
         const isPinchZoom = e.ctrlKey || e.metaKey;
+        const panDx = this.invertScroll ? -dx : dx;
+        const panDy = this.invertScroll ? -dy : dy;
 
         if (this.scrollMode === 'trackpad') {
             if (isPinchZoom) {
@@ -82,10 +90,10 @@ export class InputController {
                 this.camera.zoomAt(sx, sy, zoomFactor);
             } else if (e.shiftKey) {
                 // Horizontal pan
-                this.camera.panBy(dy !== 0 ? dy : dx, 0);
+                this.camera.panBy(panDy !== 0 ? panDy : panDx, 0);
             } else {
                 // Two-finger pan in both directions
-                this.camera.panBy(dx, dy);
+                this.camera.panBy(panDx, panDy);
             }
         } else {
             // Mouse Mode
@@ -94,12 +102,12 @@ export class InputController {
                 const factor = dy < 0 ? 1.15 : 0.87;
                 this.camera.zoomAt(sx, sy, factor);
             } else if (e.shiftKey) {
-                this.camera.panBy(dy !== 0 ? dy : dx, 0);
+                this.camera.panBy(panDy !== 0 ? panDy : panDx, 0);
             } else if (e.altKey) {
-                this.camera.panBy(0, dy !== 0 ? dy : dx);
+                this.camera.panBy(0, panDy !== 0 ? panDy : panDx);
             } else if (dx !== 0) {
                 // Horizontal scrollwheel never zooms
-                this.camera.panBy(dx, 0);
+                this.camera.panBy(panDx, 0);
             }
         }
     }

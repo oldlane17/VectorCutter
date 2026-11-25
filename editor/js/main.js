@@ -258,6 +258,9 @@ class VectorCutterApp {
         if (settings.defaultTheme && this.theme) {
             this.theme.applyTheme(settings.defaultTheme, true);
         }
+        if (settings.invertScroll !== undefined && this.input) {
+            this.input.setInvertScroll(settings.invertScroll);
+        }
         this.properties?.render();
         this.render();
         requestRender();

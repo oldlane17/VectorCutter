@@ -251,6 +251,7 @@ export class ModalsController {
         const curFont = saved.defaultFontFamily || window.__vcDefaultFontFamily || 'Arial';
         const curFontSize = saved.defaultFontSize || window.__vcDefaultFontSize || 14;
         const curTheme = storage.getItem('vc_theme', saved.defaultTheme || 'dark');
+        const curInvertScroll = saved.invertScroll !== undefined ? !!saved.invertScroll : true;
 
         modal = document.createElement('div');
         modal.id = 'settingsModal';
@@ -314,6 +315,11 @@ export class ModalsController {
                             <option value="system" ${curTheme === 'system' ? 'selected' : ''}>System</option>
                         </select>
                     </div>
+
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <label for="setInvertScroll">Invert Canvas Scroll</label>
+                        <input type="checkbox" id="setInvertScroll" ${curInvertScroll ? 'checked' : ''} style="width:18px;height:18px;cursor:pointer;">
+                    </div>
                 </div>
 
                 <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px;padding-top:12px;border-top:1px solid var(--vc-border-subtle);">
@@ -336,7 +342,8 @@ export class ModalsController {
                 defaultUnit: modal.querySelector('#setDefaultUnit').value,
                 defaultFontFamily: modal.querySelector('#setDefaultFont').value,
                 defaultFontSize: parseFloat(modal.querySelector('#setDefaultFontSize').value) || 14,
-                defaultTheme: modal.querySelector('#setDefaultTheme').value
+                defaultTheme: modal.querySelector('#setDefaultTheme').value,
+                invertScroll: modal.querySelector('#setInvertScroll').checked
             };
             storage.setItem('vc_editor_settings', settings);
             events.emit('settings:changed', settings);
