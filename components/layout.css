@@ -316,3 +316,86 @@
     margin: 0;
     white-space: nowrap;
 }
+
+/* ==========================================================================
+   STANDARDIZED GENERATOR DOWNLOAD BAR
+   ========================================================================== */
+.vc-download-bar-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    width: 100%;
+}
+
+.vc-download-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 12px;
+    padding: 14px 20px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.vc-filename-label {
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.vc-filename-wrap {
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #cbd5e1;
+}
+
+.vc-filename-input {
+    border: none;
+    outline: none;
+    padding: 10px 12px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #111827;
+    min-width: 220px;
+    background: transparent;
+}
+
+.vc-filename-ext {
+    padding: 10px 12px;
+    background: #f1f5f9;
+    color: #475569;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border-left: 1px solid #cbd5e1;
+}
+
+.vc-download-btn {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #ffffff;
+    border: 2px solid rgba(255, 255, 255, 0.7);
+    border-radius: 8px;
+    padding: 10px 22px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.vc-download-btn:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.vc-download-btn:active {
+    transform: translateY(0);
+}
