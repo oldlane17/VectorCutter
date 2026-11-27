@@ -26,9 +26,12 @@ input, textarea, select, [contenteditable] {
     font-family: inherit;
 }
 
-/* Icon Uniformity - Pure White §5 */
+/* Icon Uniformity - Theme-aware */
 .icon, .icon *, .vc-tool-btn img, .vc-tool-btn svg, .vc-quickbar-btn svg, .vc-quickbar-btn img {
     color: var(--icon-color);
+}
+[data-theme="light"] .vc-tool-btn:not(.active) img {
+    filter: brightness(0.15);
 }
 .vc-icon {
     width: 18px;

@@ -121,7 +121,10 @@ export class SelectTool {
     }
 
     onPointerDown(pt, e) {
-        const handle = e.target.dataset?.handle;
+        let handle = e.target.dataset?.handle;
+        if (!handle) {
+            handle = this.hitTestHandle(pt.screenX, pt.screenY);
+        }
 
         // 1. Clicked a handle (resize or rotate)
         if (handle) {
@@ -338,9 +341,34 @@ export class SelectTool {
                     maxY = Math.max(maxY, c.y);
                 });
             });
+            this.initialGroupBox = { x: minX, y: minY, width: Math.max(0.001, maxX - minX), height: Math.max(0.001, maxY - minY) };
             this.initialCenter = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
             this.initialAngle = Math.atan2(this.dragStart.y - this.initialCenter.y, this.dragStart.x - this.initialCenter.x);
         }
+    }
+
+    hitTestHandle(sx, sy) {
+        const overlay = document.getElementById('overlaySvg');
+        if (!overlay) return null;
+        const handles = overlay.querySelectorAll('[data-handle]');
+        let best = null;
+        let bestDist = 12; // 12px grab radius
+        handles.forEach(h => {
+            let cx, cy;
+            if (h.tagName.toLowerCase() === 'circle') {
+                cx = parseFloat(h.getAttribute('cx'));
+                cy = parseFloat(h.getAttribute('cy'));
+            } else {
+                cx = parseFloat(h.getAttribute('x')) + parseFloat(h.getAttribute('width')) / 2;
+                cy = parseFloat(h.getAttribute('y')) + parseFloat(h.getAttribute('height')) / 2;
+            }
+            const dist = Math.hypot(cx - sx, cy - sy);
+            if (dist <= bestDist) {
+                bestDist = dist;
+                best = h.dataset.handle;
+            }
+        });
+        return best;
     }
 
     applyHandleTransform(pt, e) {
@@ -421,17 +449,59 @@ export class SelectTool {
                 ky = Math.max(0.01, hPrime / h0);
             }
 
-            // Aspect ratio lock with Shift
-            if (e && e.shiftKey) {
-                if (this.activeHandle.length === 2) { // corner handles (nw, ne, se, sw)
-                    const uniform = Math.max(kx, ky);
-                    kx = uniform;
-                    ky = uniform;
-                }
+            // Aspect ratio lock (Keep Ratio toggle, Shift temporarily inverts)
+            const keepRatio = (window.__vcKeepRatio !== false) !== !!(e && e.shiftKey);
+            if (keepRatio && this.activeHandle.length === 2) { // corner handles (nw, ne, se, sw)
+                const uniform = Math.max(kx, ky);
+                kx = uniform;
+                ky = uniform;
             }
 
             const sLocal = scaleMatrix(kx, ky, anchorX, anchorY);
             el.transform = multiplyMatrix(initM, sLocal);
+        } else if (selected.length > 1 && this.initialGroupBox) {
+            const box = this.initialGroupBox;
+            const w0 = box.width;
+            const h0 = box.height;
+            const dx_w = pt.x - this.dragStart.x;
+            const dy_w = pt.y - this.dragStart.y;
+
+            let anchorX = box.x;
+            let anchorY = box.y;
+            let kx = 1;
+            let ky = 1;
+
+            if (this.activeHandle.includes('e')) {
+                anchorX = box.x;
+                kx = Math.max(0.01, (w0 + dx_w) / w0);
+            } else if (this.activeHandle.includes('w')) {
+                anchorX = box.x + w0;
+                kx = Math.max(0.01, (w0 - dx_w) / w0);
+            }
+
+            if (this.activeHandle.includes('s')) {
+                anchorY = box.y;
+                ky = Math.max(0.01, (h0 + dy_w) / h0);
+            } else if (this.activeHandle.includes('n')) {
+                anchorY = box.y + h0;
+                ky = Math.max(0.01, (h0 - dy_w) / h0);
+            }
+
+            const keepRatio = (window.__vcKeepRatio !== false) !== !!(e && e.shiftKey);
+            if (keepRatio && this.activeHandle.length === 2) {
+                const uniform = Math.max(kx, ky);
+                kx = uniform;
+                ky = uniform;
+            }
+
+            const sWorld = scaleMatrix(kx, ky, anchorX, anchorY);
+            selected.forEach(el => {
+                if (el.locked) return;
+                const initM = this.initialTransforms.get(el.id);
+                if (initM) {
+                    el.transform = multiplyMatrix(sWorld, initM);
+                }
+            });
         }
     }
 

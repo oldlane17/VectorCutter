@@ -192,6 +192,7 @@ class VectorCutterApp {
         });
 
         // Apply persisted editor settings on boot
+        if (window.__vcKeepRatio === undefined) window.__vcKeepRatio = true;
         const savedSettings = storage.getItem('vc_editor_settings', null);
         if (savedSettings) {
             this.applySettings(savedSettings);
@@ -260,6 +261,9 @@ class VectorCutterApp {
         }
         if (settings.invertScroll !== undefined && this.input) {
             this.input.setInvertScroll(settings.invertScroll);
+        }
+        if (settings.defaultKeepRatio !== undefined) {
+            window.__vcKeepRatio = !!settings.defaultKeepRatio;
         }
         this.properties?.render();
         this.render();

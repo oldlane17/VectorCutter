@@ -210,6 +210,14 @@ export class PropertiesController {
                     <div class="unit">${unit}</div>
                 </div>
                 <div class="prop-row">
+                    <label for="chkKeepRatio" style="cursor:pointer;">Keep Ratio</label>
+                    <div class="control" style="display:flex;align-items:center;gap:6px;">
+                        <input type="checkbox" id="chkKeepRatio" ${window.__vcKeepRatio !== false ? 'checked' : ''} style="width:auto;cursor:pointer;">
+                        <span style="font-size:11px;color:var(--vc-text-muted);">Lock W : H</span>
+                    </div>
+                    <div class="unit"></div>
+                </div>
+                <div class="prop-row">
                     <label for="propRot">Rotation</label>
                     <div class="control"><input type="number" id="propRot" value="${rotDeg}" min="-360" max="360" step="5"></div>
                     <div class="unit">°</div>
@@ -550,8 +558,13 @@ export class PropertiesController {
                 if (doc.elements[el.id]) doc.elements[el.id].transform[5] = toMm(val, unit);
             });
         });
+        content.querySelector('#chkKeepRatio')?.addEventListener('change', (e) => {
+            window.__vcKeepRatio = e.target.checked;
+        });
+
         bindInputLive('propW', (val) => {
             if (val <= 0) return;
+            const keepRatio = window.__vcKeepRatio !== false;
             this.store.commit('Change Width', (doc) => {
                 const target = doc.elements[el.id];
                 if (!target) return;
@@ -560,14 +573,21 @@ export class PropertiesController {
                 const curEffW = oldBox.width * Math.hypot(m[0], m[1]);
                 if (curEffW > 0) {
                     const kx = Math.max(0.01, toMm(val, unit) / curEffW);
+                    const ky = keepRatio ? kx : 1;
                     const cx = oldBox.x + oldBox.width / 2;
                     const cy = oldBox.y + oldBox.height / 2;
-                    target.transform = multiplyMatrix(m, scaleMatrix(kx, 1, cx, cy));
+                    target.transform = multiplyMatrix(m, scaleMatrix(kx, ky, cx, cy));
+                    if (keepRatio) {
+                        const hInp = content.querySelector('#propH');
+                        const newEffH = oldBox.height * Math.hypot(target.transform[2], target.transform[3]);
+                        if (hInp) hInp.value = fromMm(newEffH, unit).toFixed(1);
+                    }
                 }
             });
         });
         bindInputLive('propH', (val) => {
             if (val <= 0) return;
+            const keepRatio = window.__vcKeepRatio !== false;
             this.store.commit('Change Height', (doc) => {
                 const target = doc.elements[el.id];
                 if (!target) return;
@@ -576,9 +596,15 @@ export class PropertiesController {
                 const curEffH = oldBox.height * Math.hypot(m[2], m[3]);
                 if (curEffH > 0) {
                     const ky = Math.max(0.01, toMm(val, unit) / curEffH);
+                    const kx = keepRatio ? ky : 1;
                     const cx = oldBox.x + oldBox.width / 2;
                     const cy = oldBox.y + oldBox.height / 2;
-                    target.transform = multiplyMatrix(m, scaleMatrix(1, ky, cx, cy));
+                    target.transform = multiplyMatrix(m, scaleMatrix(kx, ky, cx, cy));
+                    if (keepRatio) {
+                        const wInp = content.querySelector('#propW');
+                        const newEffW = oldBox.width * Math.hypot(target.transform[0], target.transform[1]);
+                        if (wInp) wInp.value = fromMm(newEffW, unit).toFixed(1);
+                    }
                 }
             });
         });

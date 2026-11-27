@@ -212,7 +212,8 @@ export class ModalsController {
             { name: 'Reset Zoom (1:1 mm)', action: () => document.getElementById('menuResetZoom')?.click() },
             { name: 'Toggle Grid', action: () => document.getElementById('menuToggleGrid')?.click() },
             { name: 'Toggle Theme (Light / Dark)', action: () => document.getElementById('themeToggleBtn')?.click() },
-            { name: 'Editor Settings', action: () => this.showSettingsModal() }
+            { name: 'Editor Settings', action: () => this.showSettingsModal() },
+            { name: 'About VectorCutter', action: () => this.showAboutModal() }
         ];
 
         const renderList = (filter = '') => {
@@ -253,6 +254,7 @@ export class ModalsController {
         const curFontSize = saved.defaultFontSize || window.__vcDefaultFontSize || 14;
         const curTheme = storage.getItem('vc_theme', saved.defaultTheme || 'dark');
         const curInvertScroll = saved.invertScroll !== undefined ? !!saved.invertScroll : true;
+        const curKeepRatio = saved.defaultKeepRatio !== undefined ? !!saved.defaultKeepRatio : true;
 
         modal = document.createElement('div');
         modal.id = 'settingsModal';
@@ -319,6 +321,11 @@ export class ModalsController {
                         <label for="setInvertScroll">Invert Canvas Scroll</label>
                         <input type="checkbox" id="setInvertScroll" ${curInvertScroll ? 'checked' : ''} style="width:18px;height:18px;cursor:pointer;">
                     </div>
+
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <label for="setDefaultKeepRatio">Keep Aspect Ratio by Default</label>
+                        <input type="checkbox" id="setDefaultKeepRatio" ${curKeepRatio ? 'checked' : ''} style="width:18px;height:18px;cursor:pointer;">
+                    </div>
                 </div>
 
                 <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:18px;padding-top:12px;border-top:1px solid var(--vc-border-subtle);">
@@ -342,11 +349,48 @@ export class ModalsController {
                 defaultFontFamily: modal.querySelector('#setDefaultFont').value,
                 defaultFontSize: parseFloat(modal.querySelector('#setDefaultFontSize').value) || 14,
                 defaultTheme: modal.querySelector('#setDefaultTheme').value,
-                invertScroll: modal.querySelector('#setInvertScroll').checked
+                invertScroll: modal.querySelector('#setInvertScroll').checked,
+                defaultKeepRatio: modal.querySelector('#setDefaultKeepRatio').checked
             };
             storage.setItem('vc_editor_settings', settings);
             events.emit('settings:changed', settings);
             modal.remove();
         });
+    }
+
+    showAboutModal() {
+        let modal = document.getElementById('aboutModal');
+        if (modal) modal.remove();
+
+        modal = document.createElement('div');
+        modal.id = 'aboutModal';
+        modal.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999;';
+
+        modal.innerHTML = `
+            <div style="background:var(--vc-bg-surface-1);border:1px solid var(--vc-border-default);border-radius:var(--vc-radius-lg);width:440px;max-width:95vw;display:flex;flex-direction:column;padding:20px;box-shadow:var(--vc-shadow-modal);color:var(--vc-text-primary);text-align:center;">
+                <div style="display:flex;justify-content:flex-end;">
+                    <button id="closeAboutModal" style="background:none;border:none;color:var(--vc-text-muted);font-size:20px;cursor:pointer;line-height:1;">&times;</button>
+                </div>
+                <img src="favicon.png" alt="VectorCutter" style="width:56px;height:56px;margin:0 auto 10px auto;">
+                <h2 style="font-size:18px;margin:0 0 4px 0;">VectorCutter Studio</h2>
+                <div style="font-size:12px;color:var(--vc-text-muted);margin-bottom:14px;">Version 2.9.2 &bull; By Old Lane 17</div>
+                <p style="font-size:13px;line-height:1.5;color:var(--vc-text-secondary);margin:0 0 14px 0;">
+                    A free, open-source, 100% client-side SVG vector editor, LaTeX math vectorizer, and 3D/Laser preparation toolkit. All designs stay locally in your browser.
+                </p>
+                <div style="display:flex;justify-content:center;gap:14px;font-size:12px;margin-bottom:16px;">
+                    <a href="https://github.com/oldlane17/VectorCutter" target="_blank" style="color:var(--vc-accent-blue);text-decoration:none;font-weight:600;">GitHub</a>
+                    <a href="https://github.com/oldlane17/VectorCutter/blob/main/CONTRIBUTING.md" target="_blank" style="color:var(--vc-accent-blue);text-decoration:none;font-weight:600;">Contribute</a>
+                    <a href="https://github.com/oldlane17/VectorCutter/blob/main/CLA.md" target="_blank" style="color:var(--vc-accent-blue);text-decoration:none;font-weight:600;">CLA</a>
+                    <a href="about.html" target="_blank" style="color:var(--vc-accent-blue);text-decoration:none;font-weight:600;">Website About</a>
+                </div>
+                <div style="font-size:11px;color:var(--vc-text-muted);border-top:1px solid var(--vc-border-subtle);padding-top:10px;">
+                    MIT License &copy; 2024–2026 Old Lane 17
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        modal.querySelector('#closeAboutModal').addEventListener('click', () => modal.remove());
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
     }
 }

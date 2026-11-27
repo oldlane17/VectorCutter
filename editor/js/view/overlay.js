@@ -57,85 +57,16 @@ export class OverlayRenderer {
             poly.setAttribute('stroke-dasharray', '6 4');
             this.svg.appendChild(poly);
 
-            // Compute side midpoints and center in screen space
+            // Side midpoints in screen space
             const pNW = cornersScreen[0];
             const pNE = cornersScreen[1];
             const pSE = cornersScreen[2];
             const pSW = cornersScreen[3];
-
-            const pN = { x: (pNW.x + pNE.x) / 2, y: (pNW.y + pNE.y) / 2 };
             const pE = { x: (pNE.x + pSE.x) / 2, y: (pNE.y + pSE.y) / 2 };
             const pS = { x: (pSE.x + pSW.x) / 2, y: (pSE.y + pSW.y) / 2 };
-            const pW = { x: (pSW.x + pNW.x) / 2, y: (pSW.y + pNW.y) / 2 };
 
-            // Base direction angles for 8 handles
-            const handles = [
-                { type: 'nw', pt: pNW, baseAngle: 225 },
-                { type: 'n',  pt: pN,  baseAngle: 270 },
-                { type: 'ne', pt: pNE, baseAngle: 315 },
-                { type: 'e',  pt: pE,  baseAngle: 0 },
-                { type: 'se', pt: pSE, baseAngle: 45 },
-                { type: 's',  pt: pS,  baseAngle: 90 },
-                { type: 'sw', pt: pSW, baseAngle: 135 },
-                { type: 'w',  pt: pW,  baseAngle: 180 }
-            ];
-
-            // Only render handles if element is not locked (§4)
             if (!el.locked) {
-                // Render 8 resize handles (constant 9x9 px squares)
-                const handleSize = 9;
-                handles.forEach(h => {
-                    const rect = document.createElementNS(ns, 'rect');
-                    rect.setAttribute('x', h.pt.x - handleSize / 2);
-                    rect.setAttribute('y', h.pt.y - handleSize / 2);
-                    rect.setAttribute('width', handleSize);
-                    rect.setAttribute('height', handleSize);
-                    rect.setAttribute('fill', '#ffffff');
-                    rect.setAttribute('stroke', '#007acc');
-                    rect.setAttribute('stroke-width', '1.5');
-                    rect.dataset.handle = h.type;
-
-                    // Rotated resize cursor
-                    const effAngle = (h.baseAngle + rotDeg + 360) % 360;
-                    rect.style.cursor = getRotatedResizeCursor(effAngle);
-                    rect.style.pointerEvents = 'auto';
-
-                    this.svg.appendChild(rect);
-                    this.handleElements.push(rect);
-                });
-
-                // Rotation Handle (24px directly outward from top center edge)
-                const dirX = pN.x - pS.x;
-                const dirY = pN.y - pS.y;
-                const dirLen = Math.hypot(dirX, dirY) || 1;
-                const rotPt = {
-                    x: pN.x + (dirX / dirLen) * 24,
-                    y: pN.y + (dirY / dirLen) * 24
-                };
-
-                // Stalk line
-                const stalk = document.createElementNS(ns, 'line');
-                stalk.setAttribute('x1', pN.x);
-                stalk.setAttribute('y1', pN.y);
-                stalk.setAttribute('x2', rotPt.x);
-                stalk.setAttribute('y2', rotPt.y);
-                stalk.setAttribute('stroke', '#007acc');
-                stalk.setAttribute('stroke-width', '1');
-                this.svg.appendChild(stalk);
-
-                // Rotation knob
-                const rotKnob = document.createElementNS(ns, 'circle');
-                rotKnob.setAttribute('cx', rotPt.x);
-                rotKnob.setAttribute('cy', rotPt.y);
-                rotKnob.setAttribute('r', 4.5);
-                rotKnob.setAttribute('fill', '#007acc');
-                rotKnob.setAttribute('stroke', '#ffffff');
-                rotKnob.setAttribute('stroke-width', '1.5');
-                rotKnob.style.cursor = 'grab';
-                rotKnob.style.pointerEvents = 'auto';
-                rotKnob.dataset.handle = 'rot';
-                this.svg.appendChild(rotKnob);
-                this.handleElements.push(rotKnob);
+                this.renderResizeAndRotateHandles(ns, cornersScreen, rotDeg);
             }
 
             // Custom Rotation Centre Crosshair Indicator (if configured)
@@ -281,10 +212,90 @@ export class OverlayRenderer {
                 hLabel.setAttribute('font-weight', 'bold');
                 hLabel.textContent = `${dispH} ${unit}`;
                 this.svg.appendChild(hLabel);
+
+                // Multi-selection resize & rotation handles (if unlocked)
+                if (!selected.some(s => s.locked)) {
+                    const groupCorners = [
+                        { x: sTopLeft.x, y: sTopLeft.y },
+                        { x: sBotRight.x, y: sTopLeft.y },
+                        { x: sBotRight.x, y: sBotRight.y },
+                        { x: sTopLeft.x, y: sBotRight.y }
+                    ];
+                    this.renderResizeAndRotateHandles(ns, groupCorners, 0);
+                }
             }
         }
 
         this.renderSnapIndicator(ns);
+    }
+
+    renderResizeAndRotateHandles(ns, cornersScreen, rotDeg = 0) {
+        const [pNW, pNE, pSE, pSW] = cornersScreen;
+        const pN = { x: (pNW.x + pNE.x) / 2, y: (pNW.y + pNE.y) / 2 };
+        const pE = { x: (pNE.x + pSE.x) / 2, y: (pNE.y + pSE.y) / 2 };
+        const pS = { x: (pSE.x + pSW.x) / 2, y: (pSE.y + pSW.y) / 2 };
+        const pW = { x: (pSW.x + pNW.x) / 2, y: (pSW.y + pNW.y) / 2 };
+
+        const handles = [
+            { type: 'nw', pt: pNW, baseAngle: 225 },
+            { type: 'n',  pt: pN,  baseAngle: 270 },
+            { type: 'ne', pt: pNE, baseAngle: 315 },
+            { type: 'e',  pt: pE,  baseAngle: 0 },
+            { type: 'se', pt: pSE, baseAngle: 45 },
+            { type: 's',  pt: pS,  baseAngle: 90 },
+            { type: 'sw', pt: pSW, baseAngle: 135 },
+            { type: 'w',  pt: pW,  baseAngle: 180 }
+        ];
+
+        const handleSize = 10;
+        handles.forEach(h => {
+            const rect = document.createElementNS(ns, 'rect');
+            rect.setAttribute('x', h.pt.x - handleSize / 2);
+            rect.setAttribute('y', h.pt.y - handleSize / 2);
+            rect.setAttribute('width', handleSize);
+            rect.setAttribute('height', handleSize);
+            rect.setAttribute('fill', '#ffffff');
+            rect.setAttribute('stroke', '#007acc');
+            rect.setAttribute('stroke-width', '1.5');
+            rect.dataset.handle = h.type;
+
+            const effAngle = (h.baseAngle + rotDeg + 360) % 360;
+            rect.style.cursor = getRotatedResizeCursor(effAngle);
+            rect.style.pointerEvents = 'auto';
+
+            this.svg.appendChild(rect);
+            this.handleElements.push(rect);
+        });
+
+        const dirX = pN.x - pS.x;
+        const dirY = pN.y - pS.y;
+        const dirLen = Math.hypot(dirX, dirY) || 1;
+        const rotPt = {
+            x: pN.x + (dirX / dirLen) * 24,
+            y: pN.y + (dirY / dirLen) * 24
+        };
+
+        const stalk = document.createElementNS(ns, 'line');
+        stalk.setAttribute('x1', pN.x);
+        stalk.setAttribute('y1', pN.y);
+        stalk.setAttribute('x2', rotPt.x);
+        stalk.setAttribute('y2', rotPt.y);
+        stalk.setAttribute('stroke', '#007acc');
+        stalk.setAttribute('stroke-width', '1');
+        this.svg.appendChild(stalk);
+
+        const rotKnob = document.createElementNS(ns, 'circle');
+        rotKnob.setAttribute('cx', rotPt.x);
+        rotKnob.setAttribute('cy', rotPt.y);
+        rotKnob.setAttribute('r', 5);
+        rotKnob.setAttribute('fill', '#007acc');
+        rotKnob.setAttribute('stroke', '#ffffff');
+        rotKnob.setAttribute('stroke-width', '1.5');
+        rotKnob.style.cursor = 'grab';
+        rotKnob.style.pointerEvents = 'auto';
+        rotKnob.dataset.handle = 'rot';
+        this.svg.appendChild(rotKnob);
+        this.handleElements.push(rotKnob);
     }
 
     renderSnapIndicator(ns) {
@@ -347,9 +358,10 @@ export class OverlayRenderer {
                 const factor = newMm / currentEffMm;
                 const cx = localBox.x + localBox.width / 2;
                 const cy = localBox.y + localBox.height / 2;
-                const sMat = axis === 'width'
-                    ? scaleMatrix(factor, 1, cx, cy)
-                    : scaleMatrix(1, factor, cx, cy);
+                const keepRatio = window.__vcKeepRatio !== false;
+                const sx = (axis === 'width' || keepRatio) ? factor : 1;
+                const sy = (axis === 'height' || keepRatio) ? factor : 1;
+                const sMat = scaleMatrix(sx, sy, cx, cy);
                 const before = [...el.transform];
                 const after = multiplyMatrix(before, sMat);
                 this.store.dispatch(new TransformElementsCommand([{ id: el.id, before, after }]));

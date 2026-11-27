@@ -57,24 +57,24 @@
 }
 
 [data-theme="light"] {
-    --icon-color: #ffffff;
+    --icon-color: #1f2937;
 
-    /* Color Palette - Light Theme */
-    --vc-bg-app: #f3f3f3;
-    --vc-bg-surface-1: #252528; /* Keep left sidebar & header dark so white icons stay visible per §5.5 */
-    --vc-bg-surface-2: #2d2d30;
-    --vc-bg-surface-3: #37373b;
-    --vc-bg-surface-hover: #3f3f44;
-    --vc-bg-surface-active: #094771;
+    /* Color Palette - Light Theme (Full Outer UI + Canvas) */
+    --vc-bg-app: #f3f4f6;
+    --vc-bg-surface-1: #ffffff;
+    --vc-bg-surface-2: #f8fafc;
+    --vc-bg-surface-3: #e2e8f0;
+    --vc-bg-surface-hover: #e5e7eb;
+    --vc-bg-surface-active: #dbeafe;
 
-    --vc-border-subtle: #3e3e42;
-    --vc-border-default: #4e4e52;
+    --vc-border-subtle: #e5e7eb;
+    --vc-border-default: #cbd5e1;
     --vc-border-focus: #007acc;
 
-    --vc-text-primary: #f0f0f0;
-    --vc-text-secondary: #cccccc;
-    --vc-text-muted: #999999;
-    --vc-text-disabled: #666666;
+    --vc-text-primary: #111827;
+    --vc-text-secondary: #374151;
+    --vc-text-muted: #6b7280;
+    --vc-text-disabled: #9ca3af;
 
     --vc-accent-blue: #007acc;
     --vc-accent-hover: #0098ff;

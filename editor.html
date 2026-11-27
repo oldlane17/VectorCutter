@@ -8,8 +8,8 @@
     <link rel="apple-touch-icon" href="/favicon.ico">
 
     <!-- Design Tokens & Component Stylesheets -->
-    <link rel="stylesheet" href="editor/css/tokens.css?v=2.8.0">
-    <link rel="stylesheet" href="editor/css/layout.css?v=2.8.0">
+    <link rel="stylesheet" href="editor/css/tokens.css?v=2.9.2">
+    <link rel="stylesheet" href="editor/css/layout.css?v=2.9.2">
 
     <!-- Pinned External 3D & Geometry Libraries (§7 & §0.4) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -103,6 +103,8 @@
                         <div class="vc-dropdown-item" id="menuCommandPalette">Command Palette <span class="vc-shortcut">Ctrl+K</span></div>
                         <div class="vc-dropdown-item" id="menuShortcuts">Keyboard Shortcuts <span class="vc-shortcut">?</span></div>
                         <div class="vc-dropdown-item" id="menuShapeLibrary">Browse Shape Library...</div>
+                        <div class="vc-separator"></div>
+                        <div class="vc-dropdown-item" id="menuAbout">About VectorCutter</div>
                     </div>
                 </div>
 
@@ -299,7 +301,7 @@
                         </svg>
                     </button>
                     <button class="vc-quickbar-btn selection-action" id="quick180" title="Rotate 180°">
-                        <span style="font-size:10px;font-weight:bold;color:#fff;">180</span>
+                        <span style="font-size:10px;font-weight:bold;color:currentColor;">180</span>
                     </button>
                     <button class="vc-quickbar-btn selection-action" id="quickFlipH" title="Flip Horizontal">
                         <svg class="vc-icon" viewBox="0 0 24 24">
@@ -355,6 +357,6 @@
     </div>
 
     <!-- Application ES Module Bootloader -->
-    <script type="module" src="editor/js/main.js?v=2.9.1"></script>
+    <script type="module" src="editor/js/main.js?v=2.9.2"></script>
 </body>
 </html>
